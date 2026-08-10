@@ -34,14 +34,14 @@ export const CategoryShowcase: React.FC<CategoryShowcaseProps> = ({ onSelectCate
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
           <div>
-            <div className="inline-flex items-center gap-2 text-[#D3CCB0] text-xs font-semibold uppercase tracking-wider mb-2 font-mono">
+            <div className="inline-flex items-center gap-2 text-[#D3CCB0] text-[11px] font-mono font-bold uppercase tracking-[0.1em] mb-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#D3CCB0]" />
-              <span>Explore Ecosystem</span>
+              <span>EXPLORE ECOSYSTEM</span>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-heading font-bold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-[-0.02em]">
               6 Core Digital Asset Sectors
             </h2>
-            <p className="text-xs sm:text-sm text-[#7B8A90] mt-1 max-w-xl">
+            <p className="text-xs sm:text-sm text-[#7B8A90] font-normal mt-1 max-w-xl leading-relaxed">
               Powering Indian tech startups, indie creators, designers, and film editors with verified downloadable source files.
             </p>
           </div>

@@ -1,6 +1,6 @@
 import React from "react";
 import { AssetListing } from "../types";
-import { Star, Download, Heart, ArrowUpRight, ShieldCheck } from "lucide-react";
+import { Star, Download, Heart, ShieldCheck, FileCode, ShoppingBag } from "lucide-react";
 
 interface ListingCardProps {
   listing: AssetListing;
@@ -17,8 +17,10 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   isSaved,
   onToggleSave,
 }) => {
+  const primaryFormat = listing.fileFormatTags[0] || ".zip";
+
   return (
-    <div className="group bg-[#202C44] hover:bg-[#202C44]/90 border border-[#202C44] hover:border-[#D3CCB0]/40 rounded-2xl overflow-hidden transition-all duration-200 flex flex-col justify-between shadow-lg">
+    <div className="group bg-[#202C44] hover:bg-[#202C44]/90 border border-[#202C44] hover:border-[#D3CCB0]/40 border-l-2 border-l-transparent hover:border-l-[#D3CCB0] rounded-2xl overflow-hidden transition-all duration-200 flex flex-col justify-between shadow-lg">
       
       {/* Top Image Preview */}
       <div className="relative aspect-[16/10] overflow-hidden bg-[#111317]">
@@ -32,18 +34,14 @@ export const ListingCard: React.FC<ListingCardProps> = ({
         {/* Dark overlay gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#202C44] via-transparent to-black/30 pointer-events-none" />
 
-        {/* Top File Format Badge */}
-        <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
-          {listing.fileFormatTags.map((tag) => (
-            <span
-              key={tag}
-              className="bg-[#111317]/90 backdrop-blur-md text-[#D3CCB0] text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-[#202C44]"
-            >
-              {tag}
-            </span>
-          ))}
+        {/* Top Single Pill Extension Badge */}
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
+          <span className="bg-[#111317]/95 backdrop-blur-md text-[#D3CCB0] text-[10px] font-mono font-bold px-2.5 py-1 rounded-full border border-[#202C44] flex items-center gap-1 shadow-sm">
+            <FileCode className="w-3 h-3 text-[#D3CCB0]" />
+            <span>{primaryFormat}</span>
+          </span>
           {listing.isNew && (
-            <span className="bg-[#D3CCB0] text-[#000000] text-[10px] font-bold uppercase px-2 py-0.5 rounded">
+            <span className="bg-[#D3CCB0] text-[#000000] text-[10px] font-bold uppercase px-2 py-0.5 rounded shadow-sm">
               NEW
             </span>
           )}
@@ -88,24 +86,24 @@ export const ListingCard: React.FC<ListingCardProps> = ({
               alt={listing.seller.name}
               className="w-4 h-4 rounded-full object-cover border border-[#202C44]"
             />
-            <span className="text-[11px] text-[#7B8A90] font-medium truncate">
+            <span className="text-[11px] text-[#7B8A90] hover:text-white hover:underline cursor-pointer font-medium truncate">
               {listing.seller.name}
             </span>
             {listing.seller.verified && (
-              <ShieldCheck className="w-3 h-3 text-[#D3CCB0] shrink-0" title="Verified Creator" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[#D3CCB0] fill-[#D3CCB0]" title="Verified Creator" />
             )}
           </div>
 
           {/* Title */}
           <h3
             onClick={() => onSelectListing(listing)}
-            className="text-sm font-heading font-semibold text-white group-hover:text-[#D3CCB0] transition-colors line-clamp-2 leading-snug cursor-pointer"
+            className="text-sm font-heading font-bold text-white group-hover:text-[#D3CCB0] transition-colors line-clamp-2 leading-snug cursor-pointer"
           >
             {listing.title}
           </h3>
 
           {/* Detailed features preview */}
-          <p className="text-[11px] text-[#7B8A90] line-clamp-2 mt-1 leading-relaxed">
+          <p className="text-[11px] text-[#7B8A90] font-normal line-clamp-2 mt-1 leading-relaxed">
             {listing.description}
           </p>
         </div>
@@ -131,11 +129,11 @@ export const ListingCard: React.FC<ListingCardProps> = ({
 
             <button
               onClick={() => onBuyNowDirect(listing)}
-              className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 active:scale-95"
+              className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-bold px-3 py-1.5 rounded-lg transition-all duration-150 flex items-center gap-1.5 active:scale-95 hover:scale-[1.02] shadow"
               title="Buy now with UPI"
             >
-              <span>Buy</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <ShoppingBag className="w-3.5 h-3.5 text-[#000000]" />
+              <span>Buy Now</span>
             </button>
           </div>
 
@@ -145,3 +143,4 @@ export const ListingCard: React.FC<ListingCardProps> = ({
     </div>
   );
 };
+

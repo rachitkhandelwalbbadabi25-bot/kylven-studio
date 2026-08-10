@@ -13,14 +13,14 @@ export const FileFormatsBreadth: React.FC<FileFormatsBreadthProps> = ({ onSelect
         
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
-          <div className="inline-flex items-center gap-2 bg-[#202C44] border border-[#202C44] px-3 py-1 rounded-full text-xs font-mono text-[#D3CCB0]">
+          <div className="inline-flex items-center gap-2 bg-[#202C44] border border-[#202C44] px-3 py-1 rounded-full text-[11px] font-mono font-bold text-[#D3CCB0] uppercase tracking-[0.1em]">
             <Layers className="w-3.5 h-3.5" />
-            <span>Universal Asset Compatibility</span>
+            <span>UNIVERSAL ASSET COMPATIBILITY</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-heading font-bold text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-[-0.02em]">
             100+ Real Source File Formats Supported
           </h2>
-          <p className="text-xs sm:text-sm text-[#7B8A90] leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#7B8A90] font-normal leading-relaxed">
             No proprietary lock-in. Get clean, uncompressed, original raw files with full commercial licenses instantly upon UPI checkout.
           </p>
         </div>

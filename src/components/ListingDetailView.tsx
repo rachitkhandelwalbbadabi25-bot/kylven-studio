@@ -14,7 +14,8 @@ import {
   Sparkles,
   Lock,
   UserCheck,
-  MessageSquare
+  MessageSquare,
+  ShoppingBag
 } from "lucide-react";
 
 interface ListingDetailViewProps {
@@ -416,8 +417,9 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
             {/* Buy CTA */}
             <button
               onClick={() => onBuyNow(listing)}
-              className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-heading font-extrabold text-sm py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2"
+              className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-heading font-extrabold text-sm py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 hover:scale-[1.02] flex items-center justify-center gap-2"
             >
+              <ShoppingBag className="w-4 h-4 text-[#000000]" />
               <span>Buy Now for ₹{totalBuyerPayable.toLocaleString("en-IN")}</span>
             </button>
 

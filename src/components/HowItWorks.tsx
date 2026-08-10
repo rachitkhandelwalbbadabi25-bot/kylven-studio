@@ -10,14 +10,14 @@ export const HowItWorks: React.FC = () => {
         
         {/* Section Title */}
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 text-[#D3CCB0] text-xs font-mono uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center gap-2 text-[#D3CCB0] text-[11px] font-mono font-bold uppercase tracking-[0.1em] mb-2">
             <ShieldCheck className="w-4 h-4" />
-            <span>Transparent Workflow</span>
+            <span>TRANSPARENT WORKFLOW</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-heading font-bold text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-[-0.02em]">
             How Kreate Studio Works
           </h2>
-          <p className="text-xs sm:text-sm text-[#7B8A90] mt-1">
+          <p className="text-xs sm:text-sm text-[#7B8A90] font-normal mt-1 leading-relaxed">
             Seamless marketplace experience built specifically for the Indian creator ecosystem.
           </p>
 
