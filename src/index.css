@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #000000;
+    --surface-navy: #202C44;
+    --surface-dark: #111317;
+    --accent-cream: #D3CCB0;
+    --text-white: #FFFFFF;
+    --text-slate: #7B8A90;
+  }
+
+  body {
+    background-color: #000000;
+    color: #FFFFFF;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-heading {
+    font-family: 'Poppins', sans-serif;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #202C44;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2a3a5a;
+}
+
+/* Glass & Border Utilities matching Navy/Black palette */
+.bg-navy {
+  background-color: #202C44;
+}
+
+.bg-surface-dark {
+  background-color: #111317;
+}
+
+.text-cream {
+  color: #D3CCB0;
+}
+
+.bg-cream {
+  background-color: #D3CCB0;
+  color: #000000;
+}
+
+.border-navy {
+  border-color: rgba(32, 44, 68, 0.6);
+}
+
+.border-navy-light {
+  border-color: rgba(32, 44, 68, 0.9);
+}
+
+.text-slate-muted {
+  color: #7B8A90;
+}
+
+.glow-navy {
+  box-shadow: 0 10px 30px -10px rgba(32, 44, 68, 0.5);
+}
+
