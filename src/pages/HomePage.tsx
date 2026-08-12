@@ -10,21 +10,25 @@ import { Sparkles, ArrowRight, Store, ShoppingBag, PlusCircle, Repeat } from "lu
 
 interface HomePageProps {
   userProfile: UserProfile;
+  isAuthenticated: boolean;
   listings: AssetListing[];
   savedIds: string[];
   onToggleSave: (id: string) => void;
   onBuyNowDirect: (listing: AssetListing) => void;
   onOpenOnboarding: () => void;
+  onOpenAuthModal: (mode: "signin" | "signup") => void;
   onSwitchRole: (role: "buyer" | "seller") => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
   userProfile,
+  isAuthenticated,
   listings,
   savedIds,
   onToggleSave,
   onBuyNowDirect,
   onOpenOnboarding,
+  onOpenAuthModal,
   onSwitchRole,
 }) => {
   const navigate = useNavigate();
@@ -55,59 +59,61 @@ export const HomePage: React.FC<HomePageProps> = ({
   return (
     <div className="space-y-0">
       
-      {/* Role Action Banner for Active Users */}
-      <div className="bg-[#111317] border-b border-[#202C44] py-3.5 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3">
-            <img
-              src={userProfile.avatar}
-              alt={userProfile.name}
-              className="w-8 h-8 rounded-xl object-cover border border-[#202C44]"
-            />
-            <div>
-              <div className="text-white font-bold flex items-center gap-1.5">
-                <span>Welcome back, {userProfile.name}!</span>
-                <span className="text-[10px] bg-[#202C44] text-[#D3CCB0] px-2 py-0.5 rounded font-mono border border-[#202C44] capitalize">
-                  {isSeller ? "Seller Studio" : "Buyer Mode"}
-                </span>
+      {/* Role Action Banner for Authenticated Users Only */}
+      {isAuthenticated ? (
+        <div className="bg-[#111317] border-b border-[#202C44] py-3.5 px-4">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <img
+                src={userProfile.avatar}
+                alt={userProfile.name}
+                className="w-8 h-8 rounded-xl object-cover border border-[#202C44]"
+              />
+              <div>
+                <div className="text-white font-bold flex items-center gap-1.5">
+                  <span>Welcome back, {userProfile.name}!</span>
+                  <span className="text-[10px] bg-[#202C44] text-[#D3CCB0] px-2 py-0.5 rounded font-mono border border-[#202C44] capitalize">
+                    {isSeller ? "Seller Studio" : "Buyer Mode"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#7B8A90]">
+                  {isSeller
+                    ? "Manage your active listings, track 90% revenue, or upload new source code."
+                    : "Discover, bookmark, and buy verified digital assets with instant UPI delivery."}
+                </p>
               </div>
-              <p className="text-[11px] text-[#7B8A90]">
-                {isSeller
-                  ? "Manage your active listings, track 90% revenue, or upload new source code."
-                  : "Discover, bookmark, and buy verified digital assets with instant UPI delivery."}
-              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {isSeller ? (
+                <button
+                  onClick={() => navigate("/seller")}
+                  className="bg-[#D3CCB0] text-[#000000] font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Go to Seller Studio</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate("/purchases")}
+                  className="bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] font-bold px-3.5 py-1.5 rounded-lg border border-[#202C44] flex items-center gap-1.5"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>View My Downloads</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => onSwitchRole(isSeller ? "buyer" : "seller")}
+                className="text-[#7B8A90] hover:text-white underline text-[11px] font-mono flex items-center gap-1 px-2"
+              >
+                <Repeat className="w-3 h-3" />
+                <span>Switch to {isSeller ? "Buyer" : "Seller"}</span>
+              </button>
             </div>
           </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            {isSeller ? (
-              <button
-                onClick={() => navigate("/seller")}
-                className="bg-[#D3CCB0] text-[#000000] font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow"
-              >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>Go to Seller Studio</span>
-              </button>
-            ) : (
-              <button
-                onClick={() => navigate("/purchases")}
-                className="bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] font-bold px-3.5 py-1.5 rounded-lg border border-[#202C44] flex items-center gap-1.5"
-              >
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>View My Downloads</span>
-              </button>
-            )}
-
-            <button
-              onClick={() => onSwitchRole(isSeller ? "buyer" : "seller")}
-              className="text-[#7B8A90] hover:text-white underline text-[11px] font-mono flex items-center gap-1 px-2"
-            >
-              <Repeat className="w-3 h-3" />
-              <span>Switch to {isSeller ? "Buyer" : "Seller"}</span>
-            </button>
-          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Hero Section */}
       <HeroSection

@@ -6,6 +6,7 @@ import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
 import { CheckoutModal } from "./components/CheckoutModal";
 import { OnboardingModal } from "./components/OnboardingModal";
+import { AuthModal } from "./components/AuthModal";
 import { HomePage } from "./pages/HomePage";
 import { BrowsePage } from "./pages/BrowsePage";
 import { ListingDetailPage } from "./pages/ListingDetailPage";
@@ -23,13 +24,13 @@ function ScrollToTop() {
 }
 
 const DEFAULT_PROFILE: UserProfile = {
-  name: "Rachit K.",
+  name: "Rachit Khandelwal",
   email: "rachit@kreate.in",
   upiId: "rachit@okaxis",
   role: "buyer",
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
   joinedDate: "August 2026",
-  hasCompletedOnboarding: false,
+  hasCompletedOnboarding: true,
 };
 
 export default function App() {
@@ -38,6 +39,19 @@ export default function App() {
   const [salesHistory, setSalesHistory] = useState<SalesRecord[]>(MOCK_SALES_HISTORY);
   const [savedIds, setSavedIds] = useState<string[]>(["asset-1", "asset-3"]);
   const [checkoutListing, setCheckoutListing] = useState<AssetListing | null>(null);
+
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("kreate_is_authenticated");
+      return saved === "true";
+    } catch (e) {
+      return false;
+    }
+  });
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
 
   // User Profile & Role State with LocalStorage
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
@@ -50,9 +64,32 @@ export default function App() {
     return DEFAULT_PROFILE;
   });
 
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(
-    !userProfile.hasCompletedOnboarding
-  );
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
+
+  const handleOpenAuthModal = (mode: "signin" | "signup" = "signin") => {
+    setAuthMode(mode);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleSignInSuccess = (profile: UserProfile) => {
+    setIsAuthenticated(true);
+    setUserProfile(profile);
+    try {
+      localStorage.setItem("kreate_is_authenticated", "true");
+      localStorage.setItem("kreate_user_profile", JSON.stringify(profile));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSignOut = () => {
+    setIsAuthenticated(false);
+    try {
+      localStorage.setItem("kreate_is_authenticated", "false");
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleSaveProfile = (updated: UserProfile) => {
     setUserProfile(updated);
@@ -92,9 +129,9 @@ export default function App() {
 
   const handlePurchaseComplete = (purchasedAsset: AssetListing) => {
     const listed = purchasedAsset.priceInINR;
-    const fee = Math.round(listed * 0.125);
+    const fee = Math.round(listed * 0.125); // 12.5% Platform fee
     const totalPaid = listed + fee;
-    const sellerNet = Math.round(listed * 0.9);
+    const sellerNet = Math.round(listed * 0.9); // 90% Seller split
 
     const newSale: SalesRecord = {
       id: `sale-${Date.now()}`,
@@ -134,10 +171,13 @@ export default function App() {
         {/* Navigation Bar */}
         <Navbar
           userProfile={userProfile}
+          isAuthenticated={isAuthenticated}
           savedCount={savedIds.length}
           purchasesCount={salesHistory.length}
           onSwitchRole={handleSwitchRole}
           onOpenOnboarding={() => setIsOnboardingOpen(true)}
+          onOpenAuthModal={handleOpenAuthModal}
+          onSignOut={handleSignOut}
         />
 
         {/* Multi-Page Routes */}
@@ -148,11 +188,13 @@ export default function App() {
               element={
                 <HomePage
                   userProfile={userProfile}
+                  isAuthenticated={isAuthenticated}
                   listings={listings}
                   savedIds={savedIds}
                   onToggleSave={handleToggleSave}
                   onBuyNowDirect={handleBuyNowDirect}
                   onOpenOnboarding={() => setIsOnboardingOpen(true)}
+                  onOpenAuthModal={handleOpenAuthModal}
                   onSwitchRole={handleSwitchRole}
                 />
               }
@@ -187,6 +229,8 @@ export default function App() {
                   salesHistory={salesHistory}
                   activeListings={listings}
                   onAddNewListing={handleAddNewListing}
+                  isAuthenticated={isAuthenticated}
+                  onOpenAuthModal={handleOpenAuthModal}
                 />
               }
             />
@@ -197,6 +241,8 @@ export default function App() {
                   salesHistory={salesHistory}
                   allListings={listings}
                   userEmail={userProfile.email}
+                  isAuthenticated={isAuthenticated}
+                  onOpenAuthModal={handleOpenAuthModal}
                 />
               }
             />
@@ -209,11 +255,21 @@ export default function App() {
                   onToggleSave={handleToggleSave}
                   onClearSaved={handleClearSaved}
                   onBuyNowDirect={handleBuyNowDirect}
+                  isAuthenticated={isAuthenticated}
+                  onOpenAuthModal={handleOpenAuthModal}
                 />
               }
             />
           </Routes>
         </main>
+
+        {/* Authentication Modal */}
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          onSignInSuccess={handleSignInSuccess}
+          initialMode={authMode}
+        />
 
         {/* Global Role Onboarding & Profile Modal */}
         <OnboardingModal
@@ -238,3 +294,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+

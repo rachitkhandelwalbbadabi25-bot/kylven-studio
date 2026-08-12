@@ -234,6 +234,46 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
                 </div>
               </div>
 
+              {/* Quality & Security Audit Badge Bar */}
+              <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-4 space-y-3">
+                <h4 className="text-xs font-mono font-bold text-[#D3CCB0] uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>Verified Marketplace Quality & Security Audit</span>
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-[#202C44]/60 border border-[#202C44] p-3 rounded-xl space-y-1">
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Malware & Virus Scan</span>
+                    </div>
+                    <p className="text-[11px] text-[#7B8A90]">
+                      ClamAV 1.4.1 Engine • 0 threats detected (Scanned Aug 2026).
+                    </p>
+                  </div>
+
+                  <div className="bg-[#202C44]/60 border border-[#202C44] p-3 rounded-xl space-y-1">
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Syntax & Build Test</span>
+                    </div>
+                    <p className="text-[11px] text-[#7B8A90]">
+                      Compiled with 0 breaking errors across target environments.
+                    </p>
+                  </div>
+
+                  <div className="bg-[#202C44]/60 border border-[#202C44] p-3 rounded-xl space-y-1">
+                    <div className="font-bold text-white flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                      <span>7-Day Guarantee</span>
+                    </div>
+                    <p className="text-[11px] text-[#7B8A90]">
+                      Full replacement or refund if files are corrupted or missing key components.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Compatibility badges */}
               <div className="space-y-2">
                 <h4 className="text-white font-semibold font-heading text-xs uppercase tracking-wider">

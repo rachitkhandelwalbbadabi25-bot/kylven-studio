@@ -122,15 +122,18 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           <div className="flex items-center gap-2">
             <div className="text-right">
               <div className="text-sm font-heading font-bold text-[#D3CCB0]">
-                ₹{listing.priceInINR.toLocaleString("en-IN")}
+                ₹{(listing.priceInINR + Math.round(listing.priceInINR * 0.125)).toLocaleString("en-IN")}
               </div>
-              <span className="text-[9px] text-[#7B8A90] block -mt-0.5">+12.5% UPI fee</span>
+              <span className="text-[9px] text-[#7B8A90] block -mt-0.5">
+                ₹{listing.priceInINR.toLocaleString("en-IN")} + ₹{Math.round(listing.priceInINR * 0.125)} platform fee
+              </span>
             </div>
 
             <button
               onClick={() => onBuyNowDirect(listing)}
               className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-bold px-3 py-1.5 rounded-lg transition-all duration-150 flex items-center gap-1.5 active:scale-95 hover:scale-[1.02] shadow"
-              title="Buy now with UPI"
+              title={`Buy now for ₹${(listing.priceInINR + Math.round(listing.priceInINR * 0.125)).toLocaleString("en-IN")}`}
+              aria-label={`Buy now for total ₹${(listing.priceInINR + Math.round(listing.priceInINR * 0.125)).toLocaleString("en-IN")}`}
             >
               <ShoppingBag className="w-3.5 h-3.5 text-[#000000]" />
               <span>Buy Now</span>
