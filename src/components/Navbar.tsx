@@ -1,450 +1,492 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { UserRole, UserProfile } from "../types";
-import { Search, Heart, PlusCircle, Menu, X, ShoppingBag, Store, User, Repeat, LogIn, LogOut, ShieldCheck } from "lucide-react";
+import {
+  Search,
+  ChevronDown,
+  Menu,
+  X,
+  LogIn,
+  Layers,
+  FileCode,
+  TrendingUp,
+  ShoppingBag,
+  Heart,
+  LayoutDashboard,
+  PlusCircle,
+  LogOut,
+  User,
+  CheckCircle2
+} from "lucide-react";
+import { UserProfile } from "../types";
 
 interface NavbarProps {
-  userProfile: UserProfile;
-  isAuthenticated: boolean;
-  savedCount: number;
-  purchasesCount: number;
-  onSwitchRole: (newRole: UserRole) => void;
-  onOpenOnboarding: () => void;
-  onOpenAuthModal: (mode: "signin" | "signup") => void;
-  onSignOut: () => void;
+  isAuthenticated?: boolean;
+  userProfile?: UserProfile;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
+  onSearchSubmit?: (q?: string) => void;
+  onOpenAuthModal?: (mode?: "signin" | "signup") => void;
+  onLogout?: () => void;
+  savedCount?: number;
+  purchasesCount?: number;
 }
 
+const AUTOCOMPLETE_POPULAR = [
+  { label: "Figma Fintech UI Kit", type: "Popular Search", query: "Figma Fintech UI Kit" },
+  { label: "Neo Bharat Cyberpunk", type: "Trending Kit", query: "Cyberpunk" },
+  { label: "ML Fine-Tuning Notebook", type: "AI / ML", query: "Fine-Tuning" },
+  { label: "Cinematic India LUT Pack", type: "Video", query: "LUT" },
+  { label: "Blender Auto-Rickshaw Pack", type: "3D Asset", query: "Blender" },
+  { label: "Notion Freelancer OS", type: "Productivity", query: "Notion" },
+];
+
+const AUTOCOMPLETE_CATEGORIES = [
+  { name: "Software & Development", count: "48 assets", path: "/browse?category=Software%20%26%20Development" },
+  { name: "AI / ML & Data Science", count: "36 assets", path: "/browse?category=AI%2FML%20%26%20Data%20Science" },
+  { name: "UI/UX & Design", count: "64 assets", path: "/browse?category=UI%2FUX%20%26%20Design" },
+  { name: "3D & CAD", count: "29 assets", path: "/browse?category=3D%20%26%20CAD" },
+  { name: "Video & Motion", count: "38 assets", path: "/browse?category=Video%2FMotion%20%26%20Audio" },
+  { name: "Productivity & Business", count: "24 assets", path: "/browse?category=Productivity%20%26%20Business" },
+];
+
+const AUTOCOMPLETE_FORMATS = [
+  { ext: ".fig", label: "Figma Kit" },
+  { ext: ".ipynb", label: "Jupyter Notebook" },
+  { ext: ".dart", label: "Flutter App" },
+  { ext: ".blend", label: "Blender 3D" },
+  { ext: ".cube", label: "LUT Presets" },
+  { ext: ".notion", label: "Notion Workspace" },
+];
+
 export const Navbar: React.FC<NavbarProps> = ({
+  isAuthenticated = false,
   userProfile,
-  isAuthenticated,
-  savedCount,
-  purchasesCount,
-  onSwitchRole,
-  onOpenOnboarding,
-  onOpenAuthModal,
-  onSignOut,
+  searchQuery,
+  setSearchQuery,
+  onSearchSubmit,
+  onLogout,
+  savedCount = 0,
+  purchasesCount = 0,
 }) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  // Close search suggestions & account dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setIsSearchFocused(false);
+      }
+      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+        setIsAccountMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Close menus on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsAccountMenuOpen(false);
+    setIsSearchFocused(false);
+  }, [location.pathname]);
+
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchInput.trim()) {
-      navigate(`/browse?q=${encodeURIComponent(searchInput.trim())}`);
+    setIsSearchFocused(false);
+    if (searchQuery.trim()) {
+      navigate(`/browse?q=${encodeURIComponent(searchQuery.trim())}`);
     } else {
       navigate("/browse");
     }
   };
 
-  const isActive = (path: string) => {
-    if (path === "/" && location.pathname === "/") return true;
-    if (path !== "/" && location.pathname.startsWith(path)) return true;
-    return false;
+  const handleSelectSuggestion = (queryText: string) => {
+    setSearchQuery(queryText);
+    setIsSearchFocused(false);
+    navigate(`/browse?q=${encodeURIComponent(queryText)}`);
   };
 
-  const isSeller = userProfile.role === "seller";
+  const isActive = (path: string) => {
+    if (path === "/browse") return location.pathname === "/browse";
+    if (path === "/categories") return location.pathname === "/categories";
+    if (path === "/pricing") return location.pathname === "/pricing";
+    if (path === "/sell") return location.pathname.startsWith("/sell") || location.pathname === "/dashboard";
+    return location.pathname === path;
+  };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#000000]/90 backdrop-blur-md border-b border-[#202C44]/60 transition-all">
-      
-      {/* Top Banner Notice */}
-      <div className="bg-[#111317] border-b border-[#202C44] text-[#7B8A90] text-xs py-1.5 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-          
-          <div className="flex items-center gap-2 text-center sm:text-left">
-            <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] uppercase font-bold px-1.5 py-0.5 rounded tracking-wider border border-[#202C44]">
-              UPI Native
-            </span>
-            <span>Direct ₹ GPay, PhonePe & BHIM payouts. 90% seller split guaranteed.</span>
-          </div>
-
-          {/* Role Status or Sign In Callout */}
-          <div className="flex items-center gap-3 shrink-0">
-            {isAuthenticated ? (
-              <>
-                <div className="flex items-center gap-1.5 text-white font-medium text-[11px] bg-[#202C44]/80 px-2.5 py-0.5 rounded-full border border-[#202C44]">
-                  {isSeller ? (
-                    <>
-                      <Store className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                      <span>Mode: <strong className="text-[#D3CCB0]">Seller Studio</strong></span>
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingBag className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                      <span>Mode: <strong className="text-[#D3CCB0]">Buyer Experience</strong></span>
-                    </>
-                  )}
-                </div>
-
-                <button
-                  onClick={() => {
-                    const nextRole: UserRole = isSeller ? "buyer" : "seller";
-                    onSwitchRole(nextRole);
-                    if (nextRole === "seller") {
-                      navigate("/seller");
-                    } else {
-                      navigate("/browse");
-                    }
-                  }}
-                  className="text-[#D3CCB0] hover:text-white text-[11px] font-mono font-bold flex items-center gap-1 transition-colors hover:underline"
-                >
-                  <Repeat className="w-3 h-3" />
-                  <span>Switch to {isSeller ? "Buyer View" : "Seller Studio"}</span>
-                </button>
-              </>
-            ) : (
-              <div className="flex items-center gap-2 text-[11px]">
-                <span className="text-[#7B8A90]">Guest Visitor</span>
-                <button
-                  onClick={() => onOpenAuthModal("signin")}
-                  className="text-[#D3CCB0] hover:text-white font-bold transition-colors hover:underline"
-                >
-                  Sign in
-                </button>
-                <span className="text-[#202C44]">•</span>
-                <button
-                  onClick={() => onOpenAuthModal("signup")}
-                  className="text-white hover:text-[#D3CCB0] font-bold transition-colors hover:underline"
-                >
-                  Create account
-                </button>
-              </div>
-            )}
-          </div>
-
-        </div>
-      </div>
-
+    <header className="sticky top-0 z-50 bg-[#000000]/95 backdrop-blur-md border-b border-[#202C44]" id="public-header">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
+        <div className="flex items-center justify-between h-16 gap-3 sm:gap-6">
           
-          {/* Logo & Mobile Menu Toggle */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 text-[#7B8A90] hover:text-white rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D3CCB0]"
-              aria-label="Toggle mobile menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+          {/* Logo & Subtitle */}
+          <Link
+            to="/"
+            id="header-logo-link"
+            className="flex items-center gap-3 shrink-0 group py-1"
+            title="Kreate Studio — India’s Creative Marketplace"
+          >
+            <div className="w-9 h-9 rounded-xl bg-[#202C44] border border-[#202C44] flex items-center justify-center transition-all group-hover:border-[#D3CCB0]">
+              <span className="font-heading font-extrabold text-lg text-[#D3CCB0]">K</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-heading font-bold text-base text-white tracking-tight leading-none group-hover:text-[#D3CCB0] transition-colors">
+                Kreate <span className="text-[#D3CCB0]">Studio</span>
+              </span>
+              <span className="text-[10px] text-[#7B8A90] font-sans font-medium tracking-wide leading-tight mt-0.5">
+                India’s Creative Marketplace
+              </span>
+            </div>
+          </Link>
 
-            <Link
-              to="/"
-              className="flex items-center gap-2.5 group text-left"
-            >
-              <div className="w-9 h-9 rounded-xl bg-[#202C44] border border-[#202C44]/80 flex items-center justify-center shadow-inner group-hover:border-[#D3CCB0]/40 transition-colors">
-                <span className="font-heading font-extrabold text-lg text-[#D3CCB0]">K</span>
-              </div>
-              <div>
-                <span className="font-heading font-bold text-lg text-white tracking-tight group-hover:text-[#D3CCB0] transition-colors flex items-center gap-1">
-                  Kreate <span className="text-[#D3CCB0] font-normal text-xs uppercase tracking-widest bg-[#202C44] px-1.5 py-0.5 rounded border border-[#202C44]">Studio</span>
-                </span>
-                <span className="block text-[10px] text-[#7B8A90] -mt-1 font-mono">India's Digital Assets Marketplace</span>
-              </div>
-            </Link>
-          </div>
-
-          {/* Desktop Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="hidden md:flex flex-1 max-w-md relative">
-            <div className="relative w-full">
+          {/* Global Search Field with Autocomplete Suggestions */}
+          <div className="hidden md:flex flex-1 max-w-md lg:max-w-lg relative" ref={searchContainerRef}>
+            <form onSubmit={handleSearch} className="relative w-full" id="global-search-form">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7B8A90]" />
               <input
+                id="global-search-input"
                 type="text"
-                placeholder="Search Figma UI, Flutter code, AI notebooks, LUTs..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full bg-[#111317] text-white text-xs pl-10 pr-24 py-2.5 rounded-lg border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]/60 placeholder-[#7B8A90] transition-colors"
-                aria-label="Search digital assets catalog"
+                placeholder="Search UI kits, templates, models…"
+                value={searchQuery}
+                onFocus={() => setIsSearchFocused(true)}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#111317] text-white text-xs pl-10 pr-20 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] placeholder-[#7B8A90] transition-all"
               />
               <button
                 type="submit"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] text-[11px] font-medium px-2.5 py-1 rounded border border-[#202C44] transition-colors"
+                id="global-search-submit"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#202C44] hover:bg-[#D3CCB0] text-[#D3CCB0] hover:text-[#000000] text-[11px] font-mono font-bold px-3 py-1 rounded-lg transition-colors"
               >
                 Search
               </button>
-            </div>
-          </form>
+            </form>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-xs font-medium">
-            <Link
-              to="/"
-              className={`transition-colors hover:text-[#D3CCB0] ${
-                isActive("/") ? "text-[#D3CCB0] font-semibold" : "text-[#7B8A90]"
-              }`}
-            >
-              Home
-            </Link>
+            {/* Autocomplete Dropdown */}
+            {isSearchFocused && (
+              <div
+                id="search-autocomplete-dropdown"
+                className="absolute top-full left-0 right-0 mt-2 bg-[#111317] border border-[#202C44] rounded-2xl shadow-2xl p-4 z-50 text-xs space-y-4 max-h-[380px] overflow-y-auto"
+              >
+                {/* Popular Keywords */}
+                <div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold">
+                    <TrendingUp className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                    <span>Popular Searches</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {AUTOCOMPLETE_POPULAR.map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={() => handleSelectSuggestion(item.query)}
+                        className="text-left px-2.5 py-1.5 rounded-lg bg-[#202C44]/40 hover:bg-[#202C44] text-white text-[11px] flex items-center justify-between transition-colors"
+                      >
+                        <span className="truncate">{item.label}</span>
+                        <span className="text-[9px] text-[#7B8A90] font-mono shrink-0 ml-1">{item.type}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
+                {/* Popular File Formats */}
+                <div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold">
+                    <FileCode className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                    <span>Filter By File Type</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {AUTOCOMPLETE_FORMATS.map((fmt) => (
+                      <button
+                        key={fmt.ext}
+                        type="button"
+                        onClick={() => {
+                          setIsSearchFocused(false);
+                          navigate(`/browse?format=${encodeURIComponent(fmt.ext)}`);
+                        }}
+                        className="px-2.5 py-1 rounded-md bg-[#202C44] hover:bg-[#D3CCB0] text-[#D3CCB0] hover:text-[#000000] text-[11px] font-mono font-bold transition-colors"
+                      >
+                        {fmt.ext} <span className="font-sans font-normal text-[10px] opacity-80">({fmt.label})</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Core Categories */}
+                <div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold">
+                    <Layers className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                    <span>Browse Core Sectors</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    {AUTOCOMPLETE_CATEGORIES.map((cat) => (
+                      <button
+                        key={cat.name}
+                        type="button"
+                        onClick={() => {
+                          setIsSearchFocused(false);
+                          navigate(cat.path);
+                        }}
+                        className="text-left px-2.5 py-1.5 rounded-lg hover:bg-[#202C44]/60 text-[#7B8A90] hover:text-white text-[11px] flex items-center justify-between transition-colors"
+                      >
+                        <span className="truncate">{cat.name}</span>
+                        <span className="text-[9px] text-[#7B8A90] font-mono">{cat.count}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
             <Link
               to="/browse"
-              className={`transition-colors hover:text-[#D3CCB0] ${
-                isActive("/browse") ? "text-[#D3CCB0] font-semibold" : "text-[#7B8A90]"
+              id="nav-link-browse"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isActive("/browse")
+                  ? "bg-[#202C44] text-[#D3CCB0] font-bold"
+                  : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50"
               }`}
             >
-              Explore Assets
+              Browse
             </Link>
 
-            {isAuthenticated ? (
-              isSeller ? (
-                <Link
-                  to="/seller"
-                  className={`transition-colors hover:text-[#D3CCB0] flex items-center gap-1.5 ${
-                    isActive("/seller") ? "text-[#D3CCB0] font-semibold" : "text-[#7B8A90]"
-                  }`}
-                >
-                  <span>Seller Studio</span>
-                  <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] px-1.5 py-0.2 rounded font-mono border border-[#202C44]">
-                    90% Split
-                  </span>
-                </Link>
-              ) : (
-                <Link
-                  to="/purchases"
-                  className={`transition-colors hover:text-[#D3CCB0] flex items-center gap-1.5 ${
-                    isActive("/purchases") ? "text-[#D3CCB0] font-semibold" : "text-[#7B8A90]"
-                  }`}
-                >
-                  <span>My Library</span>
-                  {purchasesCount > 0 && (
-                    <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] px-1.5 py-0.2 rounded font-mono border border-[#202C44]">
-                      {purchasesCount}
-                    </span>
-                  )}
-                </Link>
-              )
-            ) : null}
+            <Link
+              to="/categories"
+              id="nav-link-categories"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isActive("/categories")
+                  ? "bg-[#202C44] text-[#D3CCB0] font-bold"
+                  : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50"
+              }`}
+            >
+              Categories
+            </Link>
+
+            <Link
+              to="/sell/new"
+              id="nav-link-sell"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isActive("/sell")
+                  ? "bg-[#202C44] text-[#D3CCB0] font-bold"
+                  : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50"
+              }`}
+            >
+              Sell
+            </Link>
+
+            <Link
+              to="/pricing"
+              id="nav-link-pricing"
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                isActive("/pricing")
+                  ? "bg-[#202C44] text-[#D3CCB0] font-bold"
+                  : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50"
+              }`}
+            >
+              Pricing
+            </Link>
           </nav>
 
-          {/* Right Action Controls */}
-          <div className="flex items-center gap-3">
-            
-            {/* Wishlist Icon */}
-            <button
-              onClick={() => {
-                if (!isAuthenticated) {
-                  onOpenAuthModal("signin");
-                } else {
-                  navigate("/saved");
-                }
-              }}
-              className="relative p-2 text-[#7B8A90] hover:text-[#D3CCB0] hover:bg-[#202C44]/40 rounded-lg transition-colors"
-              title="Saved Items"
-              aria-label="View saved items"
-            >
-              <Heart className="w-5 h-5" />
-              {isAuthenticated && savedCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#D3CCB0] text-[#000000] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {savedCount}
-                </span>
-              )}
-            </button>
-
-            {/* Public Auth Buttons OR Profile Avatar Dropdown */}
-            {isAuthenticated ? (
-              <div className="relative">
-                <button
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-xl bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/50 transition-all text-left"
-                  aria-label="User profile menu"
+          {/* Auth State & Action Buttons */}
+          <div className="flex items-center gap-2.5">
+            {!isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/signin"
+                  id="header-sign-in-btn"
+                  className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-bold px-4 py-2 rounded-xl transition-all shadow active:scale-95 flex items-center gap-1.5"
                 >
-                  <img
-                    src={userProfile.avatar}
-                    alt={userProfile.name}
-                    className="w-7 h-7 rounded-lg object-cover border border-[#202C44]"
-                  />
-                  <div className="hidden xl:block pr-1">
-                    <div className="text-[11px] font-bold text-white leading-none truncate max-w-[90px]">
-                      {userProfile.name}
-                    </div>
-                    <div className="text-[9px] text-[#D3CCB0] font-mono capitalize">
-                      {isSeller ? "Seller Studio" : "Buyer"}
-                    </div>
-                  </div>
-                </button>
-
-                {/* Profile Popup Menu */}
-                {userDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-[#111317] border border-[#202C44] rounded-2xl p-2 shadow-2xl z-50 space-y-1 text-xs">
-                    <div className="px-3 py-2 border-b border-[#202C44]">
-                      <div className="font-bold text-white truncate">{userProfile.name}</div>
-                      <div className="text-[10px] text-[#7B8A90] truncate">{userProfile.email}</div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        onOpenOnboarding();
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-[#202C44] text-[#D3CCB0] flex items-center gap-2"
-                    >
-                      <User className="w-4 h-4" />
-                      <span>Edit Profile & UPI VPA</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        onSwitchRole(isSeller ? "buyer" : "seller");
-                        navigate(isSeller ? "/browse" : "/seller");
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-[#202C44] text-white flex items-center gap-2"
-                    >
-                      <Repeat className="w-4 h-4 text-[#D3CCB0]" />
-                      <span>Switch to {isSeller ? "Buyer View" : "Seller Studio"}</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        onSignOut();
-                      }}
-                      className="w-full text-left px-3 py-2 rounded-xl hover:bg-[#202C44] text-rose-400 flex items-center gap-2 border-t border-[#202C44] mt-1"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                )}
+                  <LogIn className="w-3.5 h-3.5 text-[#000000]" />
+                  <span>Sign In</span>
+                </Link>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => onOpenAuthModal("signin")}
-                  className="bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] font-bold text-xs px-3.5 py-2 rounded-xl border border-[#202C44] transition-all flex items-center gap-1.5"
+              <div className="flex items-center gap-2.5">
+                <Link
+                  to="/sell/new"
+                  className="hidden sm:flex items-center gap-1.5 bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] text-xs font-bold px-3 py-2 rounded-xl border border-[#202C44] transition-all"
                 >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>Sign In</span>
-                </button>
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Sell Asset</span>
+                </Link>
 
-                <button
-                  onClick={() => onOpenAuthModal("signup")}
-                  className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-3.5 py-2 rounded-xl transition-all shadow active:scale-95 hidden sm:inline-flex"
-                >
-                  Create Account
-                </button>
+                {/* Account Menu */}
+                <div className="relative" ref={accountMenuRef}>
+                  <button
+                    onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
+                    className="flex items-center gap-2 p-1.5 rounded-xl bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/60 transition-all focus:outline-none"
+                    aria-label="User account menu"
+                  >
+                    <img
+                      src={userProfile?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
+                      alt={userProfile?.name || "User"}
+                      className="w-7 h-7 rounded-lg object-cover border border-[#202C44]"
+                    />
+                    <span className="hidden sm:block text-xs text-white font-medium max-w-[90px] truncate">
+                      {userProfile?.name || "My Account"}
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 text-[#7B8A90]" />
+                  </button>
+
+                  {isAccountMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-64 bg-[#111317] border border-[#202C44] rounded-2xl shadow-2xl py-2 z-50 text-xs">
+                      <div className="px-4 py-2.5 border-b border-[#202C44]">
+                        <p className="text-white font-bold truncate">{userProfile?.name}</p>
+                        <p className="text-[11px] text-[#7B8A90] font-mono truncate">{userProfile?.email}</p>
+                      </div>
+
+                      <div className="py-1">
+                        <Link
+                          to="/purchases"
+                          className="flex items-center justify-between px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <ShoppingBag className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                            <span>My Purchases</span>
+                          </div>
+                          {purchasesCount > 0 && (
+                            <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] font-mono px-1.5 py-0.5 rounded">
+                              {purchasesCount}
+                            </span>
+                          )}
+                        </Link>
+
+                        <Link
+                          to="/saved"
+                          className="flex items-center justify-between px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Heart className="w-3.5 h-3.5 text-pink-400" />
+                            <span>Saved Items</span>
+                          </div>
+                          {savedCount > 0 && (
+                            <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] font-mono px-1.5 py-0.5 rounded">
+                              {savedCount}
+                            </span>
+                          )}
+                        </Link>
+
+                        <Link
+                          to="/dashboard"
+                          className="flex items-center gap-2.5 px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
+                        >
+                          <LayoutDashboard className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                          <span>Seller Dashboard</span>
+                        </Link>
+
+                        <Link
+                          to="/sell/new"
+                          className="flex items-center gap-2.5 px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Sell New Asset</span>
+                        </Link>
+                      </div>
+
+                      <div className="border-t border-[#202C44] pt-1">
+                        <button
+                          onClick={onLogout}
+                          className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Main Primary Action Button tailored to role */}
-            {isAuthenticated && isSeller ? (
-              <Link
-                to="/seller"
-                className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+            {/* Mobile Menu Toggle */}
+            <button
+              id="mobile-menu-toggle-btn"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-xl bg-[#111317] border border-[#202C44] text-[#7B8A90] hover:text-white"
+              aria-label="Toggle navigation menu"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+
+        </div>
+
+        {/* Mobile Navigation Drawer */}
+        {isMobileMenuOpen && (
+          <div id="mobile-nav-drawer" className="md:hidden py-4 border-t border-[#202C44] space-y-3">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7B8A90]" />
+              <input
+                type="text"
+                placeholder="Search UI kits, templates, models…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-[#111317] text-white text-xs pl-10 pr-16 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+              />
+              <button
+                type="submit"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#202C44] text-[#D3CCB0] text-[11px] font-mono px-2.5 py-1 rounded-lg"
               >
-                <PlusCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Upload Asset</span>
-                <span className="sm:hidden">Upload</span>
-              </Link>
-            ) : (
+                Go
+              </button>
+            </form>
+
+            <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
               <Link
                 to="/browse"
-                className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                className="p-2.5 bg-[#111317] rounded-xl border border-[#202C44] text-white font-medium text-center hover:border-[#D3CCB0]"
               >
-                <ShoppingBag className="w-4 h-4 text-[#000000]" />
-                <span className="hidden sm:inline">Browse Marketplace</span>
-                <span className="sm:hidden">Browse</span>
-              </Link>
-            )}
-
-          </div>
-        </div>
-
-        {/* Mobile Search Input */}
-        <div className="md:hidden pb-3">
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7B8A90]" />
-            <input
-              type="text"
-              placeholder="Search UI kits, Flutter, Notebooks, LUTs..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full bg-[#111317] text-white text-xs pl-9 pr-3 py-2 rounded-lg border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]/60 placeholder-[#7B8A90]"
-              aria-label="Mobile search catalog"
-            />
-          </form>
-        </div>
-      </div>
-
-      {/* Mobile Drawer Menu */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#111317] border-b border-[#202C44] px-4 py-3 space-y-2 text-xs font-medium">
-          <Link
-            to="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block w-full text-left py-2 px-3 rounded-lg hover:bg-[#202C44] text-white"
-          >
-            Home / Landing
-          </Link>
-          <Link
-            to="/browse"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block w-full text-left py-2 px-3 rounded-lg hover:bg-[#202C44] text-white"
-          >
-            Explore All Digital Assets
-          </Link>
-
-          {isAuthenticated ? (
-            <>
-              <Link
-                to="/purchases"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block w-full text-left py-2 px-3 rounded-lg hover:bg-[#202C44] text-white"
-              >
-                My Buyer Library & Invoices ({purchasesCount})
+                Browse
               </Link>
               <Link
-                to="/seller"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block w-full text-left py-2 px-3 rounded-lg hover:bg-[#202C44] text-[#D3CCB0]"
+                to="/categories"
+                className="p-2.5 bg-[#111317] rounded-xl border border-[#202C44] text-white font-medium text-center hover:border-[#D3CCB0]"
               >
-                Seller Dashboard & Uploads (90% Split)
+                Categories
               </Link>
               <Link
-                to="/saved"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block w-full text-left py-2 px-3 rounded-lg hover:bg-[#202C44] text-white"
+                to="/sell/new"
+                className="p-2.5 bg-[#111317] rounded-xl border border-[#202C44] text-white font-medium text-center hover:border-[#D3CCB0]"
               >
-                Saved Assets ({savedCount})
+                Sell
               </Link>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onSignOut();
-                }}
-                className="block w-full text-left py-2 px-3 rounded-lg bg-rose-950/40 text-rose-300 font-bold border border-rose-900/50"
+              <Link
+                to="/pricing"
+                className="p-2.5 bg-[#111317] rounded-xl border border-[#202C44] text-white font-medium text-center hover:border-[#D3CCB0]"
               >
-                Sign Out ({userProfile.name})
-              </button>
-            </>
-          ) : (
-            <div className="pt-2 border-t border-[#202C44] space-y-2">
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenAuthModal("signin");
-                }}
-                className="block w-full text-center py-2.5 px-3 rounded-xl bg-[#202C44] text-[#D3CCB0] font-bold"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenAuthModal("signup");
-                }}
-                className="block w-full text-center py-2.5 px-3 rounded-xl bg-[#D3CCB0] text-[#000000] font-bold"
-              >
-                Create Account
-              </button>
+                Pricing
+              </Link>
             </div>
-          )}
-        </div>
-      )}
+
+            {isAuthenticated && (
+              <div className="pt-2 border-t border-[#202C44] space-y-1 text-xs">
+                <Link to="/purchases" className="flex items-center gap-2 py-2 text-[#7B8A90] hover:text-white">
+                  <ShoppingBag className="w-4 h-4 text-[#D3CCB0]" />
+                  <span>My Purchases</span>
+                </Link>
+                <Link to="/saved" className="flex items-center gap-2 py-2 text-[#7B8A90] hover:text-white">
+                  <Heart className="w-4 h-4 text-pink-400" />
+                  <span>Saved Items</span>
+                </Link>
+                <Link to="/dashboard" className="flex items-center gap-2 py-2 text-[#7B8A90] hover:text-white">
+                  <LayoutDashboard className="w-4 h-4 text-[#D3CCB0]" />
+                  <span>Seller Dashboard</span>
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
     </header>
   );
 };
-

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { AssetListing, CoreCategory, SalesRecord, SellerStats } from "../types";
+import { AssetListing, CoreCategory, CreatorProfile, SalesRecord, SellerStats } from "../types";
 import { CATEGORIES_LIST, FILE_FORMATS_CATALOG } from "../data/mockData";
 import {
   PlusCircle,
@@ -147,11 +147,32 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
   const handleCreateListing = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const creatorObj: CreatorProfile = {
+      id: "sel-me",
+      name: "You (Studio Creator)",
+      username: "my_studio",
+      handle: "@my_studio",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+      badge: "Verified Creator",
+      verified: true,
+      verifiedSeller: true,
+      responseTime: "< 1 hour",
+      totalSales: stats.totalSalesCount + 1,
+      rating: 5.0,
+      joinedDate: "Today",
+      location: "Mumbai, MH"
+    };
+
     const createdAsset: AssetListing = {
       id: `asset-new-${Date.now()}`,
+      slug: (title || "new-asset").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       title: title || (attachedFile ? attachedFile.name : "New Custom Creator Asset"),
       category,
       subcategory,
+      tags: [category.toLowerCase().split(" ")[0], "new"],
+      fileType: attachedFile ? attachedFile.ext : ".zip",
+      shortDescription: description || "Verified creator digital asset ready for instant download.",
+      fullDescription: description || "Verified creator digital asset ready for instant download.",
       description: description || "Verified creator digital asset ready for instant download.",
       detailedFeatures: [
         `Includes raw ${attachedFile ? attachedFile.ext.toUpperCase() : "source"} package`,
@@ -166,19 +187,11 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
       fileSizeBytes: attachedFile ? attachedFile.size : "45 MB",
       thumbnailUrl,
       previewImages: [thumbnailUrl],
-      seller: {
-        id: "sel-me",
-        name: "You (Studio Creator)",
-        handle: "@my_studio",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-        badge: "Verified Creator",
-        verified: true,
-        responseTime: "< 1 hour",
-        totalSales: stats.totalSalesCount + 1,
-        rating: 5.0,
-        joinedDate: "Today",
-        location: "Mumbai, MH"
-      },
+      seller: creatorObj,
+      creator: creatorObj,
+      reviewStatus: "Verified & Approved",
+      softwareCompatibility: ["Figma", "VS Code", "PDF Viewers", "All Standard Tools"],
+      deliveryType: "Instant ZIP Download",
       isNew: true,
       reviewList: [],
       createdAt: new Date().toISOString().split("T")[0],

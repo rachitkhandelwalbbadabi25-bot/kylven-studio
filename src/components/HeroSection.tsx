@@ -1,5 +1,6 @@
 import React from "react";
-import { Search, ShieldCheck, ArrowRight, Zap, Star, Download, FileCode, CheckCircle2 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowRight, Star, FileCode, CheckCircle2, Sparkles, Layers } from "lucide-react";
 import { motion } from "motion/react";
 import { CoreCategory } from "../types";
 
@@ -18,291 +19,233 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   setSearchQuery,
   onSearchSubmit,
 }) => {
+  const navigate = useNavigate();
+
   return (
-    <section className="relative overflow-hidden pt-10 pb-16 md:pt-16 md:pb-20 border-b border-[#202C44]/50 bg-gradient-to-b from-[#000000] via-[#000000] to-[#111317]">
-      {/* Subtle Navy Background Accent Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(#202C44_1px,transparent_1px)] [background-size:24px_24px] opacity-30 pointer-events-none" />
-      
+    <section className="relative overflow-hidden pt-8 pb-14 md:pt-12 md:pb-18 bg-[#000000]" id="homepage-hero">
+      {/* Background Subtle Grid Pattern */}
+      <div className="absolute inset-0 bg-[radial-gradient(#202C44_1px,transparent_1px)] [background-size:28px_28px] opacity-25 pointer-events-none" />
+
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Top Badges */}
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <div className="inline-flex items-center gap-2 bg-[#202C44] border border-[#202C44] px-3 py-1 rounded-full text-xs font-medium text-white">
-            <span className="w-2 h-2 rounded-full bg-[#D3CCB0] animate-pulse" />
-            <span>India's Mobile-First Marketplace</span>
-          </div>
-
-          <div className="inline-flex items-center gap-1.5 bg-[#111317] border border-[#202C44] px-3 py-1 rounded-full text-xs font-medium text-[#7B8A90]">
-            <Zap className="w-3.5 h-3.5 text-[#D3CCB0]" />
-            <span>UPI Native Checkout (₹)</span>
-          </div>
-
-          <div className="inline-flex items-center gap-1.5 bg-[#111317] border border-[#202C44] px-3 py-1 rounded-full text-xs font-medium text-[#7B8A90]">
-            <ShieldCheck className="w-3.5 h-3.5 text-[#D3CCB0]" />
-            <span>100% Quality Reviewed</span>
-          </div>
-        </div>
-
-        {/* 2-Column Grid: Left Content & Right Floating Asset Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        {/* Navy Container Panel */}
+        <div className="relative bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-10 lg:p-12 shadow-2xl overflow-hidden">
           
-          {/* Left Column (7 cols): Main Headline & Search */}
-          <div className="lg:col-span-7 space-y-6">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-heading font-extrabold text-white tracking-[-0.02em] leading-[1.12]">
-              India's Digital Asset Marketplace for <span className="text-[#D3CCB0] underline decoration-[#202C44] underline-offset-8">Creators & Developers</span>
-            </h1>
+          {/* Ambient Lighting Accents */}
+          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#202C44]/40 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-[#202C44]/30 blur-3xl pointer-events-none" />
 
-            <p className="text-base sm:text-lg text-[#7B8A90] font-normal max-w-2xl leading-relaxed">
-              Buy & sell production-ready Figma UI kits, Flutter app source code, AI notebooks, 3D Blender models, cinematic LUTs, and Notion systems. Pay directly in Rupee (₹) with instant UPI downloads.
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center relative z-10">
+            
+            {/* Left Content (7 columns) */}
+            <div className="lg:col-span-7 space-y-6">
+              
+              {/* Pill Tag */}
+              <div className="inline-flex items-center gap-2 bg-[#202C44] border border-[#202C44] px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold text-[#D3CCB0]">
+                <Sparkles className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                <span>INDIA’S VERIFIED DIGITAL COMMERCE</span>
+              </div>
 
-            {/* Search Box */}
-            <div className="pt-2">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  onSearchSubmit();
-                }}
-                className="relative flex items-center"
-              >
-                <div className="relative w-full">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#7B8A90]" />
-                  <input
-                    type="text"
-                    placeholder="Search Flutter app, Llama-3 notebooks, Fintech UI kit, LUTs, Blender..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-[#111317] text-white text-sm pl-12 pr-32 py-4 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]/80 placeholder-[#7B8A90] shadow-2xl transition-all"
-                  />
-                  <button
-                    type="submit"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-5 py-2.5 rounded-lg transition-all flex items-center gap-1.5 active:scale-95 shadow hover:scale-[1.02]"
-                  >
-                    <span>Explore</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </form>
+              {/* Exact Required Headline */}
+              <h1 className="text-3xl sm:text-5xl lg:text-5xl font-heading font-extrabold text-white tracking-tight leading-[1.15]">
+                Digital Assets Built by{" "}
+                <span className="text-[#D3CCB0]">India’s Best Creators</span>.
+              </h1>
 
-              {/* Quick Keyword Pills */}
-              <div className="flex flex-wrap items-center gap-2 mt-3 text-xs text-[#7B8A90]">
-                <span className="font-medium text-white">Popular:</span>
-                <button
-                  onClick={() => {
-                    setSearchQuery("Figma UI Kit");
-                    onSearchSubmit();
-                  }}
-                  className="hover:text-[#D3CCB0] transition-colors hover:underline"
+              {/* Exact Required Subheading */}
+              <p className="text-sm sm:text-base text-[#7B8A90] font-normal max-w-xl leading-relaxed">
+                Buy and sell production-ready UI kits, codebases, 3D models, presets, and AI workflows. Instant downloads with transparent UPI checkout.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  to="/browse"
+                  id="hero-explore-btn"
+                  className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-sm font-heading font-bold px-6 py-3.5 rounded-xl transition-all shadow active:scale-95 flex items-center gap-2"
                 >
-                  Figma UI Kit
+                  <span>Explore Marketplace</span>
+                  <ArrowRight className="w-4 h-4 text-[#000000]" />
+                </Link>
+
+                <Link
+                  to="/pricing"
+                  id="hero-creator-btn"
+                  className="bg-[#202C44] hover:bg-[#202C44]/80 text-white text-sm font-heading font-semibold px-6 py-3.5 rounded-xl border border-[#202C44] hover:border-[#D3CCB0]/60 transition-all flex items-center gap-2"
+                >
+                  <span>Become a Creator</span>
+                </Link>
+              </div>
+
+              {/* Quick Filter Badges */}
+              <div className="pt-2 flex flex-wrap items-center gap-2 text-xs text-[#7B8A90]">
+                <span className="font-mono text-[#D3CCB0] text-[11px] font-bold">Trending Sectors:</span>
+                <button
+                  type="button"
+                  onClick={() => navigate("/browse?category=UI%2FUX%20%26%20Design")}
+                  className="px-2.5 py-1 rounded-lg bg-[#202C44]/60 hover:bg-[#202C44] text-[#7B8A90] hover:text-white transition-colors"
+                >
+                  UI Kits
                 </button>
-                <span>•</span>
                 <button
-                  onClick={() => {
-                    setSearchQuery("Flutter");
-                    onSearchSubmit();
-                  }}
-                  className="hover:text-[#D3CCB0] transition-colors hover:underline"
+                  type="button"
+                  onClick={() => navigate("/browse?category=Software%20%26%20Development")}
+                  className="px-2.5 py-1 rounded-lg bg-[#202C44]/60 hover:bg-[#202C44] text-[#7B8A90] hover:text-white transition-colors"
                 >
-                  Flutter Templates
+                  Source Code
                 </button>
-                <span>•</span>
                 <button
-                  onClick={() => {
-                    setSearchQuery("Notebook");
-                    onSearchSubmit();
-                  }}
-                  className="hover:text-[#D3CCB0] transition-colors hover:underline"
+                  type="button"
+                  onClick={() => navigate("/browse?category=AI%2FML%20%26%20Data%20Science")}
+                  className="px-2.5 py-1 rounded-lg bg-[#202C44]/60 hover:bg-[#202C44] text-[#7B8A90] hover:text-white transition-colors"
                 >
-                  AI Notebooks
+                  AI Workflows
                 </button>
-                <span>•</span>
                 <button
-                  onClick={() => {
-                    setSearchQuery("LUTs");
-                    onSearchSubmit();
-                  }}
-                  className="hover:text-[#D3CCB0] transition-colors hover:underline"
+                  type="button"
+                  onClick={() => navigate("/browse?category=3D%20%26%20CAD")}
+                  className="px-2.5 py-1 rounded-lg bg-[#202C44]/60 hover:bg-[#202C44] text-[#7B8A90] hover:text-white transition-colors"
                 >
-                  Goa LUTs
-                </button>
-                <span>•</span>
-                <button
-                  onClick={() => {
-                    setSearchQuery("Notion");
-                    onSearchSubmit();
-                  }}
-                  className="hover:text-[#D3CCB0] transition-colors hover:underline"
-                >
-                  Notion Agency OS
+                  3D Assets
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Right Column (5 cols): Visual Signature - Floating Angled Staggered Asset Preview Cards */}
-          <div className="lg:col-span-5 relative min-h-[380px] sm:min-h-[420px] flex items-center justify-center pt-6 lg:pt-0">
-            
-            {/* Soft Ambient Background Glow */}
-            <div className="absolute w-72 h-72 rounded-full bg-[#202C44]/40 blur-3xl pointer-events-none" />
-
-            {/* Staggered Stacked Preview Cards */}
-            <div className="relative w-full max-w-md mx-auto">
+            {/* Right Column (5 columns): Floating Real Asset Preview Block */}
+            <div className="lg:col-span-5 relative min-h-[380px] flex items-center justify-center">
               
-              {/* Card 1: Top / Back - Fintech Figma Kit */}
-              <motion.div
-                initial={{ opacity: 0, y: 40, rotate: -8 }}
-                animate={{ opacity: 1, y: 0, rotate: -5 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-                whileHover={{ rotate: 0, scale: 1.03, zIndex: 40 }}
-                className="absolute -top-10 -left-2 sm:-left-6 w-64 sm:w-72 bg-[#111317] border border-[#202C44] rounded-2xl p-3 shadow-[0_20px_50px_rgba(32,44,68,0.6)] backdrop-blur-md cursor-pointer transition-all"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-[#202C44] flex items-center gap-1">
-                    <FileCode className="w-3 h-3 text-[#D3CCB0]" />
-                    .fig
-                  </span>
-                  <span className="text-[10px] font-bold text-[#D3CCB0] font-mono">₹1,499</span>
-                </div>
-                <div className="h-28 rounded-xl overflow-hidden mb-2 bg-[#202C44]">
-                  <img
-                    src="https://images.unsplash.com/photo-1616469829941-c7200edec809?w=500&auto=format&fit=crop&q=80"
-                    alt="Figma Fintech UI Kit"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <h4 className="font-heading font-bold text-white text-xs truncate">UPI Fintech UI Kit</h4>
-                  <div className="flex items-center gap-1 text-[10px] text-[#D3CCB0]">
-                    <Star className="w-3 h-3 fill-current" />
-                    <span>4.9</span>
+              {/* Stack of realistic preview cards */}
+              <div className="relative w-full max-w-sm mx-auto space-y-3">
+                
+                {/* Asset 1: Neo Bharat Cyberpunk UI Kit */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  onClick={() => navigate("/listing/neo-bharat-cyberpunk-ui-kit")}
+                  className="bg-[#000000]/90 border border-[#202C44] hover:border-[#D3CCB0]/70 p-3.5 rounded-2xl shadow-xl backdrop-blur-md transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80"
+                      alt="Neo Bharat Cyberpunk UI Kit"
+                      className="w-14 h-14 rounded-xl object-cover border border-[#202C44] shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-bold">
+                          .fig
+                        </span>
+                        <span className="text-xs font-mono font-bold text-[#D3CCB0]">₹1,499</span>
+                      </div>
+                      <h4 className="text-xs font-heading font-bold text-white truncate mt-1 group-hover:text-[#D3CCB0] transition-colors">
+                        Neo Bharat Cyberpunk UI Kit
+                      </h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <img
+                          src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"
+                          alt="Aarav Sharma"
+                          className="w-3.5 h-3.5 rounded-full object-cover"
+                        />
+                        <span className="text-[10px] text-[#7B8A90] truncate">Aarav Sharma</span>
+                        <div className="flex items-center gap-0.5 text-[10px] text-[#D3CCB0] ml-auto">
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                          <span>4.9</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
 
-              {/* Card 2: Middle - Flutter App Code */}
-              <motion.div
-                initial={{ opacity: 0, y: 40, rotate: 6 }}
-                animate={{ opacity: 1, y: 0, rotate: 3 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                whileHover={{ rotate: 0, scale: 1.03, zIndex: 40 }}
-                className="absolute top-12 -right-2 sm:-right-4 w-64 sm:w-72 bg-[#111317] border border-[#202C44] rounded-2xl p-3 shadow-[0_20px_50px_rgba(32,44,68,0.6)] backdrop-blur-md cursor-pointer transition-all z-20"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-[#202C44] flex items-center gap-1">
-                    <FileCode className="w-3 h-3 text-[#D3CCB0]" />
-                    .dart
-                  </span>
-                  <span className="text-[10px] font-bold text-[#D3CCB0] font-mono">₹2,499</span>
-                </div>
-                <div className="h-28 rounded-xl overflow-hidden mb-2 bg-[#202C44]">
-                  <img
-                    src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=500&auto=format&fit=crop&q=80"
-                    alt="Flutter Mobile App Source"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <h4 className="font-heading font-bold text-white text-xs truncate">Flutter QuickCommerce App</h4>
-                  <div className="flex items-center gap-1 text-[10px] text-[#D3CCB0]">
-                    <Star className="w-3 h-3 fill-current" />
-                    <span>4.8</span>
+                {/* Asset 2: ML Fine-Tuning Notebook */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.15 }}
+                  onClick={() => navigate("/listing/ml-finetuning-notebook")}
+                  className="bg-[#000000]/90 border border-[#202C44] hover:border-[#D3CCB0]/70 p-3.5 rounded-2xl shadow-xl backdrop-blur-md transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=200&auto=format&fit=crop&q=80"
+                      alt="ML Fine-Tuning Notebook"
+                      className="w-14 h-14 rounded-xl object-cover border border-[#202C44] shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-bold">
+                          .ipynb
+                        </span>
+                        <span className="text-xs font-mono font-bold text-[#D3CCB0]">₹3,499</span>
+                      </div>
+                      <h4 className="text-xs font-heading font-bold text-white truncate mt-1 group-hover:text-[#D3CCB0] transition-colors">
+                        ML Fine-Tuning Notebook (Llama-3)
+                      </h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <img
+                          src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80"
+                          alt="Vikram Patel"
+                          className="w-3.5 h-3.5 rounded-full object-cover"
+                        />
+                        <span className="text-[10px] text-[#7B8A90] truncate">Vikram Patel</span>
+                        <div className="flex items-center gap-0.5 text-[10px] text-[#D3CCB0] ml-auto">
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                          <span>5.0</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
 
-              {/* Card 3: Front / Bottom - Llama-3 Notebook */}
-              <motion.div
-                initial={{ opacity: 0, y: 40, rotate: -4 }}
-                animate={{ opacity: 1, y: 0, rotate: -2 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-                whileHover={{ rotate: 0, scale: 1.03, zIndex: 40 }}
-                className="relative mt-36 sm:mt-40 mx-auto w-68 sm:w-76 bg-[#111317] border border-[#202C44] rounded-2xl p-3.5 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-md cursor-pointer transition-all z-30"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-[#202C44]">
-                      .ipynb
-                    </span>
-                    <span className="text-[9px] text-emerald-400 font-mono flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Quality Verified
-                    </span>
+                {/* Asset 3: Cinematic India LUT Pack */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.3 }}
+                  onClick={() => navigate("/listing/cinematic-india-lut-pack")}
+                  className="bg-[#000000]/90 border border-[#202C44] hover:border-[#D3CCB0]/70 p-3.5 rounded-2xl shadow-xl backdrop-blur-md transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=200&auto=format&fit=crop&q=80"
+                      alt="Cinematic India LUT Pack"
+                      className="w-14 h-14 rounded-xl object-cover border border-[#202C44] shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-bold">
+                          .cube
+                        </span>
+                        <span className="text-xs font-mono font-bold text-emerald-400">FREE</span>
+                      </div>
+                      <h4 className="text-xs font-heading font-bold text-white truncate mt-1 group-hover:text-[#D3CCB0] transition-colors">
+                        Cinematic India LUT Pack
+                      </h4>
+                      <div className="flex items-center gap-2 mt-1">
+                        <img
+                          src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=80&q=80"
+                          alt="Ananya Rao"
+                          className="w-3.5 h-3.5 rounded-full object-cover"
+                        />
+                        <span className="text-[10px] text-[#7B8A90] truncate">Ananya Rao</span>
+                        <div className="flex items-center gap-0.5 text-[10px] text-[#D3CCB0] ml-auto">
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                          <span>4.9</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-xs font-bold text-[#D3CCB0] font-mono">₹1,899</span>
-                </div>
+                </motion.div>
 
-                <div className="h-32 rounded-xl overflow-hidden mb-2 bg-[#202C44] relative">
-                  <img
-                    src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=500&auto=format&fit=crop&q=80"
-                    alt="Llama-3 Notebook"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#111317] via-transparent to-transparent" />
-                  <span className="absolute bottom-2 left-2 text-[10px] font-mono text-[#D3CCB0] bg-[#111317]/90 px-2 py-0.5 rounded border border-[#202C44]">
-                    AI / ML Model Notebook
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs pt-1">
-                  <div>
-                    <h4 className="font-heading font-bold text-white text-xs">Llama-3 8B Fine-Tuning Guide</h4>
-                    <p className="text-[10px] text-[#7B8A90] font-mono mt-0.5">Includes PyTorch scripts & Lora weights</p>
-                  </div>
-                  <div className="flex items-center gap-1 text-xs text-[#D3CCB0] font-bold">
-                    <Star className="w-3.5 h-3.5 fill-current" />
-                    <span>5.0</span>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Accent Floating Pill Badge */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="absolute -bottom-6 -right-2 bg-[#202C44] border border-[#D3CCB0]/40 text-[#D3CCB0] px-3.5 py-1.5 rounded-full text-[11px] font-mono font-bold shadow-xl flex items-center gap-2 z-40"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Instant Raw Downloads</span>
-              </motion.div>
+              </div>
 
             </div>
 
           </div>
 
-        </div>
-
-        {/* Slim Horizontal Secondary Stats Strip Below Hero */}
-        <div className="mt-12 py-3.5 px-6 bg-[#111317]/80 border border-[#202C44] rounded-2xl flex flex-wrap items-center justify-around gap-4 text-xs font-mono text-[#7B8A90] shadow-xl">
-          <div className="flex items-center gap-2">
-            <span className="font-heading font-extrabold text-white text-sm sm:text-base">239</span>
-            <span>Specialized Sectors</span>
-          </div>
-
-          <span className="text-[#202C44] hidden sm:inline">•</span>
-
-          <div className="flex items-center gap-2">
-            <span className="font-heading font-extrabold text-[#D3CCB0] text-sm sm:text-base">100+</span>
-            <span>Real File Formats</span>
-          </div>
-
-          <span className="text-[#202C44] hidden sm:inline">•</span>
-
-          <div className="flex items-center gap-2">
-            <span className="font-heading font-extrabold text-white text-sm sm:text-base">90%</span>
-            <span>Seller Net Split</span>
-          </div>
-
-          <span className="text-[#202C44] hidden sm:inline">•</span>
-
-          <div className="flex items-center gap-2">
-            <span className="font-heading font-extrabold text-[#D3CCB0] text-sm sm:text-base">₹0</span>
-            <span>Foreign Exchange Fees</span>
-          </div>
         </div>
 
       </div>
     </section>
   );
 };
-

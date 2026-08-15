@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Search, ShieldCheck, Download, Upload, CheckCircle2, IndianRupee, Clock, Lock } from "lucide-react";
+import { Search, ShieldCheck, Download, Upload, IndianRupee, Zap, CheckCircle2 } from "lucide-react";
 
 export const HowItWorks: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"buyers" | "sellers">("buyers");
@@ -18,7 +18,7 @@ export const HowItWorks: React.FC = () => {
             How Kreate Studio Works
           </h2>
           <p className="text-xs sm:text-sm text-[#7B8A90] font-normal mt-1 leading-relaxed">
-            Seamless marketplace experience built specifically for the Indian creator ecosystem.
+            Direct Indian Rupee (₹) payments, instant digital delivery, and 90% creator earnings.
           </p>
 
           {/* Tab Switcher */}
@@ -31,7 +31,7 @@ export const HowItWorks: React.FC = () => {
                   : "text-[#7B8A90] hover:text-white"
               }`}
             >
-              For Asset Buyers
+              For Buyers
             </button>
             <button
               onClick={() => setActiveTab("sellers")}
@@ -41,7 +41,7 @@ export const HowItWorks: React.FC = () => {
                   : "text-[#7B8A90] hover:text-white"
               }`}
             >
-              For Creators & Sellers (90% Split)
+              For Creators (90% Payout)
             </button>
           </div>
         </div>
@@ -56,15 +56,15 @@ export const HowItWorks: React.FC = () => {
                   01
                 </div>
                 <h3 className="text-base font-heading font-bold text-white mb-2">
-                  Browse Reviewed Assets
+                  Browse Verified Assets
                 </h3>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Search through 239 categories of Flutter templates, Figma design kits, Jupyter notebooks, and LUTs. All items pass manual code & asset review.
+                  Search through Flutter templates, Figma design kits, Jupyter notebooks, 3D assets, and LUTs. All items pass code & file integrity review.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
                 <Search className="w-3.5 h-3.5" />
-                <span>Filter by file extension (.fig, .dart, .blend)</span>
+                <span>Filter by file format (.fig, .dart, .blend)</span>
               </div>
             </div>
 
@@ -78,12 +78,12 @@ export const HowItWorks: React.FC = () => {
                   Instant UPI Checkout (₹)
                 </h3>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Pay listed price + 12.5% platform fee directly in Indian Rupees via GPay, PhonePe, Paytm, BHIM or Cards. Zero USD currency conversions.
+                  Pay listed price + 10% platform fee directly in Indian Rupees via GPay, PhonePe, Paytm, BHIM or UPI ID. Zero FX markup.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
                 <IndianRupee className="w-3.5 h-3.5" />
-                <span>GPay, PhonePe, Cards supported</span>
+                <span>GPay, PhonePe, BHIM supported</span>
               </div>
             </div>
 
@@ -97,7 +97,7 @@ export const HowItWorks: React.FC = () => {
                   Instant File Access
                 </h3>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  The exact second payment completes, your uncompressed source files (.zip) unlock along with commercial license documentation.
+                  The exact second payment completes, your uncompressed source files unlock along with commercial license certificates and lifetime access.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
@@ -118,12 +118,12 @@ export const HowItWorks: React.FC = () => {
                   Upload & Price in ₹
                 </h3>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Upload your digital files (.zip, .fig, .ipynb), add screenshots, set your desired listed price in Indian Rupees (₹).
+                  Upload your digital files (.zip, .fig, .ipynb), add preview screenshots, and set your listed price in Indian Rupees.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
                 <Upload className="w-3.5 h-3.5" />
-                <span>Simple 4-step upload form</span>
+                <span>₹0 listing fee • No upfront charges</span>
               </div>
             </div>
 
@@ -134,15 +134,15 @@ export const HowItWorks: React.FC = () => {
                   02
                 </div>
                 <h3 className="text-base font-heading font-bold text-white mb-2">
-                  Manual Quality Review
+                  Quality & Safety Review
                 </h3>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Our team reviews code compile state, asset quality, and license parameters within 24 hours to guarantee high marketplace trust.
+                  Our team checks code compile state, archive integrity, and license clarity within 24 hours to ensure high buyer confidence.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Max 24-hr review turnaround</span>
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>ClamAV malware scanning</span>
               </div>
             </div>
 
@@ -153,40 +153,19 @@ export const HowItWorks: React.FC = () => {
                   03
                 </div>
                 <h3 className="text-base font-heading font-bold text-white mb-2">
-                  Keep 90% Net Earnings
+                  90% Guaranteed Payout
                 </h3>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Receive 90% guaranteed split on every sale. Funds settle directly into your Indian bank account via NEFT/UPI automatically.
+                  Earn 90% net from every sale paid directly to your registered UPI ID (VPA) or Indian bank account weekly.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>0% hidden processing cuts</span>
+                <Zap className="w-3.5 h-3.5" />
+                <span>Direct settlement to UPI VPA</span>
               </div>
             </div>
           </div>
         )}
-
-        {/* Manual Review Trust Signal Callout */}
-        <div className="mt-12 bg-[#111317] border border-[#202C44] rounded-2xl p-6 max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#202C44] border border-[#202C44] flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-6 h-6 text-[#D3CCB0]" />
-            </div>
-            <div>
-              <h4 className="text-white font-semibold text-sm font-heading">
-                Why Manual Review Matters
-              </h4>
-              <p className="text-xs text-[#7B8A90] leading-snug mt-0.5">
-                Unlike unmoderated marketplaces flooded with broken links and stolen code, Kreate Studio verifies every upload for compilability, virus safety, and license authenticity.
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-[#202C44] text-[#D3CCB0] px-4 py-2 rounded-xl text-xs font-mono shrink-0 border border-[#202C44]">
-            100% Quality Guarantee
-          </div>
-        </div>
 
       </div>
     </section>

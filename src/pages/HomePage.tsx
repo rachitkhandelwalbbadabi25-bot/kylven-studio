@@ -1,38 +1,56 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { AssetListing, CoreCategory, UserProfile } from "../types";
 import { HeroSection } from "../components/HeroSection";
 import { CategoryShowcase } from "../components/CategoryShowcase";
 import { FileFormatsBreadth } from "../components/FileFormatsBreadth";
 import { HowItWorks } from "../components/HowItWorks";
 import { ListingCard } from "../components/ListingCard";
-import { Sparkles, ArrowRight, Store, ShoppingBag, PlusCircle, Repeat } from "lucide-react";
+import {
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Zap,
+  Percent,
+  CheckCircle2,
+  FileCode,
+  Download,
+  IndianRupee,
+  ShieldAlert,
+  HelpCircle
+} from "lucide-react";
 
 interface HomePageProps {
-  userProfile: UserProfile;
-  isAuthenticated: boolean;
   listings: AssetListing[];
-  savedIds: string[];
-  onToggleSave: (id: string) => void;
-  onBuyNowDirect: (listing: AssetListing) => void;
-  onOpenOnboarding: () => void;
-  onOpenAuthModal: (mode: "signin" | "signup") => void;
-  onSwitchRole: (role: "buyer" | "seller") => void;
+  isAuthenticated?: boolean;
+  userProfile?: UserProfile;
+  savedIds?: string[];
+  onToggleSave?: (id: string) => void;
+  onBuyNowDirect?: (listing: AssetListing) => void;
 }
 
+type TabFilter = "all" | "free" | "paid" | "design" | "dev" | "3d" | "video";
+
 export const HomePage: React.FC<HomePageProps> = ({
-  userProfile,
-  isAuthenticated,
   listings,
-  savedIds,
+  isAuthenticated = false,
+  userProfile,
+  savedIds = [],
   onToggleSave,
   onBuyNowDirect,
-  onOpenOnboarding,
-  onOpenAuthModal,
-  onSwitchRole,
 }) => {
   const navigate = useNavigate();
-  const [heroSearch, setHeroSearch] = React.useState("");
+  const [heroSearch, setHeroSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<TabFilter>("all");
+
+  const handleSearchSubmit = () => {
+    if (heroSearch.trim()) {
+      navigate(`/browse?q=${encodeURIComponent(heroSearch.trim())}`);
+    } else {
+      navigate("/browse");
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleSelectCategory = (cat: CoreCategory) => {
     navigate(`/browse?category=${encodeURIComponent(cat)}`);
@@ -44,78 +62,21 @@ export const HomePage: React.FC<HomePageProps> = ({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleSearchSubmit = () => {
-    if (heroSearch.trim()) {
-      navigate(`/browse?q=${encodeURIComponent(heroSearch.trim())}`);
-    } else {
-      navigate("/browse");
-    }
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const featuredListings = listings.filter((l) => l.featured).slice(0, 4);
-  const isSeller = userProfile.role === "seller";
+  // Filter listings for the Trending This Week section
+  const filteredTrendingListings = listings.filter((item) => {
+    if (activeTab === "free") return item.priceInINR === 0;
+    if (activeTab === "paid") return item.priceInINR > 0;
+    if (activeTab === "design") return item.category === "UI/UX & Design";
+    if (activeTab === "dev") return item.category === "Software & Development" || item.category === "AI/ML & Data Science";
+    if (activeTab === "3d") return item.category === "3D & CAD";
+    if (activeTab === "video") return item.category === "Video/Motion & Audio";
+    return true; // 'all'
+  });
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-0" id="public-homepage-root">
       
-      {/* Role Action Banner for Authenticated Users Only */}
-      {isAuthenticated ? (
-        <div className="bg-[#111317] border-b border-[#202C44] py-3.5 px-4">
-          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-3">
-              <img
-                src={userProfile.avatar}
-                alt={userProfile.name}
-                className="w-8 h-8 rounded-xl object-cover border border-[#202C44]"
-              />
-              <div>
-                <div className="text-white font-bold flex items-center gap-1.5">
-                  <span>Welcome back, {userProfile.name}!</span>
-                  <span className="text-[10px] bg-[#202C44] text-[#D3CCB0] px-2 py-0.5 rounded font-mono border border-[#202C44] capitalize">
-                    {isSeller ? "Seller Studio" : "Buyer Mode"}
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#7B8A90]">
-                  {isSeller
-                    ? "Manage your active listings, track 90% revenue, or upload new source code."
-                    : "Discover, bookmark, and buy verified digital assets with instant UPI delivery."}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              {isSeller ? (
-                <button
-                  onClick={() => navigate("/seller")}
-                  className="bg-[#D3CCB0] text-[#000000] font-bold px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  <span>Go to Seller Studio</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => navigate("/purchases")}
-                  className="bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] font-bold px-3.5 py-1.5 rounded-lg border border-[#202C44] flex items-center gap-1.5"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>View My Downloads</span>
-                </button>
-              )}
-
-              <button
-                onClick={() => onSwitchRole(isSeller ? "buyer" : "seller")}
-                className="text-[#7B8A90] hover:text-white underline text-[11px] font-mono flex items-center gap-1 px-2"
-              >
-                <Repeat className="w-3 h-3" />
-                <span>Switch to {isSeller ? "Buyer" : "Seller"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {/* Hero Section */}
+      {/* 1. Hero Section */}
       <HeroSection
         onExploreClick={() => navigate("/browse")}
         onSelectCategory={handleSelectCategory}
@@ -124,42 +85,120 @@ export const HomePage: React.FC<HomePageProps> = ({
         onSearchSubmit={handleSearchSubmit}
       />
 
-      {/* Category Showcase (6 Core Sectors) */}
-      <CategoryShowcase onSelectCategory={handleSelectCategory} />
-
-      {/* Featured Listings Grid */}
-      <section className="py-16 bg-[#111317] border-b border-[#202C44]/50">
+      {/* 2. Clean 4-Column Trust Metrics Strip */}
+      <section className="bg-[#111317] border-y border-[#202C44] py-8" id="trust-metrics-strip">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            
+            {/* Metric 1 */}
+            <div className="flex items-start gap-3.5 p-3 rounded-2xl bg-[#000000]/40 border border-[#202C44]/60">
+              <div className="w-10 h-10 rounded-xl bg-[#202C44] flex items-center justify-center text-[#D3CCB0] shrink-0 border border-[#202C44]">
+                <FileCode className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <h4 className="font-heading font-bold text-white text-sm">100+ File Formats</h4>
+                <p className="text-xs text-[#7B8A90] font-mono leading-relaxed">
+                  .fig, .blend, .ipynb, .lut, .dart, .zip, etc.
+                </p>
+              </div>
+            </div>
+
+            {/* Metric 2 */}
+            <div className="flex items-start gap-3.5 p-3 rounded-2xl bg-[#000000]/40 border border-[#202C44]/60">
+              <div className="w-10 h-10 rounded-xl bg-[#202C44] flex items-center justify-center text-[#D3CCB0] shrink-0 border border-[#202C44]">
+                <Percent className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <h4 className="font-heading font-bold text-white text-sm">90% Creator Earnings</h4>
+                <p className="text-xs text-[#7B8A90] leading-relaxed">
+                  Direct weekly UPI settlement to Indian accounts.
+                </p>
+              </div>
+            </div>
+
+            {/* Metric 3 */}
+            <div className="flex items-start gap-3.5 p-3 rounded-2xl bg-[#000000]/40 border border-[#202C44]/60">
+              <div className="w-10 h-10 rounded-xl bg-[#202C44] flex items-center justify-center text-emerald-400 shrink-0 border border-[#202C44]">
+                <IndianRupee className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <h4 className="font-heading font-bold text-white text-sm">₹0 Fee on Free Assets</h4>
+                <p className="text-xs text-[#7B8A90] leading-relaxed">
+                  Free means 100% free with zero checkout fees.
+                </p>
+              </div>
+            </div>
+
+            {/* Metric 4 */}
+            <div className="flex items-start gap-3.5 p-3 rounded-2xl bg-[#000000]/40 border border-[#202C44]/60">
+              <div className="w-10 h-10 rounded-xl bg-[#202C44] flex items-center justify-center text-[#D3CCB0] shrink-0 border border-[#202C44]">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <h4 className="font-heading font-bold text-white text-sm">Verified Virus-Free</h4>
+                <p className="text-xs text-[#7B8A90] leading-relaxed">
+                  ClamAV & syntax automated inspection.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Trending Marketplace Section with Quick Filter Tabs */}
+      <section className="py-16 bg-[#000000]" id="trending-marketplace-section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <div className="inline-flex items-center gap-2 text-[#D3CCB0] text-xs font-mono uppercase tracking-wider mb-2">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Curated Assets</span>
+                <span>Curated Discoveries</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-heading font-bold text-white tracking-tight">
-                Top Trending Indian Creator Assets
+              <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight">
+                Trending This Week
               </h2>
+              <p className="text-xs sm:text-sm text-[#7B8A90] mt-1">
+                Hand-tested digital tools built by India's top creators, engineers, and 3D artists.
+              </p>
             </div>
 
-            <button
-              onClick={() => {
-                navigate("/browse");
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-              className="text-xs font-bold text-[#D3CCB0] hover:underline flex items-center gap-1"
-            >
-              <span>View All {listings.length} Listings</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            {/* Quick Filter Tabs */}
+            <div className="flex flex-wrap items-center gap-1.5 bg-[#111317] p-1.5 rounded-2xl border border-[#202C44]">
+              {[
+                { key: "all", label: "All Assets" },
+                { key: "free", label: "Free (₹0)" },
+                { key: "paid", label: "Premium" },
+                { key: "design", label: "Design" },
+                { key: "dev", label: "Dev & Code" },
+                { key: "3d", label: "3D & CAD" },
+                { key: "video", label: "Video & LUTs" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key as TabFilter)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                    activeTab === tab.key
+                      ? "bg-[#D3CCB0] text-[#000000] font-bold shadow"
+                      : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
+          {/* Grid of Listing Cards (8 items minimum) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredListings.map((item) => (
+            {filteredTrendingListings.slice(0, 8).map((item) => (
               <ListingCard
                 key={item.id}
                 listing={item}
                 onSelectListing={(asset) => {
-                  navigate(`/asset/${asset.id}`);
+                  navigate(`/listing/${asset.slug || asset.id}`);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
                 onBuyNowDirect={onBuyNowDirect}
@@ -168,14 +207,31 @@ export const HomePage: React.FC<HomePageProps> = ({
               />
             ))}
           </div>
+
+          {/* Direct Link to Browse All Assets */}
+          <div className="text-center pt-8 border-t border-[#202C44]/40">
+            <Link
+              to="/browse"
+              id="view-all-assets-btn"
+              className="inline-flex items-center gap-2 bg-[#111317] hover:bg-[#202C44] text-[#D3CCB0] hover:text-white font-heading font-bold text-xs px-6 py-3.5 rounded-xl border border-[#202C44] transition-all shadow active:scale-95"
+            >
+              <span>View all {listings.length} assets in Browse</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
         </div>
       </section>
 
-      {/* Breadth of 239 Categories & 100+ File Formats */}
+      {/* 4. Core Category Showcase */}
+      <CategoryShowcase onSelectCategory={handleSelectCategory} />
+
+      {/* 5. Breadth of File Formats */}
       <FileFormatsBreadth onSelectFormat={handleSelectFormat} />
 
-      {/* How It Works (Buyers vs Sellers) */}
+      {/* 6. How It Works (Transparent 3 Steps) */}
       <HowItWorks />
+
     </div>
   );
 };

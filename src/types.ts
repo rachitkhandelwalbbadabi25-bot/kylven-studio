@@ -6,19 +6,28 @@ export type CoreCategory =
   | "Video/Motion & Audio"
   | "Productivity & Business";
 
-export interface SellerInfo {
+export interface CreatorProfile {
   id: string;
   name: string;
-  handle: string;
+  username: string; // e.g. "aarav_ui"
+  handle?: string; // e.g. "@aarav_ui"
   avatar: string;
-  badge: string; // e.g. "Pro Creator", "Top Seller", "Verified Studio"
-  verified: boolean;
-  responseTime: string; // e.g. "< 2 hours"
+  initials?: string;
+  badge?: string; // e.g. "Top Seller", "Verified Studio", "AI Specialist"
+  verified?: boolean;
+  verifiedSeller?: boolean;
+  responseTime: string; // e.g. "< 1 hour"
   totalSales: number;
   rating: number;
   joinedDate: string;
   location: string;
+  bio?: string;
+  upiVpa?: string;
+  skills?: string[];
 }
+
+// Alias for backwards compatibility
+export type SellerInfo = CreatorProfile;
 
 export interface ReviewItem {
   id: string;
@@ -30,44 +39,106 @@ export interface ReviewItem {
   verifiedPurchase: boolean;
 }
 
+export type ReviewStatus = "Verified & Approved" | "In Review" | "Community Certified" | string;
+export type LicenseType = "Standard Commercial License" | "Extended Commercial License" | "MIT Open License" | "Commercial License" | "Personal Use Only" | "Extended Enterprise" | string;
+export type DeliveryType = "Instant ZIP Download" | "Direct Cloud Access" | "GitHub Repository Access" | string;
+
 export interface AssetListing {
   id: string;
   title: string;
+  slug: string;
+  creator: CreatorProfile;
+  seller?: CreatorProfile; // backward compatibility
   category: CoreCategory;
   subcategory: string;
-  description: string;
-  detailedFeatures: string[];
-  priceInINR: number; // Listed price
+  tags: string[];
+  fileType: string; // e.g. ".fig", ".dart", ".ipynb", ".blend", ".notion"
+  fileFormatTags: string[]; // e.g. ['.fig', '.zip', '.svg']
+  fileSizeBytes: string; // e.g. "84 MB"
+  previewImages: string[];
+  thumbnailUrl: string;
+  shortDescription: string;
+  fullDescription: string;
+  description?: string; // backward compatibility
+  priceInINR: number; // Listed base price in INR
   rating: number;
   reviewCount: number;
   salesCount: number;
-  fileFormatTags: string[]; // e.g. ['.fig', '.zip', '.svg']
-  fileSizeBytes: string; // e.g. "124 MB"
-  previewImages: string[];
-  thumbnailUrl: string;
-  seller: SellerInfo;
+  reviewStatus: ReviewStatus;
+  softwareCompatibility: string[];
+  compatibleWith?: string[]; // backward compatibility
+  licenseType: LicenseType;
+  deliveryType: DeliveryType;
+  createdAt: string;
+  updatedAt?: string;
   featured?: boolean;
   isNew?: boolean;
-  reviewList: ReviewItem[];
-  createdAt: string;
-  licenseType: "Commercial License" | "Personal Use Only";
-  compatibleWith: string[]; // e.g. ["Figma", "VS Code", "Jupyter", "Flutter 3.x"]
+  detailedFeatures: string[];
+  reviewList?: ReviewItem[];
   downloadUrl?: string;
+}
+
+export interface PricingBreakdown {
+  listedPriceINR: number;
+  platformFeeINR: number; // 10% platform fee
+  buyerTotalINR: number; // listedPriceINR + platformFeeINR
+  sellerNetINR: number; // 90% payout to creator
+  sellerSplitPercent: number; // 90%
+  platformFeePercent: number; // 10%
+}
+
+/**
+ * Single source of truth for pricing across the entire Kreate Studio marketplace.
+ * - Platform fee: 10% (paid by buyer for UPI gateways, CDN bandwidth, malware scans, lifetime updates)
+ * - Seller net payout: 90% of listed price guaranteed
+ */
+export function calculatePricing(priceInINR: number): PricingBreakdown {
+  const listedPriceINR = Math.max(0, Math.round(Number(priceInINR) || 0));
+  const platformFeeINR = Math.round(listedPriceINR * 0.10);
+  const buyerTotalINR = listedPriceINR + platformFeeINR;
+  const sellerNetINR = Math.round(listedPriceINR * 0.90);
+
+  return {
+    listedPriceINR,
+    platformFeeINR,
+    buyerTotalINR,
+    sellerNetINR,
+    sellerSplitPercent: 90,
+    platformFeePercent: 10,
+  };
+}
+
+export interface UserPurchase {
+  orderId: string;
+  listingId: string;
+  title: string;
+  thumbnailUrl: string;
+  category: string;
+  fileType: string;
+  downloadUrl: string;
+  licenseKey: string;
+  purchaseDate: string;
+  pricePaidINR: number;
+  sellerNetINR: number;
+  platformFeeINR: number;
+  paymentMethod: string;
 }
 
 export interface SalesRecord {
   id: string;
   orderId: string;
+  assetId?: string;
   assetTitle: string;
   buyerName: string;
+  buyerEmail?: string;
   buyerLocation: string;
   listedPriceINR: number;
-  platformFeeINR: number; // 12.5% paid by buyer
-  totalPaidINR: number; // listedPrice + 12.5%
-  sellerEarningsINR: number; // 90% of listed price
-  paymentMethod: "UPI (GPay)" | "UPI (PhonePe)" | "UPI (Paytm)" | "Credit Card" | "NetBanking";
+  platformFeeINR: number;
+  totalPaidINR: number;
+  sellerEarningsINR: number;
+  paymentMethod: "UPI (GPay)" | "UPI (PhonePe)" | "UPI (Paytm)" | "BHIM UPI" | "Credit Card" | "NetBanking" | string;
   date: string;
-  status: "Completed" | "Pending Review" | "Payout Processing";
+  status: "Completed" | "Pending Review" | "Payout Processing" | string;
 }
 
 export interface SellerStats {
@@ -78,30 +149,25 @@ export interface SellerStats {
   averageRating: number;
 }
 
-export type UserRole = "buyer" | "seller";
+export type UserRole = "buyer" | "seller" | "both" | "creator";
 
 export interface UserProfile {
   name: string;
+  username?: string;
   email: string;
-  upiId: string;
+  upiId?: string;
   role: UserRole;
-  avatar: string;
-  joinedDate: string;
-  hasCompletedOnboarding: boolean;
+  avatar?: string;
+  bio?: string;
+  joinedDate?: string;
+  hasCompletedOnboarding?: boolean;
 }
-
-export type PageView =
-  | "home"
-  | "browse"
-  | "listing-detail"
-  | "seller-dashboard"
-  | "purchases"
-  | "saved";
 
 export interface FilterOptions {
   category: CoreCategory | "All";
   searchQuery: string;
   fileFormat: string;
+  tag: string;
   minPrice: number;
   maxPrice: number;
   sortBy: "popular" | "newest" | "price-asc" | "price-desc";

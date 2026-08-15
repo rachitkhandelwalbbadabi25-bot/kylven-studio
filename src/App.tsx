@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { AssetListing, SellerStats, SalesRecord, UserProfile, UserRole } from "./types";
-import { MOCK_LISTINGS, INITIAL_SELLER_STATS, MOCK_SALES_HISTORY } from "./data/mockData";
+import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { AssetListing, UserProfile, UserPurchase } from "./types";
+import { MOCK_LISTINGS } from "./data/mockData";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
-import { CheckoutModal } from "./components/CheckoutModal";
-import { OnboardingModal } from "./components/OnboardingModal";
-import { AuthModal } from "./components/AuthModal";
 import { HomePage } from "./pages/HomePage";
 import { BrowsePage } from "./pages/BrowsePage";
+import { CategoriesPage } from "./pages/CategoriesPage";
 import { ListingDetailPage } from "./pages/ListingDetailPage";
-import { SellerPage } from "./pages/SellerPage";
+import { CheckoutPage } from "./pages/CheckoutPage";
+import { PricingPage } from "./pages/PricingPage";
+import { CreatorProfilePage } from "./pages/CreatorProfilePage";
+import { SellNewAssetPage } from "./pages/SellNewAssetPage";
+import { DashboardPage } from "./pages/DashboardPage";
 import { PurchasesPage } from "./pages/PurchasesPage";
 import { SavedPage } from "./pages/SavedPage";
+import { AuthPage } from "./pages/AuthPage";
 
 // Automatically scroll to top on route change
 function ScrollToTop() {
@@ -24,21 +27,43 @@ function ScrollToTop() {
 }
 
 const DEFAULT_PROFILE: UserProfile = {
-  name: "Rachit Khandelwal",
-  email: "rachit@kreate.in",
-  upiId: "rachit@okaxis",
-  role: "buyer",
-  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
-  joinedDate: "August 2026",
-  hasCompletedOnboarding: true,
+  name: "Aarav Sharma",
+  email: "aarav.sharma@kreate.studio",
+  username: "aarav_ui",
+  role: "both",
+  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+  bio: "Founding UI/UX Designer & Flutter Engineer on Kreate Studio.",
 };
 
+const INITIAL_PURCHASES: UserPurchase[] = [
+  {
+    orderId: "KRT-892104",
+    listingId: "asset-1",
+    title: "BharatUPI & Banking Mobile App UI Kit",
+    thumbnailUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop&q=80",
+    category: "UI/UX & Design",
+    fileType: ".fig",
+    downloadUrl: "https://kreatestudio.in/downloads/bharat-upi-uikit.zip",
+    licenseKey: "KREATE-COMM-2026-BHARAT-8921",
+    purchaseDate: "2026-08-10",
+    pricePaidINR: 1649,
+    sellerNetINR: 1349,
+    platformFeeINR: 150,
+    paymentMethod: "UPI (GPAY)",
+  },
+];
+
 export default function App() {
-  const [listings, setListings] = useState<AssetListing[]>(MOCK_LISTINGS);
-  const [sellerStats, setSellerStats] = useState<SellerStats>(INITIAL_SELLER_STATS);
-  const [salesHistory, setSalesHistory] = useState<SalesRecord[]>(MOCK_SALES_HISTORY);
-  const [savedIds, setSavedIds] = useState<string[]>(["asset-1", "asset-3"]);
-  const [checkoutListing, setCheckoutListing] = useState<AssetListing | null>(null);
+  // Global Listings State (persisted with initial seed)
+  const [listings, setListings] = useState<AssetListing[]>(() => {
+    try {
+      const saved = localStorage.getItem("kreate_listings");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return MOCK_LISTINGS;
+  });
 
   // Auth State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -50,10 +75,7 @@ export default function App() {
     }
   });
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
-  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
-
-  // User Profile & Role State with LocalStorage
+  // User Profile
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
     try {
       const saved = localStorage.getItem("kreate_user_profile");
@@ -64,12 +86,49 @@ export default function App() {
     return DEFAULT_PROFILE;
   });
 
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
+  // User Purchases
+  const [purchases, setPurchases] = useState<UserPurchase[]>(() => {
+    try {
+      const saved = localStorage.getItem("kreate_purchases");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return INITIAL_PURCHASES;
+  });
 
-  const handleOpenAuthModal = (mode: "signin" | "signup" = "signin") => {
-    setAuthMode(mode);
-    setIsAuthModalOpen(true);
-  };
+  // Saved Wishlist IDs
+  const [savedIds, setSavedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("kreate_saved_ids");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return ["asset-1", "asset-3"];
+  });
+
+  // Global Search in Navbar
+  const [globalSearch, setGlobalSearch] = useState("");
+
+  // Persist State Changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("kreate_listings", JSON.stringify(listings));
+    } catch (e) {}
+  }, [listings]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("kreate_saved_ids", JSON.stringify(savedIds));
+    } catch (e) {}
+  }, [savedIds]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("kreate_purchases", JSON.stringify(purchases));
+    } catch (e) {}
+  }, [purchases]);
 
   const handleSignInSuccess = (profile: UserProfile) => {
     setIsAuthenticated(true);
@@ -91,75 +150,21 @@ export default function App() {
     }
   };
 
-  const handleSaveProfile = (updated: UserProfile) => {
-    setUserProfile(updated);
-    try {
-      localStorage.setItem("kreate_user_profile", JSON.stringify(updated));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleSwitchRole = (newRole: UserRole) => {
-    const updated = { ...userProfile, role: newRole };
-    handleSaveProfile(updated);
-  };
-
   const handleToggleSave = (id: string) => {
     setSavedIds((prev) =>
       prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
     );
   };
 
-  const handleClearSaved = () => {
-    setSavedIds([]);
-  };
-
-  const handleBuyNowDirect = (listing: AssetListing) => {
-    setCheckoutListing(listing);
-  };
-
   const handleAddNewListing = (newListing: AssetListing) => {
-    setListings([newListing, ...listings]);
-    setSellerStats((prev) => ({
-      ...prev,
-      activeListingsCount: prev.activeListingsCount + 1,
-    }));
+    setListings((prev) => [newListing, ...prev]);
   };
 
-  const handlePurchaseComplete = (purchasedAsset: AssetListing) => {
-    const listed = purchasedAsset.priceInINR;
-    const fee = Math.round(listed * 0.125); // 12.5% Platform fee
-    const totalPaid = listed + fee;
-    const sellerNet = Math.round(listed * 0.9); // 90% Seller split
-
-    const newSale: SalesRecord = {
-      id: `sale-${Date.now()}`,
-      orderId: `KS-ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-      assetTitle: purchasedAsset.title,
-      buyerName: userProfile.name || "You (Verified Buyer)",
-      buyerLocation: "Mumbai, MH",
-      listedPriceINR: listed,
-      platformFeeINR: fee,
-      totalPaidINR: totalPaid,
-      sellerEarningsINR: sellerNet,
-      paymentMethod: "UPI (GPay)",
-      date: "Just Now",
-      status: "Completed",
-    };
-
-    setSalesHistory([newSale, ...salesHistory]);
-
-    setSellerStats((prev) => ({
-      ...prev,
-      totalEarnedINR: prev.totalEarnedINR + sellerNet,
-      totalSalesCount: prev.totalSalesCount + 1,
-    }));
-
-    setListings((prevListings) =>
-      prevListings.map((a) =>
-        a.id === purchasedAsset.id ? { ...a, salesCount: a.salesCount + 1 } : a
-      )
+  const handleCompletePurchase = (purchase: UserPurchase) => {
+    setPurchases((prev) => [purchase, ...prev]);
+    // increment sales count on listing
+    setListings((prev) =>
+      prev.map((l) => (l.id === purchase.listingId ? { ...l, salesCount: (l.salesCount || 0) + 1 } : l))
     );
   };
 
@@ -168,37 +173,38 @@ export default function App() {
       <ScrollToTop />
       <div className="min-h-screen bg-[#000000] text-white flex flex-col font-sans selection:bg-[#202C44] selection:text-[#D3CCB0]">
         
-        {/* Navigation Bar */}
+        {/* Strict Public / Authenticated Navigation Bar */}
         <Navbar
-          userProfile={userProfile}
           isAuthenticated={isAuthenticated}
+          userProfile={userProfile}
+          searchQuery={globalSearch}
+          setSearchQuery={setGlobalSearch}
+          onSearchSubmit={(q) => {}}
+          onOpenAuthModal={() => {}}
+          onLogout={handleSignOut}
           savedCount={savedIds.length}
-          purchasesCount={salesHistory.length}
-          onSwitchRole={handleSwitchRole}
-          onOpenOnboarding={() => setIsOnboardingOpen(true)}
-          onOpenAuthModal={handleOpenAuthModal}
-          onSignOut={handleSignOut}
+          purchasesCount={purchases.length}
         />
 
-        {/* Multi-Page Routes */}
+        {/* Canonical Multi-Page Routes */}
         <main className="flex-1">
           <Routes>
+            {/* 1. Public Homepage */}
             <Route
               path="/"
               element={
                 <HomePage
-                  userProfile={userProfile}
-                  isAuthenticated={isAuthenticated}
                   listings={listings}
+                  isAuthenticated={isAuthenticated}
+                  userProfile={userProfile}
                   savedIds={savedIds}
                   onToggleSave={handleToggleSave}
-                  onBuyNowDirect={handleBuyNowDirect}
-                  onOpenOnboarding={() => setIsOnboardingOpen(true)}
-                  onOpenAuthModal={handleOpenAuthModal}
-                  onSwitchRole={handleSwitchRole}
+                  onBuyNowDirect={(listing) => {}}
                 />
               }
             />
+
+            {/* 2. Browse Marketplace Feed */}
             <Route
               path="/browse"
               element={
@@ -206,46 +212,104 @@ export default function App() {
                   listings={listings}
                   savedIds={savedIds}
                   onToggleSave={handleToggleSave}
-                  onBuyNowDirect={handleBuyNowDirect}
+                  onBuyNowDirect={(listing) => {}}
                 />
               }
             />
+
+            {/* 3. Category Directory */}
+            <Route path="/categories" element={<CategoriesPage />} />
+
+            {/* 4. Listing Detail Page (by slug or id) */}
+            <Route
+              path="/listing/:slug"
+              element={
+                <ListingDetailPage
+                  listings={listings}
+                  onBuyNowDirect={(listing) => {}}
+                  savedIds={savedIds}
+                  onToggleSave={handleToggleSave}
+                />
+              }
+            />
+            {/* Alias /asset/:id compatibility */}
             <Route
               path="/asset/:id"
               element={
                 <ListingDetailPage
                   listings={listings}
+                  onBuyNowDirect={(listing) => {}}
                   savedIds={savedIds}
                   onToggleSave={handleToggleSave}
-                  onBuyNow={handleBuyNowDirect}
+                />
+              }
+            />
+
+            {/* 5. Checkout & UPI Payment */}
+            <Route
+              path="/checkout/:listingId"
+              element={
+                <CheckoutPage
+                  listings={listings}
+                  onCompletePurchase={handleCompletePurchase}
+                  buyerEmail={userProfile.email}
+                />
+              }
+            />
+
+            {/* 6. Pricing & Fee Calculator */}
+            <Route path="/pricing" element={<PricingPage />} />
+
+            {/* 7. Public Creator Profile */}
+            <Route
+              path="/profile/:username"
+              element={
+                <CreatorProfilePage
+                  listings={listings}
+                  savedIds={savedIds}
+                  onToggleSave={handleToggleSave}
+                  onBuyNowDirect={(listing) => {}}
+                />
+              }
+            />
+
+            {/* 8. Sell Asset / Publish Studio */}
+            <Route
+              path="/sell/new"
+              element={
+                <SellNewAssetPage
+                  onAddListing={handleAddNewListing}
+                  userProfile={userProfile}
+                />
+              }
+            />
+            <Route
+              path="/sell"
+              element={<Navigate to="/sell/new" replace />}
+            />
+
+            {/* 9. Seller Studio Dashboard */}
+            <Route
+              path="/dashboard"
+              element={
+                <DashboardPage
+                  listings={listings}
+                  userProfile={userProfile}
                 />
               }
             />
             <Route
               path="/seller"
-              element={
-                <SellerPage
-                  stats={sellerStats}
-                  salesHistory={salesHistory}
-                  activeListings={listings}
-                  onAddNewListing={handleAddNewListing}
-                  isAuthenticated={isAuthenticated}
-                  onOpenAuthModal={handleOpenAuthModal}
-                />
-              }
+              element={<Navigate to="/dashboard" replace />}
             />
+
+            {/* 10. Buyer Purchases Library */}
             <Route
               path="/purchases"
-              element={
-                <PurchasesPage
-                  salesHistory={salesHistory}
-                  allListings={listings}
-                  userEmail={userProfile.email}
-                  isAuthenticated={isAuthenticated}
-                  onOpenAuthModal={handleOpenAuthModal}
-                />
-              }
+              element={<PurchasesPage purchases={purchases} />}
             />
+
+            {/* 11. Saved Wishlist */}
             <Route
               path="/saved"
               element={
@@ -253,40 +317,35 @@ export default function App() {
                   listings={listings}
                   savedIds={savedIds}
                   onToggleSave={handleToggleSave}
-                  onClearSaved={handleClearSaved}
-                  onBuyNowDirect={handleBuyNowDirect}
-                  isAuthenticated={isAuthenticated}
-                  onOpenAuthModal={handleOpenAuthModal}
+                  onBuyNowDirect={(listing) => {}}
                 />
               }
             />
+
+            {/* 12. Auth (Sign In & Sign Up) */}
+            <Route
+              path="/signin"
+              element={
+                <AuthPage
+                  onLoginSuccess={handleSignInSuccess}
+                  defaultMode="signin"
+                />
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <AuthPage
+                  onLoginSuccess={handleSignInSuccess}
+                  defaultMode="signup"
+                />
+              }
+            />
+
+            {/* Catch-all fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
-
-        {/* Authentication Modal */}
-        <AuthModal
-          isOpen={isAuthModalOpen}
-          onClose={() => setIsAuthModalOpen(false)}
-          onSignInSuccess={handleSignInSuccess}
-          initialMode={authMode}
-        />
-
-        {/* Global Role Onboarding & Profile Modal */}
-        <OnboardingModal
-          isOpen={isOnboardingOpen}
-          onClose={() => setIsOnboardingOpen(false)}
-          currentUserProfile={userProfile}
-          onSaveProfile={handleSaveProfile}
-        />
-
-        {/* Global UPI Checkout Modal */}
-        {checkoutListing && (
-          <CheckoutModal
-            listing={checkoutListing}
-            onClose={() => setCheckoutListing(null)}
-            onPurchaseComplete={handlePurchaseComplete}
-          />
-        )}
 
         {/* Global Footer */}
         <Footer />
@@ -294,4 +353,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-
