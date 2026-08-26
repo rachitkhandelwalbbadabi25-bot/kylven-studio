@@ -1,43 +1,55 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { AssetListing, calculatePricing, UserPurchase } from "../types";
 import {
   ShieldCheck,
-  Zap,
+  Lock,
   Download,
   CheckCircle2,
-  Lock,
+  AlertCircle,
+  Copy,
   ArrowRight,
   Sparkles,
-  Copy,
-  AlertCircle,
-  FileArchive,
-  QrCode,
-  Smartphone
+  Smartphone,
+  CreditCard,
+  Zap,
+  Check
 } from "lucide-react";
 
 interface CheckoutPageProps {
   listings: AssetListing[];
   onCompletePurchase: (purchase: UserPurchase) => void;
   buyerEmail?: string;
+  isAuthenticated?: boolean;
 }
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   listings,
   onCompletePurchase,
   buyerEmail: initialBuyerEmail = "developer@kreatestudio.in",
+  isAuthenticated = false,
 }) => {
   const { listingId } = useParams<{ listingId: string }>();
   const navigate = useNavigate();
 
   const listing = listings.find((l) => l.id === listingId || l.slug === listingId);
 
-  const [paymentMethod, setPaymentMethod] = useState<"gpay" | "phonepe" | "paytm" | "upi_id">("gpay");
-  const [upiId, setUpiId] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"upi" | "gpay" | "phonepe" | "card">("upi");
   const [buyerEmail, setBuyerEmail] = useState(initialBuyerEmail);
+  const [upiId, setUpiId] = useState("");
+  const [cardNumber, setCardNumber] = useState("");
+  const [cardExpiry, setCardExpiry] = useState("");
+  const [cardCvv, setCardCvv] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState<UserPurchase | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
+
+  // If initial email changes (e.g. user logs in)
+  useEffect(() => {
+    if (initialBuyerEmail && initialBuyerEmail !== "developer@kreatestudio.in") {
+      setBuyerEmail(initialBuyerEmail);
+    }
+  }, [initialBuyerEmail]);
 
   if (!listing) {
     return (
@@ -55,12 +67,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     );
   }
 
+  // Calculate pricing using 12.5% platform + payment fee
   const pricing = calculatePricing(listing.priceInINR);
+  const creatorName = listing.creator?.name || listing.seller?.name || "Verified Creator";
 
-  const handlePayNow = (e: React.FormEvent) => {
+  const handlePay = (e: React.FormEvent) => {
     e.preventDefault();
     if (!buyerEmail.includes("@")) {
-      alert("Please enter a valid email for file delivery and invoice.");
+      alert("Please enter a valid email address for file delivery.");
       return;
     }
 
@@ -79,7 +93,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         fileType: listing.fileType,
         downloadUrl: listing.downloadUrl || "https://kreatestudio.in/downloads/asset-package.zip",
         licenseKey,
-        purchaseDate: new Date().toISOString().split("T")[0],
+        purchaseDate: new Date().toLocaleDateString("en-GB", {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        }),
         pricePaidINR: pricing.buyerTotalINR,
         sellerNetINR: pricing.sellerNetINR,
         platformFeeINR: pricing.platformFeeINR,
@@ -89,7 +107,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       onCompletePurchase(newPurchase);
       setPurchaseSuccess(newPurchase);
       setIsProcessing(false);
-    }, 1500);
+    }, 1200);
   };
 
   const handleCopyLicense = () => {
@@ -101,288 +119,296 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8">
       
-      {/* SUCCESS STATE */}
+      {/* 1. SUCCESS CONFIRMATION STATE */}
       {purchaseSuccess ? (
-        <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-8 sm:p-10 space-y-8 shadow-2xl">
+        <div className="max-w-xl w-full mx-auto bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-10 space-y-6 shadow-2xl animate-fade-in">
           <div className="text-center space-y-3">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
+            <div className="w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
               <CheckCircle2 className="w-9 h-9" />
             </div>
-            <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider">
-              Payment Successful • Instant Access Unlocked
+            <span className="text-xs font-mono text-emerald-400 font-bold uppercase tracking-wider block">
+              Payment Completed • Order {purchaseSuccess.orderId}
             </span>
             <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white">
-              Thank You for Your Order!
+              Purchase Successful!
             </h1>
-            <p className="text-xs text-[#7B8A90] max-w-md mx-auto">
-              Your uncompressed archive and commercial license certificate have been generated. A copy has been dispatched to <span className="text-white font-mono">{buyerEmail}</span>.
+            <p className="text-xs text-[#7B8A90] max-w-sm mx-auto">
+              Your uncompressed archive is ready. A receipt and commercial license certificate have been sent to <span className="text-white font-mono">{buyerEmail}</span>.
             </p>
           </div>
 
-          {/* Order Details Card */}
-          <div className="bg-[#202C44]/80 border border-[#202C44] rounded-2xl p-6 space-y-5">
-            <div className="flex items-center justify-between border-b border-[#202C44] pb-4">
-              <div>
-                <span className="text-[10px] text-[#7B8A90] font-mono uppercase">Order Reference</span>
-                <p className="text-sm font-mono font-bold text-[#D3CCB0]">{purchaseSuccess.orderId}</p>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] text-[#7B8A90] font-mono uppercase">Total Paid</span>
-                <p className="text-sm font-mono font-bold text-white">₹{purchaseSuccess.pricePaidINR.toLocaleString("en-IN")}</p>
-              </div>
-            </div>
-
-            {/* Asset Info */}
-            <div className="flex items-center gap-4">
+          {/* Purchased Summary Box */}
+          <div className="bg-[#202C44]/70 border border-[#202C44] rounded-2xl p-5 space-y-4">
+            <div className="flex items-center gap-3.5">
               <img
                 src={purchaseSuccess.thumbnailUrl}
                 alt={purchaseSuccess.title}
-                className="w-16 h-16 rounded-xl object-cover border border-[#202C44]"
+                className="w-14 h-14 rounded-xl object-cover border border-[#202C44]"
               />
-              <div>
-                <h3 className="text-sm font-bold text-white">{purchaseSuccess.title}</h3>
-                <p className="text-xs text-[#7B8A90] font-mono mt-0.5">{purchaseSuccess.category} • {purchaseSuccess.fileType}</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xs sm:text-sm font-bold text-white truncate">{purchaseSuccess.title}</h3>
+                <p className="text-[11px] text-[#7B8A90] font-mono mt-0.5">
+                  {purchaseSuccess.category} • {purchaseSuccess.fileType}
+                </p>
+                <p className="text-xs font-mono font-bold text-[#D3CCB0] mt-1">
+                  Paid ₹{purchaseSuccess.pricePaidINR.toLocaleString("en-IN")} via {purchaseSuccess.paymentMethod}
+                </p>
               </div>
             </div>
 
             {/* License Key Box */}
-            <div className="bg-[#111317] border border-[#202C44] rounded-xl p-4 space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-[#7B8A90] font-mono font-bold">Commercial License Key:</span>
+            <div className="bg-[#111317] border border-[#202C44] rounded-xl p-3.5 space-y-1.5">
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-[#7B8A90] font-mono">Commercial License Key</span>
                 <button
                   type="button"
                   onClick={handleCopyLicense}
-                  className="text-xs text-[#D3CCB0] hover:underline flex items-center gap-1 font-mono"
+                  className="text-[#D3CCB0] hover:underline flex items-center gap-1 font-mono font-bold"
                 >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>{copiedKey ? "Copied!" : "Copy Key"}</span>
+                  <Copy className="w-3 h-3" />
+                  <span>{copiedKey ? "Copied!" : "Copy"}</span>
                 </button>
               </div>
-              <p className="font-mono text-xs font-bold text-white bg-[#000000] p-2.5 rounded-lg border border-[#202C44] select-all">
+              <p className="font-mono text-xs font-bold text-white bg-[#000000] p-2 rounded-lg border border-[#202C44] select-all truncate">
                 {purchaseSuccess.licenseKey}
               </p>
             </div>
 
-            {/* Download CTA */}
-            <div className="pt-2">
-              <a
-                href={purchaseSuccess.downloadUrl}
-                download
-                className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-sm py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 active:scale-98"
-              >
-                <Download className="w-5 h-5 text-[#000000]" />
-                <span>Download Asset Package (.zip uncompressed)</span>
-              </a>
-            </div>
+            {/* Direct Download Trigger */}
+            <a
+              href={purchaseSuccess.downloadUrl}
+              download
+              className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-sm py-3.5 rounded-xl transition-all shadow flex items-center justify-center gap-2 active:scale-98"
+            >
+              <Download className="w-4 h-4 text-[#000000]" />
+              <span>Download File Archive (.zip)</span>
+            </a>
           </div>
 
-          {/* Action Links */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-xs">
+          <div className="flex items-center justify-between pt-2 text-xs">
             <Link
               to="/purchases"
-              className="text-[#D3CCB0] font-bold hover:underline"
+              className="text-[#D3CCB0] font-bold hover:underline flex items-center gap-1"
             >
-              View in My Purchases →
+              <span>Go to My Purchases</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
-            <span className="text-[#202C44] hidden sm:inline">•</span>
             <Link
               to="/browse"
               className="text-[#7B8A90] hover:text-white"
             >
-              Continue Exploring Marketplace
+              Browse more assets
             </Link>
           </div>
         </div>
       ) : (
-        /* CHECKOUT FORM */
-        <div className="space-y-8">
+        /* 2. RECREATED 4_checkout.png CARD */
+        <div className="max-w-xl w-full mx-auto bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
           
-          {/* Header */}
-          <div className="border-b border-[#202C44] pb-6">
-            <div className="flex items-center gap-2 text-xs font-mono text-[#D3CCB0] mb-2">
-              <Lock className="w-3.5 h-3.5" />
-              <span>256-bit Encrypted UPI Checkout</span>
+          {/* Header: Centered checkout card titled "Secure Checkout" */}
+          <div className="text-center space-y-1 pb-2 border-b border-[#202C44]">
+            <div className="inline-flex items-center gap-1.5 text-xs font-mono font-bold text-[#D3CCB0] bg-[#202C44] px-3 py-1 rounded-full border border-[#202C44] mb-1">
+              <Lock className="w-3 h-3" />
+              <span>Encrypted Transaction</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight">
-              Complete Your Digital Purchase
+            <h1 className="text-2xl font-heading font-extrabold text-white">
+              Secure Checkout
             </h1>
-            <p className="text-xs text-[#7B8A90] mt-1">
-              Direct Indian Rupee (₹) payment with instant automated file unlock.
+            <p className="text-xs text-[#7B8A90]">
+              Instant access and license generation upon payment.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            {/* Left: Payment Method & Contact (7 cols) */}
-            <form onSubmit={handlePayNow} className="lg:col-span-7 space-y-6">
-              
-              {/* Buyer Email Input */}
-              <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-4">
-                <h3 className="text-sm font-heading font-bold text-white flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-[#D3CCB0]" />
-                  <span>1. Delivery Contact</span>
-                </h3>
-
-                <div>
-                  <label className="block text-xs text-[#7B8A90] mb-1.5 font-medium">
-                    Email for File Delivery & Commercial License Invoice
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={buyerEmail}
-                    onChange={(e) => setBuyerEmail(e.target.value)}
-                    placeholder="yourname@gmail.com"
-                    className="w-full bg-[#000000] text-white text-xs px-4 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
-                  />
-                  <p className="text-[11px] text-[#7B8A90] mt-1">
-                    Download link and commercial invoice will be sent immediately.
-                  </p>
-                </div>
+          {/* Auth Status Notification if logged out */}
+          {!isAuthenticated && (
+            <div className="bg-[#202C44]/60 border border-[#202C44] rounded-2xl p-3.5 flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2 text-[#7B8A90]">
+                <Sparkles className="w-4 h-4 text-[#D3CCB0] shrink-0" />
+                <span>Checking out as guest? You can link your account anytime.</span>
               </div>
-
-              {/* UPI Payment Selector */}
-              <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-4">
-                <h3 className="text-sm font-heading font-bold text-white flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-[#D3CCB0]" />
-                  <span>2. Select UPI Payment App</span>
-                </h3>
-
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { id: "gpay", label: "Google Pay", desc: "Instant UPI Intent" },
-                    { id: "phonepe", label: "PhonePe", desc: "Direct App Push" },
-                    { id: "paytm", label: "Paytm UPI", desc: "Wallet & UPI" },
-                    { id: "upi_id", label: "Custom UPI ID", desc: "Any VPA / BHIM" },
-                  ].map((method) => (
-                    <button
-                      key={method.id}
-                      type="button"
-                      onClick={() => setPaymentMethod(method.id as any)}
-                      className={`p-3.5 rounded-xl border text-left transition-all ${
-                        paymentMethod === method.id
-                          ? "bg-[#202C44] border-[#D3CCB0] text-white shadow"
-                          : "bg-[#000000] border-[#202C44] text-[#7B8A90] hover:text-white"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-xs">{method.label}</span>
-                        {paymentMethod === method.id && (
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                        )}
-                      </div>
-                      <span className="text-[10px] text-[#7B8A90] block">{method.desc}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {paymentMethod === "upi_id" && (
-                  <div className="pt-2">
-                    <label className="block text-xs text-[#7B8A90] mb-1">
-                      Enter your UPI ID / Virtual Payment Address (VPA)
-                    </label>
-                    <input
-                      type="text"
-                      value={upiId}
-                      onChange={(e) => setUpiId(e.target.value)}
-                      placeholder="username@okhdfcbank / yourname@upi"
-                      className="w-full bg-[#000000] text-white text-xs px-4 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Submit CTA */}
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-sm py-4 rounded-xl transition-all shadow-xl active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
+              <Link
+                to={`/signin?redirect=/checkout/${listing.id}`}
+                className="text-xs font-bold text-[#D3CCB0] hover:underline shrink-0"
               >
-                {isProcessing ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-[#000000] border-t-transparent rounded-full animate-spin" />
-                    <span>Confirming with UPI Gateway...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Pay ₹{pricing.buyerTotalINR.toLocaleString("en-IN")} & Unlock Files</span>
-                    <ArrowRight className="w-4 h-4 text-[#000000]" />
-                  </>
-                )}
-              </button>
+                Sign In
+              </Link>
+            </div>
+          )}
 
-              <p className="text-[11px] text-[#7B8A90] text-center">
-                🔒 Protected by NPCI UPI Security protocols • Instant file download delivery
-              </p>
-            </form>
-
-            {/* Right: Order Summary Breakdown (5 cols) */}
-            <div className="lg:col-span-5 space-y-5">
-              <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-5 shadow-xl">
-                <h3 className="text-xs font-mono font-bold text-[#D3CCB0] uppercase tracking-wider">
-                  Order Summary
-                </h3>
-
-                {/* Selected Item */}
-                <div className="flex items-center gap-3.5 pb-4 border-b border-[#202C44]">
-                  <img
-                    src={listing.thumbnailUrl}
-                    alt={listing.title}
-                    className="w-14 h-14 rounded-xl object-cover border border-[#202C44]"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-white truncate">{listing.title}</h4>
-                    <p className="text-[11px] text-[#7B8A90] font-mono mt-0.5">{listing.category}</p>
-                    <span className="text-[10px] text-[#D3CCB0] font-mono bg-[#202C44] px-1.5 py-0.2 rounded mt-1 inline-block">
-                      {listing.fileType}
-                    </span>
-                  </div>
+          {/* 1. Order Summary Section */}
+          <div className="space-y-3">
+            <span className="text-xs font-mono font-bold text-[#7B8A90] uppercase tracking-wider block">
+              Order Summary
+            </span>
+            <div className="flex items-center gap-4 bg-[#000000] border border-[#202C44] p-4 rounded-2xl">
+              <img
+                src={listing.thumbnailUrl}
+                alt={listing.title}
+                className="w-16 h-16 rounded-xl object-cover border border-[#202C44]"
+              />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-white truncate">{listing.title}</h3>
+                <p className="text-xs text-[#7B8A90] mt-0.5">by {creatorName}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-2 py-0.5 rounded border border-[#202C44]">
+                    {listing.fileType || "ZIP Archive"}
+                  </span>
+                  <span className="text-[10px] text-[#7B8A90] font-mono">
+                    {listing.fileSizeBytes || "12 MB"}
+                  </span>
                 </div>
-
-                {/* Canonical Pricing Table */}
-                <div className="space-y-2.5 text-xs">
-                  <div className="flex items-center justify-between text-[#7B8A90]">
-                    <span>Creator Listed Price</span>
-                    <span className="font-mono text-white">₹{pricing.listedPriceINR.toLocaleString("en-IN")}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[#7B8A90]">
-                    <span className="flex items-center gap-1">
-                      <span>Platform Fee (10%)</span>
-                      <span className="text-[10px] text-[#7B8A90] font-mono">(hosting & verification)</span>
-                    </span>
-                    <span className="font-mono text-[#D3CCB0]">₹{pricing.platformFeeINR.toLocaleString("en-IN")}</span>
-                  </div>
-
-                  <div className="pt-3 border-t border-[#202C44] flex items-center justify-between text-sm font-bold text-white">
-                    <span>Total Amount (₹)</span>
-                    <span className="text-lg font-extrabold text-[#D3CCB0] font-heading">
-                      ₹{pricing.buyerTotalINR.toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Guarantee Features */}
-                <div className="pt-4 border-t border-[#202C44] space-y-2 text-[11px] text-[#7B8A90]">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span>Instant uncompressed .zip download</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span>Commercial use license certificate included</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span>Unlimited future re-downloads from library</span>
-                  </div>
-                </div>
-
               </div>
             </div>
+          </div>
 
+          {/* 2. Price Breakdown (Item Price, Platform fee 12.5%, Total) */}
+          <div className="space-y-3">
+            <span className="text-xs font-mono font-bold text-[#7B8A90] uppercase tracking-wider block">
+              Price Breakdown
+            </span>
+            <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl space-y-2.5 text-xs">
+              <div className="flex items-center justify-between text-[#7B8A90]">
+                <span>Item price</span>
+                <span className="font-mono text-white">₹{pricing.listedPriceINR.toLocaleString("en-IN")}</span>
+              </div>
+
+              <div className="flex items-center justify-between text-[#7B8A90]">
+                <span>Platform + payment fee (12.5%)</span>
+                <span className="font-mono text-[#D3CCB0]">₹{pricing.platformFeeINR.toLocaleString("en-IN")}</span>
+              </div>
+
+              <div className="pt-2.5 border-t border-[#202C44] flex items-center justify-between text-base font-bold">
+                <span className="text-white">Total</span>
+                <span className="text-2xl font-heading font-extrabold text-[#D3CCB0]">
+                  ₹{pricing.buyerTotalINR.toLocaleString("en-IN")}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Delivery Email Address */}
+          <form onSubmit={handlePay} className="space-y-6">
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-[#7B8A90]">
+                Email Address for Delivery & License Key
+              </label>
+              <input
+                type="email"
+                required
+                value={buyerEmail}
+                onChange={(e) => setBuyerEmail(e.target.value)}
+                placeholder="developer@gmail.com"
+                className="w-full bg-[#000000] text-white text-xs px-4 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+              />
+            </div>
+
+            {/* 4. Payment Method Selection: Buttons for UPI, GPay, PhonePe, and Card */}
+            <div className="space-y-2.5">
+              <label className="block text-xs font-medium text-[#7B8A90]">
+                Payment Method Selection
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {[
+                  { id: "upi", label: "UPI", icon: Smartphone },
+                  { id: "gpay", label: "GPay", icon: Zap },
+                  { id: "phonepe", label: "PhonePe", icon: Smartphone },
+                  { id: "card", label: "Card", icon: CreditCard },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  const isActive = paymentMethod === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setPaymentMethod(item.id as any)}
+                      className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1.5 ${
+                        isActive
+                          ? "bg-[#202C44] border-[#D3CCB0] text-white shadow-md"
+                          : "bg-[#000000] border-[#202C44] text-[#7B8A90] hover:text-white hover:border-[#7B8A90]"
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? "text-[#D3CCB0]" : "text-[#7B8A90]"}`} />
+                      <span className="font-bold text-xs">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* UPI Custom ID option */}
+              {paymentMethod === "upi" && (
+                <div className="pt-2">
+                  <input
+                    type="text"
+                    value={upiId}
+                    onChange={(e) => setUpiId(e.target.value)}
+                    placeholder="Enter UPI VPA (e.g. name@okhdfcbank / name@upi)"
+                    className="w-full bg-[#000000] text-white text-xs px-4 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                  />
+                </div>
+              )}
+
+              {/* Card inputs option */}
+              {paymentMethod === "card" && (
+                <div className="pt-2 space-y-2 bg-[#000000] p-3.5 rounded-2xl border border-[#202C44]">
+                  <input
+                    type="text"
+                    value={cardNumber}
+                    onChange={(e) => setCardNumber(e.target.value)}
+                    placeholder="Card Number (XXXX XXXX XXXX XXXX)"
+                    maxLength={19}
+                    className="w-full bg-[#111317] text-white text-xs px-3 py-2 rounded-lg border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={cardExpiry}
+                      onChange={(e) => setCardExpiry(e.target.value)}
+                      placeholder="MM / YY"
+                      maxLength={5}
+                      className="bg-[#111317] text-white text-xs px-3 py-2 rounded-lg border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                    />
+                    <input
+                      type="password"
+                      value={cardCvv}
+                      onChange={(e) => setCardCvv(e.target.value)}
+                      placeholder="CVV"
+                      maxLength={4}
+                      className="bg-[#111317] text-white text-xs px-3 py-2 rounded-lg border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 5. Primary Action: Large Cream "Pay ₹[Total] Securely" button */}
+            <button
+              type="submit"
+              disabled={isProcessing}
+              className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-sm py-4 px-6 rounded-2xl transition-all shadow-xl active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {isProcessing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-[#000000] border-t-transparent rounded-full animate-spin" />
+                  <span>Processing Payment...</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4 text-[#000000]" />
+                  <span>Pay ₹{pricing.buyerTotalINR.toLocaleString("en-IN")} Securely</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* 6. Trust Signal: "Secured by Razorpay" */}
+          <div className="pt-4 border-t border-[#202C44] flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#7B8A90]">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>Secured by Razorpay</span>
+            </div>
+            <span className="font-mono text-[10px]">256-bit SSL • Instant Download</span>
           </div>
 
         </div>

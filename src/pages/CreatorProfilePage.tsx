@@ -1,19 +1,26 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { AssetListing, CreatorProfile } from "../types";
-import { CREATOR_PROFILES_MOCK } from "../data/mockData";
+import { AssetListing, CreatorProfile, UserProfile, UserPurchase } from "../types";
+import { CREATOR_PROFILES_MOCK, CREATORS_DIRECTORY } from "../data/mockData";
 import { ListingCard } from "../components/ListingCard";
 import {
-  Star,
   ShieldCheck,
   CheckCircle2,
   MapPin,
   Clock,
   ShoppingBag,
   Share2,
-  Globe,
-  ExternalLink,
-  Layers
+  Edit3,
+  Layers,
+  LayoutDashboard,
+  Heart,
+  Sparkles,
+  X,
+  Plus,
+  ArrowRight,
+  TrendingUp,
+  Award,
+  Download
 } from "lucide-react";
 
 interface CreatorProfilePageProps {
@@ -21,6 +28,9 @@ interface CreatorProfilePageProps {
   savedIds: string[];
   onToggleSave: (id: string) => void;
   onBuyNowDirect: (listing: AssetListing) => void;
+  userProfile?: UserProfile;
+  onUpdateUserProfile?: (updated: Partial<UserProfile>) => void;
+  purchases?: UserPurchase[];
 }
 
 export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
@@ -28,157 +38,495 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   savedIds,
   onToggleSave,
   onBuyNowDirect,
+  userProfile,
+  onUpdateUserProfile,
+  purchases = [],
 }) => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
 
-  // Find creator in mock or build from username
-  const cleanUsername = (username || "aarav_ui").replace("@", "");
-  const creator: CreatorProfile =
-    CREATOR_PROFILES_MOCK[cleanUsername] || {
-      id: "creator_custom",
-      name: cleanUsername.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
-      username: cleanUsername,
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      bio: "Verified digital asset creator on Kreate Studio. Crafting production-grade components & tools for Indian tech builders.",
-      location: "Bengaluru, India",
-      skills: ["Design", "Code", "Components"],
-      rating: 4.9,
-      totalSales: 450,
-      responseTime: "< 2 hours",
-      joinedDate: "January 2024",
-      verifiedSeller: true,
-    };
+  const [activeTab, setActiveTab] = useState<"listings" | "purchases" | "dashboard">("listings");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Derive target username (default to buildwithansh or current user)
+  const cleanUsername = (username || userProfile?.username || "buildwithansh").replace("@", "").toLowerCase();
+  
+  // Check if viewing own profile
+  const isOwner =
+    !username ||
+    username === "me" ||
+    cleanUsername === (userProfile?.username || "buildwithansh").toLowerCase() ||
+    cleanUsername === "buildwithansh";
+
+  // Match creator data from mock or state
+  const mockMatch =
+    CREATOR_PROFILES_MOCK[cleanUsername] ||
+    CREATORS_DIRECTORY[cleanUsername] ||
+    (cleanUsername === "buildwithansh" ? CREATOR_PROFILES_MOCK.buildwithansh : null);
+
+  const [name, setName] = useState(
+    isOwner ? (userProfile?.name || mockMatch?.name || "Ansh Bhardwaj") : (mockMatch?.name || "Ansh Bhardwaj")
+  );
+  const [bio, setBio] = useState(
+    isOwner
+      ? (userProfile?.bio || mockMatch?.bio || "Full-stack developer and UI designer building production-grade digital assets, cyberpunk kits, and developer starters.")
+      : (mockMatch?.bio || "Digital asset creator on Kreate Studio.")
+  );
+  const [handle, setHandle] = useState(isOwner ? (userProfile?.username || cleanUsername) : cleanUsername);
+  const [location, setLocation] = useState(mockMatch?.location || "Bengaluru, India");
+
+  // Get Initials for Avatar
+  const getInitials = (fullName: string) => {
+    const parts = fullName.trim().split(" ");
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return fullName.slice(0, 2).toUpperCase() || "AB";
+  };
+
+  const initials = isOwner && userProfile?.name ? getInitials(userProfile.name) : (mockMatch?.initials || getInitials(name));
 
   // Find listings by this creator
-  const creatorListings = listings.filter(
-    (l) =>
-      (l.creator?.username && l.creator.username.toLowerCase() === cleanUsername.toLowerCase()) ||
-      (l.seller?.handle && l.seller.handle.replace("@", "").toLowerCase() === cleanUsername.toLowerCase()) ||
-      l.seller?.name.toLowerCase().includes(cleanUsername.toLowerCase())
-  );
+  const creatorListings = listings.filter((l) => {
+    const cUser = l.creator?.username?.toLowerCase() || "";
+    const sHandle = l.seller?.handle?.replace("@", "").toLowerCase() || "";
+    const sName = l.seller?.name?.toLowerCase() || "";
+    const cName = l.creator?.name?.toLowerCase() || "";
+
+    if (cleanUsername === "buildwithansh" || cleanUsername === "ansh") {
+      return (
+        cUser === "buildwithansh" ||
+        sHandle === "buildwithansh" ||
+        sName.includes("ansh") ||
+        l.isNew ||
+        l.id === "asset-1" ||
+        l.id === "asset-2"
+      );
+    }
+
+    return (
+      cUser === cleanUsername ||
+      sHandle === cleanUsername ||
+      sName.includes(cleanUsername) ||
+      cName.includes(cleanUsername)
+    );
+  });
+
+  // Calculate dynamic stats
+  const listingsCount = creatorListings.length > 0 ? creatorListings.length : 12;
+  const followersCount = "1.2k";
+  const salesCount = creatorListings.reduce((sum, item) => sum + (item.salesCount || 0), 34);
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onUpdateUserProfile) {
+      onUpdateUserProfile({
+        name,
+        bio,
+        username: handle.replace("@", ""),
+      });
+    }
+    setIsEditModalOpen(false);
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8" id="seller-profile-page">
       
-      {/* Creator Header Banner */}
-      <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      {/* 1. Header Section: Profile Banner */}
+      <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden" id="seller-profile-header">
+        
+        {/* Background glow accent */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#202C44]/20 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">
           
-          <div className="flex items-center gap-5">
-            <img
-              src={creator.avatar}
-              alt={creator.name}
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-[#202C44]"
-            />
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-heading font-extrabold text-white">
-                  {creator.name}
-                </h1>
-                <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-2 py-0.5 rounded border border-[#202C44]">
-                  @{creator.username}
+          {/* Avatar & Identity details */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
+            
+            {/* Large Initials Avatar (e.g. "AB") */}
+            <div className="relative shrink-0">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-[#202C44] border-2 border-[#202C44] flex items-center justify-center shadow-lg group hover:border-[#D3CCB0] transition-colors">
+                <span className="font-heading font-extrabold text-2xl sm:text-3xl text-[#D3CCB0] tracking-wider font-mono">
+                  {initials}
                 </span>
-                {creator.verifiedSeller && (
-                  <span className="text-xs text-emerald-400 font-mono flex items-center gap-1 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Verified Creator
-                  </span>
-                )}
+              </div>
+              <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-4 h-4 rounded-full border-2 border-[#111317]" title="Active Creator" />
+            </div>
+
+            {/* Seller Name, Handle & Badge */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight" id="seller-name-heading">
+                  {name}
+                </h1>
+                
+                <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-2.5 py-0.5 rounded-lg border border-[#202C44] font-medium" id="seller-handle-badge">
+                  @{handle.replace("@", "")}
+                </span>
+
+                <span className="text-xs font-bold text-[#000000] bg-[#D3CCB0] px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-sm font-sans" id="seller-role-badge">
+                  <Award className="w-3.5 h-3.5 text-[#000000]" />
+                  <span>Seller</span>
+                </span>
               </div>
 
-              <p className="text-xs text-[#7B8A90] max-w-xl leading-relaxed">
-                {creator.bio}
+              <p className="text-xs sm:text-sm text-[#7B8A90] max-w-2xl leading-relaxed">
+                {bio}
               </p>
 
-              <div className="flex flex-wrap items-center gap-4 text-xs text-[#7B8A90] pt-1">
+              <div className="flex flex-wrap items-center gap-4 text-xs text-[#7B8A90] pt-1 font-sans">
                 <span className="flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                  <span>{creator.location}</span>
+                  <span>{location}</span>
                 </span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                  <span>Avg Response: {creator.responseTime}</span>
+                  <span>Avg Response: &lt; 1 hour</span>
                 </span>
                 <span className="flex items-center gap-1">
-                  <span>Member since {creator.joinedDate}</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>100% Verified Commercial Assets</span>
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Stats Badges */}
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <div className="flex-1 sm:flex-initial bg-[#202C44]/60 border border-[#202C44] px-4 py-3 rounded-2xl text-center">
-              <span className="text-[10px] text-[#7B8A90] uppercase font-mono block">Rating</span>
-              <span className="text-base font-bold text-[#D3CCB0] font-heading flex items-center justify-center gap-1">
-                <Star className="w-4 h-4 fill-current" /> {creator.rating.toFixed(1)}
-              </span>
-            </div>
-
-            <div className="flex-1 sm:flex-initial bg-[#202C44]/60 border border-[#202C44] px-4 py-3 rounded-2xl text-center">
-              <span className="text-[10px] text-[#7B8A90] uppercase font-mono block">Total Sales</span>
-              <span className="text-base font-bold text-white font-mono">{creator.totalSales}+</span>
-            </div>
-
-            <div className="flex-1 sm:flex-initial bg-[#202C44]/60 border border-[#202C44] px-4 py-3 rounded-2xl text-center">
-              <span className="text-[10px] text-[#7B8A90] uppercase font-mono block">Published</span>
-              <span className="text-base font-bold text-white font-mono">{creatorListings.length}</span>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Skills & Tools */}
-        {creator.skills && creator.skills.length > 0 && (
-          <div className="pt-4 border-t border-[#202C44] flex items-center gap-2 flex-wrap text-xs">
-            <span className="text-[#7B8A90] font-mono">Specializations:</span>
-            {creator.skills.map((skill) => (
-              <span
-                key={skill}
-                className="bg-[#202C44] text-white text-[11px] px-2.5 py-0.5 rounded-lg border border-[#202C44]"
+          {/* Action: Edit Profile (visible to owner) or Follow/Share */}
+          <div className="flex items-center gap-2.5 self-start md:self-auto shrink-0">
+            {isOwner && (
+              <button
+                id="edit-profile-button"
+                onClick={() => setIsEditModalOpen(true)}
+                className="bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] text-xs font-bold px-4 py-2.5 rounded-xl border border-[#202C44] flex items-center gap-1.5 transition-all active:scale-95 shadow"
               >
-                {skill}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Edit Profile</span>
+              </button>
+            )}
 
-      {/* Published Listings by this creator */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between border-b border-[#202C44] pb-4">
-          <div>
-            <h2 className="text-xl font-heading font-bold text-white">
-              Published Assets ({creatorListings.length})
-            </h2>
-            <p className="text-xs text-[#7B8A90] mt-0.5">
-              Original digital assets with verified commercial licenses.
-            </p>
+            <button
+              onClick={() => {
+                if (navigator.clipboard) {
+                  navigator.clipboard.writeText(window.location.href);
+                  alert("Seller profile link copied to clipboard!");
+                }
+              }}
+              className="bg-[#111317] hover:bg-[#202C44] text-[#7B8A90] hover:text-white p-2.5 rounded-xl border border-[#202C44] transition-colors"
+              title="Share profile"
+              aria-label="Share profile"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
           </div>
+
         </div>
 
-        {creatorListings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {creatorListings.map((item) => (
-              <ListingCard
-                key={item.id}
-                listing={item}
-                onSelectListing={(asset) => {
-                  navigate(`/listing/${asset.slug || asset.id}`);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                onBuyNowDirect={onBuyNowDirect}
-                isSaved={savedIds.includes(item.id)}
-                onToggleSave={onToggleSave}
-              />
-            ))}
+        {/* 2. Stats Row: Listings, Followers, Sales */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 pt-4 border-t border-[#202C44]" id="seller-stats-row">
+          
+          <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
+            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
+              Listings
+            </span>
+            <span className="text-xl sm:text-2xl font-heading font-extrabold text-white font-mono mt-0.5 block" id="stat-listings-count">
+              {listingsCount}
+            </span>
           </div>
-        ) : (
-          <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-12 text-center text-xs text-[#7B8A90]">
-            No public listings currently listed under this creator.
+
+          <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
+            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
+              Followers
+            </span>
+            <span className="text-xl sm:text-2xl font-heading font-extrabold text-[#D3CCB0] font-mono mt-0.5 block" id="stat-followers-count">
+              {followersCount}
+            </span>
           </div>
+
+          <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
+            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
+              Sales
+            </span>
+            <span className="text-xl sm:text-2xl font-heading font-extrabold text-emerald-400 font-mono mt-0.5 block" id="stat-sales-count">
+              {salesCount}
+            </span>
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* 3. Interactive Tabs: "My Listings", "Purchases", and "Dashboard" */}
+      <div className="flex items-center justify-between border-b border-[#202C44] pb-4">
+        <div className="flex items-center gap-2 sm:gap-3" id="seller-tabs-container">
+          
+          <button
+            id="tab-my-listings"
+            onClick={() => setActiveTab("listings")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === "listings"
+                ? "bg-[#D3CCB0] text-[#000000] shadow"
+                : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>My Listings ({creatorListings.length})</span>
+          </button>
+
+          <button
+            id="tab-purchases"
+            onClick={() => setActiveTab("purchases")}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === "purchases"
+                ? "bg-[#D3CCB0] text-[#000000] shadow"
+                : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5" />
+            <span>Purchases ({purchases.length})</span>
+          </button>
+
+          <button
+            id="tab-dashboard"
+            onClick={() => {
+              setActiveTab("dashboard");
+            }}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === "dashboard"
+                ? "bg-[#D3CCB0] text-[#000000] shadow"
+                : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
+            }`}
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Dashboard</span>
+          </button>
+        </div>
+
+        {activeTab === "listings" && isOwner && (
+          <Link
+            to="/sell/new"
+            className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#D3CCB0] hover:underline"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>List New Asset</span>
+          </Link>
         )}
       </div>
+
+      {/* Tab Content 1: My Listings Grid */}
+      {activeTab === "listings" && (
+        <div className="space-y-6" id="tab-content-listings">
+          {creatorListings.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {creatorListings.map((item) => (
+                <ListingCard
+                  key={item.id}
+                  listing={item}
+                  onSelectListing={(asset) => {
+                    navigate(`/listing/${asset.slug || asset.id}`);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  onBuyNowDirect={onBuyNowDirect}
+                  isSaved={savedIds.includes(item.id)}
+                  onToggleSave={onToggleSave}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-12 text-center space-y-4">
+              <Layers className="w-10 h-10 text-[#7B8A90] mx-auto opacity-50" />
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-white">No Active Listings Found</h3>
+                <p className="text-xs text-[#7B8A90]">
+                  Get started by publishing your first digital asset or UI kit.
+                </p>
+              </div>
+              <Link
+                to="/sell/new"
+                className="inline-flex items-center gap-2 bg-[#D3CCB0] text-[#000000] text-xs font-bold px-4 py-2.5 rounded-xl shadow"
+              >
+                <span>Upload New Asset</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content 2: Purchases Tab */}
+      {activeTab === "purchases" && (
+        <div className="space-y-6" id="tab-content-purchases">
+          {purchases.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {purchases.map((purchase) => (
+                <div
+                  key={purchase.orderId}
+                  className="bg-[#111317] border border-[#202C44] rounded-2xl p-5 space-y-4 hover:border-[#D3CCB0]/60 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={purchase.thumbnailUrl}
+                      alt={purchase.title}
+                      className="w-14 h-14 rounded-xl object-cover border border-[#202C44]"
+                    />
+                    <div className="space-y-0.5 min-w-0">
+                      <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded">
+                        {purchase.fileType}
+                      </span>
+                      <h4 className="text-xs font-bold text-white truncate">{purchase.title}</h4>
+                      <p className="text-[10px] text-[#7B8A90] font-mono">{purchase.orderId}</p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-[#202C44] flex items-center justify-between text-xs">
+                    <span className="text-white font-mono font-bold">₹{purchase.pricePaidINR}</span>
+                    <a
+                      href={purchase.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-[#202C44] hover:bg-[#D3CCB0] text-[#D3CCB0] hover:text-[#000000] text-xs font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                    >
+                      <Download className="w-3 h-3" />
+                      <span>Download</span>
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-12 text-center space-y-3">
+              <ShoppingBag className="w-10 h-10 text-[#7B8A90] mx-auto opacity-50" />
+              <p className="text-xs text-[#7B8A90]">No purchases yet under this account.</p>
+              <Link to="/browse" className="inline-block bg-[#D3CCB0] text-[#000000] text-xs font-bold px-4 py-2 rounded-xl">
+                Explore Marketplace
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab Content 3: Dashboard Preview / Quick Stats */}
+      {activeTab === "dashboard" && (
+        <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-8 space-y-6" id="tab-content-dashboard">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#202C44] pb-5">
+            <div>
+              <h3 className="text-lg font-heading font-extrabold text-white">
+                Seller Dashboard Overview
+              </h3>
+              <p className="text-xs text-[#7B8A90] mt-0.5">
+                Quick snapshot of earnings, active listings, and payouts.
+              </p>
+            </div>
+            <Link
+              to="/dashboard"
+              className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow flex items-center gap-1.5 self-start sm:self-auto"
+            >
+              <span>Open Full Dashboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl">
+              <span className="text-[11px] text-[#7B8A90] font-mono block">Estimated Earnings</span>
+              <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">₹12,450</span>
+              <span className="text-[10px] text-[#7B8A90]">90% net creator share</span>
+            </div>
+            <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl">
+              <span className="text-[11px] text-[#7B8A90] font-mono block">Pending Payout</span>
+              <span className="text-2xl font-bold font-mono text-white mt-1 block">₹1,800</span>
+              <span className="text-[10px] text-emerald-400">Settles next Monday via UPI</span>
+            </div>
+            <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl">
+              <span className="text-[11px] text-[#7B8A90] font-mono block">Active Assets</span>
+              <span className="text-2xl font-bold font-mono text-[#D3CCB0] mt-1 block">{creatorListings.length || 12}</span>
+              <span className="text-[10px] text-[#7B8A90]">Live in marketplace</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Profile Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 bg-[#000000]/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#111317] border border-[#202C44] rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-[#202C44] pb-4">
+              <h3 className="text-lg font-heading font-extrabold text-white">
+                Edit Seller Profile
+              </h3>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-[#7B8A90] hover:text-white p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
+              <div>
+                <label className="block text-[#7B8A90] mb-1 font-medium">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[#7B8A90] mb-1 font-medium">Username Handle</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7B8A90] font-mono">@</span>
+                  <input
+                    type="text"
+                    required
+                    value={handle.replace("@", "")}
+                    onChange={(e) => setHandle(e.target.value)}
+                    className="w-full bg-[#000000] text-white pl-8 pr-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#7B8A90] mb-1 font-medium">Bio</label>
+                <textarea
+                  rows={3}
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="w-full bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[#7B8A90] mb-1 font-medium">Location</label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Bengaluru, India"
+                  className="w-full bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#202C44]">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-[#7B8A90] hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold px-5 py-2.5 rounded-xl shadow transition-all"
+                >
+                  Save Profile
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );

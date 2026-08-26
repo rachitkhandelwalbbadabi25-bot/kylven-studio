@@ -15,7 +15,11 @@ import {
   PlusCircle,
   LogOut,
   User,
-  CheckCircle2
+  CheckCircle2,
+  Settings,
+  ShieldCheck,
+  Award,
+  Repeat
 } from "lucide-react";
 import { UserProfile } from "../types";
 
@@ -27,6 +31,7 @@ interface NavbarProps {
   onSearchSubmit?: (q?: string) => void;
   onOpenAuthModal?: (mode?: "signin" | "signup") => void;
   onLogout?: () => void;
+  onToggleRole?: () => void;
   savedCount?: number;
   purchasesCount?: number;
 }
@@ -65,6 +70,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setSearchQuery,
   onSearchSubmit,
   onLogout,
+  onToggleRole,
   savedCount = 0,
   purchasesCount = 0,
 }) => {
@@ -73,6 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
 
@@ -116,10 +123,14 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isActive = (path: string) => {
     if (path === "/browse") return location.pathname === "/browse";
     if (path === "/categories") return location.pathname === "/categories";
+    if (path === "/dashboard") return location.pathname === "/dashboard";
+    if (path === "/purchases") return location.pathname === "/purchases";
     if (path === "/pricing") return location.pathname === "/pricing";
-    if (path === "/sell") return location.pathname.startsWith("/sell") || location.pathname === "/dashboard";
+    if (path === "/sell/new") return location.pathname === "/sell/new" || location.pathname === "/sell";
     return location.pathname === path;
   };
+
+  const currentUsername = userProfile?.username || "buildwithansh";
 
   return (
     <header className="sticky top-0 z-50 bg-[#000000]/95 backdrop-blur-md border-b border-[#202C44]" id="public-header">
@@ -174,7 +185,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 id="search-autocomplete-dropdown"
                 className="absolute top-full left-0 right-0 mt-2 bg-[#111317] border border-[#202C44] rounded-2xl shadow-2xl p-4 z-50 text-xs space-y-4 max-h-[380px] overflow-y-auto"
               >
-                {/* Popular Keywords */}
                 <div>
                   <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold">
                     <TrendingUp className="w-3.5 h-3.5 text-[#D3CCB0]" />
@@ -195,7 +205,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 </div>
 
-                {/* Popular File Formats */}
                 <div>
                   <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold">
                     <FileCode className="w-3.5 h-3.5 text-[#D3CCB0]" />
@@ -218,7 +227,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 </div>
 
-                {/* Core Categories */}
                 <div>
                   <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold">
                     <Layers className="w-3.5 h-3.5 text-[#D3CCB0]" />
@@ -245,8 +253,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
 
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+          {/* Primary Navigation Links (Updated for Sellers) */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-1.5">
             <Link
               to="/browse"
               id="nav-link-browse"
@@ -271,11 +279,48 @@ export const Navbar: React.FC<NavbarProps> = ({
               Categories
             </Link>
 
+            {/* Dashboard Link for Authenticated Sellers */}
+            {isAuthenticated && (
+              <Link
+                to="/dashboard"
+                id="nav-link-dashboard"
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive("/dashboard")
+                    ? "bg-[#202C44] text-[#D3CCB0] font-bold"
+                    : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50"
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Dashboard</span>
+              </Link>
+            )}
+
+            {/* My Purchases */}
+            {isAuthenticated && (
+              <Link
+                to="/purchases"
+                id="nav-link-purchases"
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive("/purchases")
+                    ? "bg-[#202C44] text-[#D3CCB0] font-bold"
+                    : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50"
+                }`}
+              >
+                <span>My Purchases</span>
+                {purchasesCount > 0 && (
+                  <span className="bg-[#D3CCB0] text-[#000000] text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
+                    {purchasesCount}
+                  </span>
+                )}
+              </Link>
+            )}
+
+            {/* Sell Link directly takes user to /sell/new */}
             <Link
               to="/sell/new"
               id="nav-link-sell"
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                isActive("/sell")
+                isActive("/sell/new")
                   ? "bg-[#202C44] text-[#D3CCB0] font-bold"
                   : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50"
               }`}
@@ -296,7 +341,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </Link>
           </nav>
 
-          {/* Auth State & Action Buttons */}
+          {/* Auth State & Account Dropdown */}
           <div className="flex items-center gap-2.5">
             {!isAuthenticated ? (
               <div className="flex items-center gap-2">
@@ -311,47 +356,95 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
             ) : (
               <div className="flex items-center gap-2.5">
+                
+                {/* Upload Button */}
                 <Link
                   to="/sell/new"
-                  className="hidden sm:flex items-center gap-1.5 bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] text-xs font-bold px-3 py-2 rounded-xl border border-[#202C44] transition-all"
+                  id="header-sell-btn"
+                  className="hidden sm:flex items-center gap-1.5 bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] text-xs font-bold px-3 py-2 rounded-xl border border-[#202C44] transition-all active:scale-95"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
                   <span>Sell Asset</span>
                 </Link>
 
-                {/* Account Menu */}
+                {/* Account Menu Dropdown */}
                 <div className="relative" ref={accountMenuRef}>
                   <button
+                    id="account-menu-button"
                     onClick={() => setIsAccountMenuOpen(!isAccountMenuOpen)}
                     className="flex items-center gap-2 p-1.5 rounded-xl bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/60 transition-all focus:outline-none"
                     aria-label="User account menu"
                   >
-                    <img
-                      src={userProfile?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80"}
-                      alt={userProfile?.name || "User"}
-                      className="w-7 h-7 rounded-lg object-cover border border-[#202C44]"
-                    />
-                    <span className="hidden sm:block text-xs text-white font-medium max-w-[90px] truncate">
-                      {userProfile?.name || "My Account"}
+                    <div className="w-7 h-7 rounded-lg bg-[#202C44] text-[#D3CCB0] font-mono font-bold text-xs flex items-center justify-center border border-[#202C44]">
+                      AB
+                    </div>
+                    <span className="hidden sm:block text-xs text-white font-medium max-w-[100px] truncate">
+                      {userProfile?.name || "Ansh Bhardwaj"}
                     </span>
                     <ChevronDown className="w-3.5 h-3.5 text-[#7B8A90]" />
                   </button>
 
+                  {/* Dropdown Menu */}
                   {isAccountMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-64 bg-[#111317] border border-[#202C44] rounded-2xl shadow-2xl py-2 z-50 text-xs">
+                    <div
+                      id="account-menu-dropdown"
+                      className="absolute right-0 mt-2 w-64 bg-[#111317] border border-[#202C44] rounded-2xl shadow-2xl py-2 z-50 text-xs animate-in fade-in"
+                    >
                       <div className="px-4 py-2.5 border-b border-[#202C44]">
-                        <p className="text-white font-bold truncate">{userProfile?.name}</p>
-                        <p className="text-[11px] text-[#7B8A90] font-mono truncate">{userProfile?.email}</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-white font-bold truncate">{userProfile?.name || "Ansh Bhardwaj"}</p>
+                          <span className="text-[10px] text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-mono">
+                            Seller
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#7B8A90] font-mono truncate">{userProfile?.email || "rrachitkhandelwal8@gmail.com"}</p>
                       </div>
 
                       <div className="py-1">
+                        {/* 1. Profile Link */}
+                        <Link
+                          to={`/profile/${currentUsername}`}
+                          id="menu-link-profile"
+                          className="flex items-center gap-2.5 px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
+                        >
+                          <User className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                          <span>Profile</span>
+                        </Link>
+
+                        {/* 2. Dashboard Link */}
+                        <Link
+                          to="/dashboard"
+                          id="menu-link-dashboard"
+                          className="flex items-center gap-2.5 px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
+                        >
+                          <LayoutDashboard className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>Dashboard</span>
+                        </Link>
+
+                        {/* 3. Settings */}
+                        <button
+                          id="menu-link-settings"
+                          onClick={() => {
+                            setIsAccountMenuOpen(false);
+                            setIsSettingsOpen(true);
+                          }}
+                          className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
+                        >
+                          <Settings className="w-3.5 h-3.5 text-[#7B8A90]" />
+                          <span>Settings</span>
+                        </button>
+
+                        <div className="my-1 border-t border-[#202C44]" />
+
+                        {/* 4. Purchases */}
                         <Link
                           to="/purchases"
+                          id="menu-link-purchases"
                           className="flex items-center justify-between px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
                         >
                           <div className="flex items-center gap-2.5">
                             <ShoppingBag className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                            <span>My Purchases</span>
+                            <span>Purchases</span>
                           </div>
                           {purchasesCount > 0 && (
                             <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] font-mono px-1.5 py-0.5 rounded">
@@ -360,8 +453,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                           )}
                         </Link>
 
+                        {/* 5. Saved Items */}
                         <Link
                           to="/saved"
+                          id="menu-link-saved"
                           className="flex items-center justify-between px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
                         >
                           <div className="flex items-center gap-2.5">
@@ -374,27 +469,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                             </span>
                           )}
                         </Link>
-
-                        <Link
-                          to="/dashboard"
-                          className="flex items-center gap-2.5 px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
-                        >
-                          <LayoutDashboard className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                          <span>Seller Dashboard</span>
-                        </Link>
-
-                        <Link
-                          to="/sell/new"
-                          className="flex items-center gap-2.5 px-4 py-2 text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50 transition-colors"
-                        >
-                          <PlusCircle className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Sell New Asset</span>
-                        </Link>
                       </div>
 
+                      {/* Sign Out */}
                       <div className="border-t border-[#202C44] pt-1">
                         <button
                           onClick={onLogout}
+                          id="menu-link-logout"
                           className="w-full text-left flex items-center gap-2.5 px-4 py-2 text-rose-400 hover:bg-rose-500/10 transition-colors"
                         >
                           <LogOut className="w-3.5 h-3.5" />
@@ -454,32 +535,32 @@ export const Navbar: React.FC<NavbarProps> = ({
                 Categories
               </Link>
               <Link
+                to="/dashboard"
+                className="p-2.5 bg-[#111317] rounded-xl border border-[#202C44] text-[#D3CCB0] font-medium text-center hover:border-[#D3CCB0]"
+              >
+                Dashboard
+              </Link>
+              <Link
                 to="/sell/new"
                 className="p-2.5 bg-[#111317] rounded-xl border border-[#202C44] text-white font-medium text-center hover:border-[#D3CCB0]"
               >
-                Sell
-              </Link>
-              <Link
-                to="/pricing"
-                className="p-2.5 bg-[#111317] rounded-xl border border-[#202C44] text-white font-medium text-center hover:border-[#D3CCB0]"
-              >
-                Pricing
+                Sell Asset
               </Link>
             </div>
 
             {isAuthenticated && (
               <div className="pt-2 border-t border-[#202C44] space-y-1 text-xs">
+                <Link to={`/profile/${currentUsername}`} className="flex items-center gap-2 py-2 text-[#7B8A90] hover:text-white">
+                  <User className="w-4 h-4 text-[#D3CCB0]" />
+                  <span>Profile</span>
+                </Link>
                 <Link to="/purchases" className="flex items-center gap-2 py-2 text-[#7B8A90] hover:text-white">
                   <ShoppingBag className="w-4 h-4 text-[#D3CCB0]" />
-                  <span>My Purchases</span>
+                  <span>Purchases ({purchasesCount})</span>
                 </Link>
                 <Link to="/saved" className="flex items-center gap-2 py-2 text-[#7B8A90] hover:text-white">
                   <Heart className="w-4 h-4 text-pink-400" />
-                  <span>Saved Items</span>
-                </Link>
-                <Link to="/dashboard" className="flex items-center gap-2 py-2 text-[#7B8A90] hover:text-white">
-                  <LayoutDashboard className="w-4 h-4 text-[#D3CCB0]" />
-                  <span>Seller Dashboard</span>
+                  <span>Saved Items ({savedCount})</span>
                 </Link>
               </div>
             )}
@@ -487,6 +568,63 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
 
       </div>
+
+      {/* Settings Modal */}
+      {isSettingsOpen && (
+        <div className="fixed inset-0 z-50 bg-[#000000]/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#111317] border border-[#202C44] rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-[#202C44] pb-4">
+              <h3 className="text-base font-heading font-extrabold text-white flex items-center gap-2">
+                <Settings className="w-4 h-4 text-[#D3CCB0]" />
+                <span>Account & Store Settings</span>
+              </h3>
+              <button onClick={() => setIsSettingsOpen(false)} className="text-[#7B8A90] hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 rounded-xl space-y-1">
+                <span className="text-[10px] text-[#7B8A90] uppercase font-mono block">Active Role Mode</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-white">Creator & Buyer (Full Access)</span>
+                  <span className="bg-emerald-950 text-emerald-400 font-mono text-[10px] px-2 py-0.5 rounded border border-emerald-800">
+                    Active
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[#7B8A90] mb-1 font-mono uppercase text-[10px]">Registered Email</label>
+                <input
+                  type="text"
+                  disabled
+                  value={userProfile?.email || "rrachitkhandelwal8@gmail.com"}
+                  className="w-full bg-[#000000] text-[#7B8A90] px-3 py-2 rounded-xl border border-[#202C44] font-mono text-xs cursor-not-allowed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[#7B8A90] mb-1 font-mono uppercase text-[10px]">Default Currency</label>
+                <div className="w-full bg-[#000000] text-white px-3 py-2 rounded-xl border border-[#202C44] font-mono text-xs flex items-center justify-between">
+                  <span>INR — Indian Rupee (₹)</span>
+                  <span className="text-emerald-400">Default</span>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-[#202C44] flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="bg-[#D3CCB0] text-[#000000] font-bold px-4 py-2 rounded-xl text-xs"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

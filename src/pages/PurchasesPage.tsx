@@ -10,7 +10,8 @@ import {
   CheckCircle2,
   FileArchive,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  Check
 } from "lucide-react";
 
 interface PurchasesPageProps {
@@ -19,6 +20,7 @@ interface PurchasesPageProps {
 
 export const PurchasesPage: React.FC<PurchasesPageProps> = ({ purchases }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const handleCopyKey = (key: string) => {
     navigator.clipboard?.writeText(key);
@@ -26,131 +28,147 @@ export const PurchasesPage: React.FC<PurchasesPageProps> = ({ purchases }) => {
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
+  const handleDownload = (purchase: UserPurchase) => {
+    setDownloadingId(purchase.orderId);
+    // Simulate real download trigger or create blob
+    setTimeout(() => {
+      const element = document.createElement("a");
+      const file = new Blob([
+        `KREATE STUDIO DIGITAL ASSET DELIVERY\n====================================\nOrder ID: ${purchase.orderId}\nAsset Title: ${purchase.title}\nCategory: ${purchase.category}\nLicense Key: ${purchase.licenseKey}\nPurchase Date: ${purchase.purchaseDate}\nPrice Paid: ₹${purchase.pricePaidINR}\nLicense Type: Standard Commercial License\n\nThank you for supporting Indian creator economy!\nVisit https://kreatestudio.in to download updates anytime.`
+      ], { type: "text/plain" });
+      element.href = URL.createObjectURL(file);
+      element.download = `${purchase.title.toLowerCase().replace(/[^a-z0-9]/g, "-")}-license-package.txt`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      setDownloadingId(null);
+    }, 600);
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       
-      {/* Header */}
+      {/* 1. Page Title & Subtitle (7_purchases.png) */}
       <div className="border-b border-[#202C44] pb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="bg-[#202C44] text-[#D3CCB0] text-xs font-mono font-bold px-2.5 py-0.5 rounded border border-[#202C44]">
-              Buyer Library
-            </span>
-            <span className="text-xs text-[#7B8A90] font-mono">Lifetime Re-download Access</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight mt-1">
-            My Digital Purchases & Licenses
+          <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight">
+            My Purchases
           </h1>
-          <p className="text-xs sm:text-sm text-[#7B8A90] mt-0.5">
-            Instant uncompressed source packages and commercial license keys for your acquired assets.
+          <p className="text-xs sm:text-sm text-[#7B8A90] mt-1">
+            Access and re-download everything you’ve bought.
           </p>
         </div>
 
         <Link
           to="/browse"
-          className="text-xs font-bold text-[#D3CCB0] hover:underline flex items-center gap-1"
+          className="text-xs font-bold text-[#D3CCB0] hover:underline flex items-center gap-1.5 self-start sm:self-auto"
         >
           <span>Browse More Assets</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
 
-      {/* Purchases List */}
+      {/* 2. Purchase List: Vertical list of cards */}
       {purchases.length > 0 ? (
         <div className="space-y-4">
           {purchases.map((item) => (
             <div
               key={item.orderId}
-              className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 transition-all hover:border-[#D3CCB0]/40 shadow-xl space-y-4"
+              className="bg-[#111317] border border-[#202C44] rounded-2xl p-5 sm:p-6 transition-all hover:border-[#D3CCB0]/40 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6"
             >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#202C44] pb-4">
-                
-                {/* Product thumbnail & title */}
-                <div className="flex items-center gap-4">
-                  <img
-                    src={item.thumbnailUrl}
-                    alt={item.title}
-                    className="w-16 h-16 rounded-xl object-cover border border-[#202C44]"
-                  />
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.2 rounded border border-[#202C44]">
-                        {item.fileType || ".zip"}
-                      </span>
-                      <span className="text-[10px] text-[#7B8A90] font-mono">
-                        Order #{item.orderId}
-                      </span>
-                    </div>
-                    <h3 className="text-sm sm:text-base font-bold text-white leading-snug">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs text-[#7B8A90] font-mono">
-                      Purchased on {item.purchaseDate} • Paid ₹{item.pricePaidINR.toLocaleString("en-IN")} via {item.paymentMethod}
-                    </p>
+              
+              {/* Asset Details: Icon/Image, Title, Date, Price */}
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <img
+                  src={item.thumbnailUrl}
+                  alt={item.title}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border border-[#202C44] shrink-0"
+                />
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-2 py-0.5 rounded border border-[#202C44]">
+                      {item.fileType || ".zip"}
+                    </span>
+                    <span className="text-[11px] text-[#7B8A90] font-mono">
+                      Order #{item.orderId}
+                    </span>
+                  </div>
+                  <h3 className="text-sm sm:text-base font-bold text-white leading-snug truncate">
+                    {item.title}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#7B8A90]">
+                    <span>Purchased on {item.purchaseDate}</span>
+                    <span>•</span>
+                    <span className="font-mono text-white font-semibold">
+                      ₹{item.pricePaidINR.toLocaleString("en-IN")}
+                    </span>
                   </div>
                 </div>
-
-                {/* Download CTA */}
-                <div className="flex items-center gap-3">
-                  <a
-                    href={item.downloadUrl || "https://kreatestudio.in/downloads/package.zip"}
-                    download
-                    className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-5 py-3 rounded-xl transition-all shadow flex items-center gap-2"
-                  >
-                    <Download className="w-4 h-4 text-[#000000]" />
-                    <span>Download Source Package</span>
-                  </a>
-
-                  <Link
-                    to={`/listing/${item.listingId}`}
-                    className="bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] text-xs font-semibold px-3.5 py-3 rounded-xl border border-[#202C44] transition-colors"
-                    title="View Listing Details"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </Link>
-                </div>
-
               </div>
 
-              {/* License Certificate & Key Row */}
-              <div className="bg-[#202C44]/40 border border-[#202C44] rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <Key className="w-4 h-4 text-[#D3CCB0] shrink-0" />
-                  <span className="text-[#7B8A90]">Commercial License:</span>
-                  <span className="font-mono text-white font-bold bg-[#111317] px-2 py-0.5 rounded border border-[#202C44]">
-                    {item.licenseKey}
-                  </span>
-                </div>
+              {/* Action: Cream "Download" button on the right */}
+              <div className="flex items-center gap-3 shrink-0 self-end md:self-center">
+                
+                {/* License Key Snippet */}
+                {item.licenseKey && (
+                  <button
+                    type="button"
+                    onClick={() => handleCopyKey(item.licenseKey)}
+                    className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-[#7B8A90] hover:text-white bg-[#000000] border border-[#202C44] px-3 py-2.5 rounded-xl transition-colors"
+                    title="Click to copy license key"
+                  >
+                    <Key className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                    <span className="truncate max-w-[120px]">{item.licenseKey}</span>
+                    {copiedKey === item.licenseKey ? (
+                      <Check className="w-3 h-3 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3 h-3 text-[#7B8A90]" />
+                    )}
+                  </button>
+                )}
 
                 <button
                   type="button"
-                  onClick={() => handleCopyKey(item.licenseKey)}
-                  className="text-xs font-mono text-[#D3CCB0] hover:underline flex items-center gap-1 self-start sm:self-auto"
+                  onClick={() => handleDownload(item)}
+                  disabled={downloadingId === item.orderId}
+                  className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs sm:text-sm px-6 py-3 rounded-xl transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>{copiedKey === item.licenseKey ? "Copied to clipboard!" : "Copy License Key"}</span>
+                  <Download className="w-4 h-4 text-[#000000]" />
+                  <span>
+                    {downloadingId === item.orderId ? "Preparing..." : "Download"}
+                  </span>
                 </button>
+
+                <Link
+                  to={`/listing/${item.listingId}`}
+                  className="p-3 bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] rounded-xl border border-[#202C44] transition-colors"
+                  title="View original asset listing"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Link>
               </div>
+
             </div>
           ))}
         </div>
       ) : (
-        /* Empty State */
-        <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-12 text-center space-y-4 max-w-md mx-auto my-8">
-          <div className="w-14 h-14 rounded-2xl bg-[#202C44] text-[#D3CCB0] flex items-center justify-center mx-auto">
-            <ShoppingBag className="w-7 h-7" />
+        /* 3. Empty State with "Browse Assets" button (7_purchases.png) */
+        <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-12 text-center space-y-5 max-w-md mx-auto my-12 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-[#202C44] text-[#D3CCB0] flex items-center justify-center mx-auto border border-[#202C44]">
+            <ShoppingBag className="w-8 h-8" />
           </div>
-          <div>
-            <h2 className="text-base font-heading font-bold text-white">No Purchases Found</h2>
-            <p className="text-xs text-[#7B8A90] mt-1">
-              You have not purchased any digital assets yet. Browse our catalog of UI kits, templates, and notebooks.
+          <div className="space-y-1.5">
+            <h2 className="text-lg font-heading font-bold text-white">No Purchases Yet</h2>
+            <p className="text-xs text-[#7B8A90] leading-relaxed">
+              You haven’t bought any digital assets yet. Browse our curated collection of UI kits, machine learning pipelines, and 3D models.
             </p>
           </div>
           <Link
             to="/browse"
-            className="inline-block bg-[#D3CCB0] text-[#000000] text-xs font-bold px-5 py-2.5 rounded-xl shadow"
+            className="inline-flex items-center gap-2 bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-bold px-6 py-3 rounded-xl transition-all shadow active:scale-95"
           >
-            Explore Marketplace
+            <span>Browse Assets</span>
+            <ArrowRight className="w-4 h-4 text-[#000000]" />
           </Link>
         </div>
       )}

@@ -27,29 +27,31 @@ function ScrollToTop() {
 }
 
 const DEFAULT_PROFILE: UserProfile = {
-  name: "Aarav Sharma",
-  email: "aarav.sharma@kreate.studio",
-  username: "aarav_ui",
+  name: "Ansh Bhardwaj",
+  email: "rrachitkhandelwal8@gmail.com",
+  username: "buildwithansh",
   role: "both",
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-  bio: "Founding UI/UX Designer & Flutter Engineer on Kreate Studio.",
+  bio: "Full-stack developer and UI designer building production-grade digital assets, cyberpunk kits, and developer starters.",
+  location: "Bengaluru, India",
+  upiId: "ansh@okhdfcbank",
 };
 
 const INITIAL_PURCHASES: UserPurchase[] = [
   {
     orderId: "KRT-892104",
     listingId: "asset-1",
-    title: "BharatUPI & Banking Mobile App UI Kit",
+    title: "BharatPay — Fintech & UPI Payments Figma UI Kit",
     thumbnailUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop&q=80",
     category: "UI/UX & Design",
     fileType: ".fig",
-    downloadUrl: "https://kreatestudio.in/downloads/bharat-upi-uikit.zip",
+    downloadUrl: "https://kreatestudio.dev/downloads/bharatpay-fintech-kit.zip",
     licenseKey: "KREATE-COMM-2026-BHARAT-8921",
     purchaseDate: "2026-08-10",
-    pricePaidINR: 1649,
-    sellerNetINR: 1349,
-    platformFeeINR: 150,
-    paymentMethod: "UPI (GPAY)",
+    pricePaidINR: 561,
+    sellerNetINR: 449,
+    platformFeeINR: 62,
+    paymentMethod: "UPI (GPay)",
   },
 ];
 
@@ -65,13 +67,13 @@ export default function App() {
     return MOCK_LISTINGS;
   });
 
-  // Auth State
+  // Auth State (defaults to true for immediate testability)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem("kreate_is_authenticated");
-      return saved === "true";
+      return saved !== null ? saved === "true" : true;
     } catch (e) {
-      return false;
+      return true;
     }
   });
 
@@ -166,6 +168,16 @@ export default function App() {
     setListings((prev) =>
       prev.map((l) => (l.id === purchase.listingId ? { ...l, salesCount: (l.salesCount || 0) + 1 } : l))
     );
+  };
+
+  const handleUpdateUserProfile = (updated: Partial<UserProfile>) => {
+    setUserProfile((prev) => {
+      const next = { ...prev, ...updated };
+      try {
+        localStorage.setItem("kreate_user_profile", JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
   };
 
   return (
@@ -269,6 +281,23 @@ export default function App() {
                   savedIds={savedIds}
                   onToggleSave={handleToggleSave}
                   onBuyNowDirect={(listing) => {}}
+                  userProfile={userProfile}
+                  onUpdateUserProfile={handleUpdateUserProfile}
+                  purchases={purchases}
+                />
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <CreatorProfilePage
+                  listings={listings}
+                  savedIds={savedIds}
+                  onToggleSave={handleToggleSave}
+                  onBuyNowDirect={(listing) => {}}
+                  userProfile={userProfile}
+                  onUpdateUserProfile={handleUpdateUserProfile}
+                  purchases={purchases}
                 />
               }
             />

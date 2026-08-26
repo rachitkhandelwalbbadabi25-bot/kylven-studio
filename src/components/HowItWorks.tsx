@@ -1,171 +1,121 @@
-import React, { useState } from "react";
-import { Search, ShieldCheck, Download, Upload, IndianRupee, Zap, CheckCircle2 } from "lucide-react";
+import React from "react";
+import { Search, IndianRupee, Download, Sparkles, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
+import { motion } from "motion/react";
 
 export const HowItWorks: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"buyers" | "sellers">("buyers");
+  const steps = [
+    {
+      number: "01",
+      title: "Discover",
+      description: "Browse 239+ categories of manually reviewed digital assets.",
+      highlight: "Verified Code & Assets",
+      icon: <Search className="w-5 h-5 text-[#D3CCB0]" />,
+      badgeList: [".fig", ".dart", ".ipynb", ".blend", ".zip"],
+    },
+    {
+      number: "02",
+      title: "Instant UPI Pay",
+      description: "Pay the exact Rupee price using GPay, PhonePe, or any UPI app.",
+      highlight: "Zero FX / Zero Friction",
+      icon: <IndianRupee className="w-5 h-5 text-emerald-400" />,
+      badgeList: ["GPay", "PhonePe", "Paytm", "BHIM", "UPI QR"],
+    },
+    {
+      number: "03",
+      title: "Lifetime Access",
+      description: "Download your source files instantly and get lifetime updates.",
+      highlight: "Commercial License Included",
+      icon: <Download className="w-5 h-5 text-[#D3CCB0]" />,
+      badgeList: ["Instant Unlock", "Lifetime Updates", "Raw Files"],
+    },
+  ];
 
   return (
-    <section className="py-16 bg-[#000000] border-b border-[#202C44]/50">
+    <section className="py-20 bg-[#000000] border-b border-[#202C44]" id="how-it-works-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Title */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <div className="inline-flex items-center gap-2 text-[#D3CCB0] text-[11px] font-mono font-bold uppercase tracking-[0.1em] mb-2">
-            <ShieldCheck className="w-4 h-4" />
-            <span>TRANSPARENT WORKFLOW</span>
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+          <div className="inline-flex items-center gap-2 bg-[#111317] border border-[#202C44] px-3.5 py-1.5 rounded-full text-xs font-mono font-bold text-[#D3CCB0]">
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>THE 1-2-3 PROCESS</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-[-0.02em]">
+          <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-white tracking-tight">
             How Kreate Studio Works
           </h2>
-          <p className="text-xs sm:text-sm text-[#7B8A90] font-normal mt-1 leading-relaxed">
-            Direct Indian Rupee (₹) payments, instant digital delivery, and 90% creator earnings.
+          <p className="text-sm sm:text-base text-[#7B8A90] font-normal leading-relaxed">
+            From search to production-ready code in less than 60 seconds.
           </p>
-
-          {/* Tab Switcher */}
-          <div className="inline-flex p-1 bg-[#111317] border border-[#202C44] rounded-xl mt-6">
-            <button
-              onClick={() => setActiveTab("buyers")}
-              className={`px-5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === "buyers"
-                  ? "bg-[#202C44] text-[#D3CCB0] shadow border border-[#202C44]"
-                  : "text-[#7B8A90] hover:text-white"
-              }`}
-            >
-              For Buyers
-            </button>
-            <button
-              onClick={() => setActiveTab("sellers")}
-              className={`px-5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                activeTab === "sellers"
-                  ? "bg-[#202C44] text-[#D3CCB0] shadow border border-[#202C44]"
-                  : "text-[#7B8A90] hover:text-white"
-              }`}
-            >
-              For Creators (90% Payout)
-            </button>
-          </div>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === "buyers" ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {/* Step 1 */}
-            <div className="bg-[#202C44] border border-[#202C44] rounded-2xl p-6 relative flex flex-col justify-between">
+        {/* Clean Numbered Horizontal Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+          
+          {steps.map((step, index) => (
+            <motion.div
+              key={step.number}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: index * 0.15 }}
+              className="relative bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/40 rounded-3xl p-8 flex flex-col justify-between shadow-2xl transition-all group"
+            >
               <div>
-                <div className="w-10 h-10 rounded-xl bg-[#111317] text-[#D3CCB0] font-heading font-bold flex items-center justify-center text-lg mb-4 border border-[#202C44]">
-                  01
+                {/* Step Number & Icon Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-[#202C44] border border-[#202C44] text-[#D3CCB0] font-heading font-black text-xl flex items-center justify-center group-hover:scale-105 transition-transform">
+                    {step.number}
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-[#000000] border border-[#202C44] flex items-center justify-center">
+                    {step.icon}
+                  </div>
                 </div>
-                <h3 className="text-base font-heading font-bold text-white mb-2">
-                  Browse Verified Assets
-                </h3>
-                <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Search through Flutter templates, Figma design kits, Jupyter notebooks, 3D assets, and LUTs. All items pass code & file integrity review.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
-                <Search className="w-3.5 h-3.5" />
-                <span>Filter by file format (.fig, .dart, .blend)</span>
-              </div>
-            </div>
 
-            {/* Step 2 */}
-            <div className="bg-[#202C44] border border-[#202C44] rounded-2xl p-6 relative flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-[#111317] text-[#D3CCB0] font-heading font-bold flex items-center justify-center text-lg mb-4 border border-[#202C44]">
-                  02
-                </div>
-                <h3 className="text-base font-heading font-bold text-white mb-2">
-                  Instant UPI Checkout (₹)
+                {/* Title */}
+                <h3 className="text-xl font-heading font-bold text-white mb-2 group-hover:text-[#D3CCB0] transition-colors">
+                  {step.title}
                 </h3>
-                <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Pay listed price + 10% platform fee directly in Indian Rupees via GPay, PhonePe, Paytm, BHIM or UPI ID. Zero FX markup.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
-                <IndianRupee className="w-3.5 h-3.5" />
-                <span>GPay, PhonePe, BHIM supported</span>
-              </div>
-            </div>
 
-            {/* Step 3 */}
-            <div className="bg-[#202C44] border border-[#202C44] rounded-2xl p-6 relative flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-[#111317] text-[#D3CCB0] font-heading font-bold flex items-center justify-center text-lg mb-4 border border-[#202C44]">
-                  03
-                </div>
-                <h3 className="text-base font-heading font-bold text-white mb-2">
-                  Instant File Access
-                </h3>
-                <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  The exact second payment completes, your uncompressed source files unlock along with commercial license certificates and lifetime access.
+                {/* Exact Copy Description */}
+                <p className="text-xs sm:text-sm text-[#7B8A90] leading-relaxed mb-6">
+                  {step.description}
                 </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
-                <Download className="w-3.5 h-3.5" />
-                <span>Lifetime re-downloads from account</span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {/* Step 1 */}
-            <div className="bg-[#202C44] border border-[#202C44] rounded-2xl p-6 relative flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-[#111317] text-[#D3CCB0] font-heading font-bold flex items-center justify-center text-lg mb-4 border border-[#202C44]">
-                  01
-                </div>
-                <h3 className="text-base font-heading font-bold text-white mb-2">
-                  Upload & Price in ₹
-                </h3>
-                <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Upload your digital files (.zip, .fig, .ipynb), add preview screenshots, and set your listed price in Indian Rupees.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
-                <Upload className="w-3.5 h-3.5" />
-                <span>₹0 listing fee • No upfront charges</span>
-              </div>
-            </div>
 
-            {/* Step 2 */}
-            <div className="bg-[#202C44] border border-[#202C44] rounded-2xl p-6 relative flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-[#111317] text-[#D3CCB0] font-heading font-bold flex items-center justify-center text-lg mb-4 border border-[#202C44]">
-                  02
+              {/* Tags / Highlight Row */}
+              <div className="pt-4 border-t border-[#202C44]/60 space-y-3">
+                <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-400">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>{step.highlight}</span>
                 </div>
-                <h3 className="text-base font-heading font-bold text-white mb-2">
-                  Quality & Safety Review
-                </h3>
-                <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Our team checks code compile state, archive integrity, and license clarity within 24 hours to ensure high buyer confidence.
-                </p>
-              </div>
-              <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>ClamAV malware scanning</span>
-              </div>
-            </div>
 
-            {/* Step 3 */}
-            <div className="bg-[#202C44] border border-[#202C44] rounded-2xl p-6 relative flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-[#111317] text-[#D3CCB0] font-heading font-bold flex items-center justify-center text-lg mb-4 border border-[#202C44]">
-                  03
+                <div className="flex flex-wrap gap-1.5">
+                  {step.badgeList.map((badge) => (
+                    <span
+                      key={badge}
+                      className="text-[10px] font-mono bg-[#000000] text-[#7B8A90] px-2 py-0.5 rounded border border-[#202C44]"
+                    >
+                      {badge}
+                    </span>
+                  ))}
                 </div>
-                <h3 className="text-base font-heading font-bold text-white mb-2">
-                  90% Guaranteed Payout
-                </h3>
-                <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Earn 90% net from every sale paid directly to your registered UPI ID (VPA) or Indian bank account weekly.
-                </p>
               </div>
-              <div className="mt-6 pt-4 border-t border-[#111317] flex items-center gap-2 text-[11px] text-[#D3CCB0]">
-                <Zap className="w-3.5 h-3.5" />
-                <span>Direct settlement to UPI VPA</span>
-              </div>
-            </div>
-          </div>
-        )}
+            </motion.div>
+          ))}
+
+        </div>
+
+        {/* Action Link below */}
+        <div className="mt-12 text-center">
+          <Link
+            to="/browse"
+            className="inline-flex items-center gap-2 text-xs font-mono font-bold text-[#D3CCB0] hover:text-white transition-colors"
+          >
+            <span>Browse 239+ Categories Now</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
 
       </div>
     </section>

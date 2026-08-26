@@ -438,23 +438,59 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
               ))}
             </div>
           ) : (
-            /* Empty State */
-            <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-12 text-center space-y-4 max-w-md mx-auto my-8 shadow-xl">
-              <div className="w-12 h-12 rounded-2xl bg-[#202C44] text-[#D3CCB0] flex items-center justify-center mx-auto">
-                <Search className="w-6 h-6" />
+            /* Premium Empty State with Category Recommendations */
+            <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-10 sm:p-14 text-center space-y-6 max-w-lg mx-auto my-6 shadow-2xl">
+              <div className="w-16 h-16 rounded-2xl bg-[#202C44] text-[#D3CCB0] flex items-center justify-center mx-auto border border-[#202C44] shadow-lg">
+                <Search className="w-8 h-8" />
               </div>
-              <div>
-                <h3 className="text-base font-heading font-bold text-white">No Matching Assets Found</h3>
-                <p className="text-xs text-[#7B8A90] mt-1 leading-relaxed">
-                  We couldn't find any assets matching your current search or filter criteria.
+              
+              <div className="space-y-2">
+                <h3 className="text-xl font-heading font-bold text-white">No Matching Assets Found</h3>
+                <p className="text-xs sm:text-sm text-[#7B8A90] max-w-sm mx-auto leading-relaxed">
+                  We couldn't find any listings matching your search or filters. Try exploring one of our most popular categories:
                 </p>
               </div>
-              <button
-                onClick={handleResetFilters}
-                className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow"
-              >
-                Reset All Filters
-              </button>
+
+              {/* Suggested Categories Grid */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSearchParams({ category: "UI/UX & Design" })}
+                  className="px-3 py-1.5 rounded-xl bg-[#202C44]/80 hover:bg-[#202C44] text-xs text-[#D3CCB0] hover:text-white border border-[#202C44] transition-colors"
+                >
+                  UI/UX & Figma
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchParams({ category: "Software & Development" })}
+                  className="px-3 py-1.5 rounded-xl bg-[#202C44]/80 hover:bg-[#202C44] text-xs text-[#D3CCB0] hover:text-white border border-[#202C44] transition-colors"
+                >
+                  Flutter & React
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchParams({ category: "AI/ML & Data Science" })}
+                  className="px-3 py-1.5 rounded-xl bg-[#202C44]/80 hover:bg-[#202C44] text-xs text-[#D3CCB0] hover:text-white border border-[#202C44] transition-colors"
+                >
+                  AI Notebooks
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSearchParams({ category: "3D & CAD" })}
+                  className="px-3 py-1.5 rounded-xl bg-[#202C44]/80 hover:bg-[#202C44] text-xs text-[#D3CCB0] hover:text-white border border-[#202C44] transition-colors"
+                >
+                  3D Blender Assets
+                </button>
+              </div>
+
+              <div className="pt-4 border-t border-[#202C44]/60">
+                <button
+                  onClick={handleResetFilters}
+                  className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-heading font-bold px-6 py-3 rounded-xl transition-all shadow active:scale-95"
+                >
+                  Reset All Filters & View All
+                </button>
+              </div>
             </div>
           )}
 

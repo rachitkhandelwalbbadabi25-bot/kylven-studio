@@ -2,10 +2,14 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AssetListing, CoreCategory, UserProfile } from "../types";
 import { HeroSection } from "../components/HeroSection";
+import { DualPathSection } from "../components/DualPathSection";
+import { HowItWorks } from "../components/HowItWorks";
+import { FeatureHighlights } from "../components/FeatureHighlights";
 import { CategoryShowcase } from "../components/CategoryShowcase";
 import { FileFormatsBreadth } from "../components/FileFormatsBreadth";
-import { HowItWorks } from "../components/HowItWorks";
 import { ListingCard } from "../components/ListingCard";
+import { BottomCTA } from "../components/BottomCTA";
+import { motion } from "motion/react";
 import {
   Sparkles,
   ArrowRight,
@@ -16,8 +20,6 @@ import {
   FileCode,
   Download,
   IndianRupee,
-  ShieldAlert,
-  HelpCircle
 } from "lucide-react";
 
 interface HomePageProps {
@@ -62,7 +64,7 @@ export const HomePage: React.FC<HomePageProps> = ({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Filter listings for the Trending This Week section
+  // Filter listings for the Trending Marketplace section
   const filteredTrendingListings = listings.filter((item) => {
     if (activeTab === "free") return item.priceInINR === 0;
     if (activeTab === "paid") return item.priceInINR > 0;
@@ -76,7 +78,7 @@ export const HomePage: React.FC<HomePageProps> = ({
   return (
     <div className="space-y-0" id="public-homepage-root">
       
-      {/* 1. Hero Section */}
+      {/* 1. Enhanced Hero Section (The Hook) */}
       <HeroSection
         onExploreClick={() => navigate("/browse")}
         onSelectCategory={handleSelectCategory}
@@ -98,7 +100,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="space-y-0.5">
                 <h4 className="font-heading font-bold text-white text-sm">100+ File Formats</h4>
                 <p className="text-xs text-[#7B8A90] font-mono leading-relaxed">
-                  .fig, .blend, .ipynb, .lut, .dart, .zip, etc.
+                  .fig, .blend, .ipynb, .lut, .dart, .zip
                 </p>
               </div>
             </div>
@@ -111,7 +113,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="space-y-0.5">
                 <h4 className="font-heading font-bold text-white text-sm">90% Creator Earnings</h4>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  Direct weekly UPI settlement to Indian accounts.
+                  Direct weekly UPI bank settlement.
                 </p>
               </div>
             </div>
@@ -146,20 +148,32 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </section>
 
-      {/* 3. Trending Marketplace Section with Quick Filter Tabs */}
-      <section className="py-16 bg-[#000000]" id="trending-marketplace-section">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      {/* 3. The "What You Can Do" Section (Dual Paths: For Buyers & For Sellers) */}
+      <DualPathSection />
+
+      {/* 4. "How it Works" (The 1-2-3 Process) */}
+      <HowItWorks />
+
+      {/* 5. Feature Highlights (Why We’re Different) */}
+      <FeatureHighlights />
+
+      {/* 6. Category Showcase (Visual Discovery with 6 Large Category Tiles & Trending Tags) */}
+      <CategoryShowcase onSelectCategory={handleSelectCategory} />
+
+      {/* 7. Trending Marketplace Section with Quick Filter Tabs */}
+      <section className="py-20 bg-[#000000] border-b border-[#202C44]" id="trending-marketplace-section">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <div className="inline-flex items-center gap-2 text-[#D3CCB0] text-xs font-mono uppercase tracking-wider mb-2">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 text-[#D3CCB0] text-xs font-mono uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Curated Discoveries</span>
+                <span>CURATED DISCOVERIES</span>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight">
+              <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-white tracking-tight">
                 Trending This Week
               </h2>
-              <p className="text-xs sm:text-sm text-[#7B8A90] mt-1">
+              <p className="text-sm text-[#7B8A90] max-w-xl">
                 Hand-tested digital tools built by India's top creators, engineers, and 3D artists.
               </p>
             </div>
@@ -179,7 +193,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   key={tab.key}
                   type="button"
                   onClick={() => setActiveTab(tab.key as TabFilter)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
                     activeTab === tab.key
                       ? "bg-[#D3CCB0] text-[#000000] font-bold shadow"
                       : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/50"
@@ -191,7 +205,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             </div>
           </div>
 
-          {/* Grid of Listing Cards (8 items minimum) */}
+          {/* Grid of Listing Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredTrendingListings.slice(0, 8).map((item) => (
               <ListingCard
@@ -209,13 +223,13 @@ export const HomePage: React.FC<HomePageProps> = ({
           </div>
 
           {/* Direct Link to Browse All Assets */}
-          <div className="text-center pt-8 border-t border-[#202C44]/40">
+          <div className="text-center pt-8 border-t border-[#202C44]/50">
             <Link
               to="/browse"
               id="view-all-assets-btn"
-              className="inline-flex items-center gap-2 bg-[#111317] hover:bg-[#202C44] text-[#D3CCB0] hover:text-white font-heading font-bold text-xs px-6 py-3.5 rounded-xl border border-[#202C44] transition-all shadow active:scale-95"
+              className="inline-flex items-center gap-2 bg-[#111317] hover:bg-[#202C44] text-[#D3CCB0] hover:text-white font-heading font-bold text-xs px-8 py-4 rounded-xl border border-[#202C44] hover:border-[#D3CCB0]/40 transition-all shadow active:scale-95"
             >
-              <span>View all {listings.length} assets in Browse</span>
+              <span>View all {listings.length} assets in Catalog</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -223,14 +237,11 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
       </section>
 
-      {/* 4. Core Category Showcase */}
-      <CategoryShowcase onSelectCategory={handleSelectCategory} />
-
-      {/* 5. Breadth of File Formats */}
+      {/* 8. Breadth of File Formats (100+ Raw Formats Supported) */}
       <FileFormatsBreadth onSelectFormat={handleSelectFormat} />
 
-      {/* 6. How It Works (Transparent 3 Steps) */}
-      <HowItWorks />
+      {/* 9. Final "Call to Adventure" (Bottom CTA) */}
+      <BottomCTA />
 
     </div>
   );
