@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, useSearchParams } from "react-router-dom";
 import { UserProfile } from "../types";
 import {
@@ -25,6 +25,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "";
+  const roleParam = searchParams.get("role");
 
   const isSignUpInitial =
     location.pathname === "/signup" ||
@@ -35,9 +36,17 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"buyer" | "seller">("buyer");
+  const [role, setRole] = useState<"buyer" | "seller">(roleParam === "seller" ? "seller" : "buyer");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (roleParam === "seller") {
+      setRole("seller");
+    } else if (roleParam === "buyer") {
+      setRole("buyer");
+    }
+  }, [roleParam]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +77,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       role: role === "seller" ? "seller" : "buyer",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
       bio: role === "seller" ? "Digital creator on Kreate Studio." : "Digital asset buyer on Kreate Studio.",
+      hasCompletedOnboarding: false,
     };
 
     setTimeout(() => {
@@ -76,12 +86,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
       if (redirectUrl) {
         navigate(redirectUrl);
+      } else if (isSignUp) {
+        // Direct to Workspace Selection Onboarding
+        navigate("/onboarding");
       } else if (role === "seller") {
         navigate("/dashboard");
       } else {
         navigate("/browse");
       }
-    }, 600);
+    }, 500);
   };
 
   const handleQuickDemoLogin = (demoRole: "buyer" | "seller") => {
@@ -92,6 +105,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       role: demoRole,
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
       bio: demoRole === "seller" ? "Founding UI/UX Designer & Flutter Engineer at Kreate Studio." : "Verified Digital Asset Buyer.",
+      hasCompletedOnboarding: true,
     };
 
     onLoginSuccess(demoProfile);
@@ -100,12 +114,12 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     } else if (demoRole === "seller") {
       navigate("/dashboard");
     } else {
-      navigate("/purchases");
+      navigate("/browse");
     }
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center py-8 px-4 sm:px-6 lg:px-8 bg-[#000000]">
       <div className="max-w-5xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 rounded-3xl border border-[#202C44] overflow-hidden shadow-2xl bg-[#000000]">
         
         {/* Left Side: Muted Navy Trust Panel (5 cols) */}
@@ -195,7 +209,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin("seller")}
-                className="bg-[#111317] hover:bg-[#111317]/80 text-[#D3CCB0] hover:text-white text-[11px] font-medium py-2 px-3 rounded-xl border border-[#202C44] transition-colors text-center truncate"
+                className="bg-[#111317] hover:bg-[#111317]/80 text-emerald-400 hover:text-emerald-300 text-[11px] font-medium py-2 px-3 rounded-xl border border-[#202C44] transition-colors text-center truncate"
               >
                 Login as Creator
               </button>
@@ -230,7 +244,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             {isSignUp && (
               <div className="space-y-1.5">
                 <label className="block text-xs font-medium text-[#7B8A90]">
-                  I want to:
+                  Initial Interest:
                 </label>
                 <div className="grid grid-cols-2 gap-2 bg-[#000000] p-1.5 rounded-2xl border border-[#202C44]">
                   <button
@@ -329,7 +343,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 </>
               ) : (
                 <>
-                  <span>{isSignUp ? "Create Account" : "Sign In to Account"}</span>
+                  <span>{isSignUp ? "Create Account & Continue" : "Sign In to Workspace"}</span>
                   <ArrowRight className="w-4 h-4 text-[#000000]" />
                 </>
               )}

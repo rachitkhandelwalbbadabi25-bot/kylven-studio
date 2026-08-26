@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
-import { AssetListing, UserProfile, UserPurchase } from "./types";
+import { BrowserRouter, Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
+import { AssetListing, UserProfile, UserPurchase, UserRole } from "./types";
 import { MOCK_LISTINGS } from "./data/mockData";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
 import { HomePage } from "./pages/HomePage";
+import { IntroLandingPage } from "./pages/IntroLandingPage";
+import { OnboardingPage } from "./pages/OnboardingPage";
+import { HowItWorksPage } from "./pages/HowItWorksPage";
 import { BrowsePage } from "./pages/BrowsePage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { ListingDetailPage } from "./pages/ListingDetailPage";
@@ -30,11 +33,12 @@ const DEFAULT_PROFILE: UserProfile = {
   name: "Ansh Bhardwaj",
   email: "rrachitkhandelwal8@gmail.com",
   username: "buildwithansh",
-  role: "both",
+  role: "seller",
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
   bio: "Full-stack developer and UI designer building production-grade digital assets, cyberpunk kits, and developer starters.",
   location: "Bengaluru, India",
   upiId: "ansh@okhdfcbank",
+  hasCompletedOnboarding: true,
 };
 
 const INITIAL_PURCHASES: UserPurchase[] = [
@@ -152,6 +156,27 @@ export default function App() {
     }
   };
 
+  const handleToggleRole = (newRole?: UserRole) => {
+    const targetRole = newRole || (userProfile.role === "seller" ? "buyer" : "seller");
+    setUserProfile((prev) => {
+      const next = { ...prev, role: targetRole };
+      try {
+        localStorage.setItem("kreate_user_profile", JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  const handleSelectRoleOnboarding = (role: UserRole) => {
+    setUserProfile((prev) => {
+      const next = { ...prev, role, hasCompletedOnboarding: true };
+      try {
+        localStorage.setItem("kreate_user_profile", JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
   const handleToggleSave = (id: string) => {
     setSavedIds((prev) =>
       prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
@@ -185,7 +210,7 @@ export default function App() {
       <ScrollToTop />
       <div className="min-h-screen bg-[#000000] text-white flex flex-col font-sans selection:bg-[#202C44] selection:text-[#D3CCB0]">
         
-        {/* Strict Public / Authenticated Navigation Bar */}
+        {/* Context-aware Navigation Bar */}
         <Navbar
           isAuthenticated={isAuthenticated}
           userProfile={userProfile}
@@ -194,6 +219,7 @@ export default function App() {
           onSearchSubmit={(q) => {}}
           onOpenAuthModal={() => {}}
           onLogout={handleSignOut}
+          onToggleRole={handleToggleRole}
           savedCount={savedIds.length}
           purchasesCount={purchases.length}
         />
@@ -201,22 +227,47 @@ export default function App() {
         {/* Canonical Multi-Page Routes */}
         <main className="flex-1">
           <Routes>
-            {/* 1. Public Homepage */}
+            {/* 1. Root Route:
+                - If logged out: Intro Tour Landing Page (no listings or dashboards)
+                - If logged in as Buyer: Marketplace Browse Feed
+                - If logged in as Seller: Seller Dashboard */}
             <Route
               path="/"
               element={
-                <HomePage
-                  listings={listings}
-                  isAuthenticated={isAuthenticated}
+                !isAuthenticated ? (
+                  <IntroLandingPage onGetStarted={() => {}} />
+                ) : userProfile.role === "seller" ? (
+                  <DashboardPage
+                    listings={listings}
+                    userProfile={userProfile}
+                    onToggleRole={handleToggleRole}
+                  />
+                ) : (
+                  <BrowsePage
+                    listings={listings}
+                    savedIds={savedIds}
+                    onToggleSave={handleToggleSave}
+                    onBuyNowDirect={(listing) => {}}
+                  />
+                )
+              }
+            />
+
+            {/* 2. Onboarding Workspace Classification */}
+            <Route
+              path="/onboarding"
+              element={
+                <OnboardingPage
                   userProfile={userProfile}
-                  savedIds={savedIds}
-                  onToggleSave={handleToggleSave}
-                  onBuyNowDirect={(listing) => {}}
+                  onSelectRole={handleSelectRoleOnboarding}
                 />
               }
             />
 
-            {/* 2. Browse Marketplace Feed */}
+            {/* 3. Feature Tour / How it Works */}
+            <Route path="/how-it-works" element={<HowItWorksPage />} />
+
+            {/* 4. Browse Marketplace Feed */}
             <Route
               path="/browse"
               element={
@@ -229,10 +280,10 @@ export default function App() {
               }
             />
 
-            {/* 3. Category Directory */}
+            {/* 5. Category Directory */}
             <Route path="/categories" element={<CategoriesPage />} />
 
-            {/* 4. Listing Detail Page (by slug or id) */}
+            {/* 6. Listing Detail Page (by slug or id) */}
             <Route
               path="/listing/:slug"
               element={
@@ -257,7 +308,7 @@ export default function App() {
               }
             />
 
-            {/* 5. Checkout & UPI Payment */}
+            {/* 7. Checkout & UPI Payment */}
             <Route
               path="/checkout/:listingId"
               element={
@@ -269,10 +320,10 @@ export default function App() {
               }
             />
 
-            {/* 6. Pricing & Fee Calculator */}
+            {/* 8. Pricing & Fee Calculator */}
             <Route path="/pricing" element={<PricingPage />} />
 
-            {/* 7. Public Creator Profile */}
+            {/* 9. Public Creator Profile */}
             <Route
               path="/profile/:username"
               element={
@@ -302,7 +353,7 @@ export default function App() {
               }
             />
 
-            {/* 8. Sell Asset / Publish Studio */}
+            {/* 10. Sell Asset / Publish Studio */}
             <Route
               path="/sell/new"
               element={
@@ -317,13 +368,14 @@ export default function App() {
               element={<Navigate to="/sell/new" replace />}
             />
 
-            {/* 9. Seller Studio Dashboard */}
+            {/* 11. Seller Studio Dashboard */}
             <Route
               path="/dashboard"
               element={
                 <DashboardPage
                   listings={listings}
                   userProfile={userProfile}
+                  onToggleRole={handleToggleRole}
                 />
               }
             />
@@ -332,13 +384,13 @@ export default function App() {
               element={<Navigate to="/dashboard" replace />}
             />
 
-            {/* 10. Buyer Purchases Library */}
+            {/* 12. Buyer Purchases Library */}
             <Route
               path="/purchases"
               element={<PurchasesPage purchases={purchases} />}
             />
 
-            {/* 11. Saved Wishlist */}
+            {/* 13. Saved Wishlist */}
             <Route
               path="/saved"
               element={
@@ -351,7 +403,7 @@ export default function App() {
               }
             />
 
-            {/* 12. Auth (Sign In & Sign Up) */}
+            {/* 14. Auth (Sign In & Sign Up) */}
             <Route
               path="/signin"
               element={
