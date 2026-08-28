@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   ChevronRight,
   Sparkles,
+  UploadCloud,
 } from "lucide-react";
 import { UserProfile, UserRole } from "../types";
 
@@ -593,7 +594,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/browse") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                     </Link>
 
-                    {/* 4. New Listing */}
+                    {/* 4. Upload Asset */}
                     <Link
                       to="/sell/new"
                       onClick={closeDrawer}
@@ -606,7 +607,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <div className="flex items-center gap-2.5">
                         <PlusCircle className={`w-4 h-4 ${isActive("/sell/new") ? "text-[#000000]" : "text-emerald-400"}`} />
-                        <span>New Listing</span>
+                        <span>Upload Asset</span>
                       </div>
                       <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded ${
                         isActive("/sell/new") ? "bg-[#000000] text-emerald-400" : "bg-emerald-950 text-emerald-400 border border-emerald-900"
@@ -748,6 +749,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                       ) : (
                         <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/saved") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                       )}
+                    </Link>
+
+                    {/* 6. Upload Asset / Start Selling Gateway */}
+                    <Link
+                      to="/upgrade-seller"
+                      onClick={closeDrawer}
+                      id="drawer-link-start-selling"
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isActive("/upgrade-seller") || isActive("/sell/new")
+                          ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
+                          : "text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950/40 bg-[#111317] border border-emerald-900/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <UploadCloud className="w-4 h-4 text-emerald-400" />
+                        <span className="font-bold text-white">Start Selling</span>
+                      </div>
+                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-900">
+                        90% Split
+                      </span>
                     </Link>
 
                   </div>

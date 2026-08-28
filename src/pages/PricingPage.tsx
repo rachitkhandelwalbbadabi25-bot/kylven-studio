@@ -258,6 +258,37 @@ export const PricingPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Upgrade to Seller CTA Card */}
+      <div className="bg-[#111317] border border-emerald-500/30 rounded-3xl p-8 sm:p-10 text-center space-y-5 max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+        <div className="space-y-2">
+          <span className="bg-emerald-950 text-emerald-400 text-xs font-mono font-bold px-3 py-1 rounded-full border border-emerald-900">
+            START EARNING TODAY
+          </span>
+          <h3 className="text-2xl sm:text-3xl font-heading font-black text-white">
+            Ready to publish your creative assets?
+          </h3>
+          <p className="text-xs sm:text-sm text-[#7B8A90] max-w-lg mx-auto leading-relaxed">
+            Upgrade your account in seconds, enter your UPI ID, and receive 90% direct payouts with zero upfront fees.
+          </p>
+        </div>
+
+        <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            to="/upgrade-seller"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-heading font-black text-sm transition-all shadow-lg flex items-center justify-center gap-2"
+          >
+            <span>Upgrade to Seller</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <Link
+            to="/browse"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-[#202C44] hover:bg-[#202C44]/80 text-white font-mono text-xs transition-all border border-[#202C44]"
+          >
+            Browse Marketplace
+          </Link>
+        </div>
+      </div>
+
     </div>
   );
 };

@@ -16,7 +16,6 @@ import {
   Sparkles,
   Calendar,
   Filter,
-  CheckCircle
 } from "lucide-react";
 
 interface DashboardPageProps {
@@ -31,8 +30,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onToggleRole,
 }) => {
   const navigate = useNavigate();
-  const [upiVpa, setUpiVpa] = useState(userProfile.upiId || "ansh@okhdfcbank");
-  const [savedVpa, setSavedVpa] = useState(false);
+  const upiVpa = userProfile.upiId || "ansh@okhdfcbank";
   const [chartTimeRange, setChartTimeRange] = useState<"7d" | "30d" | "12m">("12m");
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
 
@@ -82,12 +80,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const totalSales = 34;
   const totalEarnedINR = 12450;
   const pendingPayoutINR = 1800;
-
-  const handleSavePayoutVpa = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavedVpa(true);
-    setTimeout(() => setSavedVpa(false), 2500);
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8" id="seller-dashboard-page">
@@ -148,7 +140,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow flex items-center gap-1.5 self-start sm:self-auto active:scale-95"
         >
           <PlusCircle className="w-4 h-4 text-[#000000]" />
-          <span>List New Asset</span>
+          <span>Upload Asset</span>
         </Link>
       </div>
 
@@ -422,50 +414,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </table>
         </div>
 
-      </div>
-
-      {/* 5. Payout Settlement Configuration */}
-      <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#202C44] pb-4">
-          <div>
-            <h3 className="text-base font-heading font-extrabold text-white flex items-center gap-2">
-              <IndianRupee className="w-4 h-4 text-[#D3CCB0]" />
-              <span>Payout Settlement Details</span>
-            </h3>
-            <p className="text-xs text-[#7B8A90] mt-0.5">
-              Creator earnings are disbursed every Monday directly to your Indian UPI VPA with 0% platform transfer deductions.
-            </p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSavePayoutVpa} className="max-w-xl space-y-4 text-xs">
-          <div>
-            <label className="block text-[11px] font-mono uppercase text-[#7B8A90] mb-1">
-              Registered UPI VPA Address
-            </label>
-            <div className="flex items-center gap-3">
-              <input
-                type="text"
-                required
-                value={upiVpa}
-                onChange={(e) => setUpiVpa(e.target.value)}
-                placeholder="ansh@okhdfcbank"
-                className="flex-1 bg-[#000000] text-white px-4 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] font-mono"
-              />
-              <button
-                type="submit"
-                className="bg-[#202C44] hover:bg-[#D3CCB0] text-[#D3CCB0] hover:text-[#000000] font-bold px-4 py-2.5 rounded-xl border border-[#202C44] transition-all whitespace-nowrap"
-              >
-                {savedVpa ? "Saved!" : "Update VPA"}
-              </button>
-            </div>
-          </div>
-          {savedVpa && (
-            <p className="text-emerald-400 text-xs flex items-center gap-1">
-              <CheckCircle className="w-3.5 h-3.5" /> Payout VPA handle saved and verified.
-            </p>
-          )}
-        </form>
       </div>
 
     </div>

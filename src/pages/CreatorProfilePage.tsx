@@ -307,7 +307,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
             className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#D3CCB0] hover:underline"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>List New Asset</span>
+            <span>Upload Asset</span>
           </Link>
         )}
       </div>
@@ -344,7 +344,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                 to="/sell/new"
                 className="inline-flex items-center gap-2 bg-[#D3CCB0] text-[#000000] text-xs font-bold px-4 py-2.5 rounded-xl shadow"
               >
-                <span>Upload New Asset</span>
+                <span>Upload Asset</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>

@@ -340,6 +340,30 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
               </div>
             </div>
 
+            {/* Creator Upgrade Value Banner */}
+            <div className="p-4 rounded-2xl bg-[#000000]/60 border border-emerald-900/40 space-y-2.5 shadow-inner" id="browse-sidebar-upgrade-card">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-900">
+                  CREATOR STUDIO
+                </span>
+                <span className="text-[10px] font-mono text-[#D3CCB0]">90% Split</span>
+              </div>
+              <p className="text-xs font-heading font-bold text-white leading-snug">
+                Want to monetize your UI kits, codebases, or 3D packs?
+              </p>
+              <p className="text-[11px] text-[#7B8A90] leading-relaxed">
+                Direct UPI payouts with ₹0 listing fees.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/upgrade-seller")}
+                className="w-full py-2 px-3 rounded-xl bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-heading font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+              >
+                <span>Start Selling</span>
+                <span>→</span>
+              </button>
+            </div>
+
             {/* Mobile close filters button */}
             <button
               type="button"

@@ -19,6 +19,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { PurchasesPage } from "./pages/PurchasesPage";
 import { SavedPage } from "./pages/SavedPage";
 import { AuthPage } from "./pages/AuthPage";
+import { UpgradeToSellerPage } from "./pages/UpgradeToSellerPage";
 
 // Automatically scroll to top on route change
 function ScrollToTop() {
@@ -205,6 +206,20 @@ export default function App() {
     });
   };
 
+  const handleUpgradeToSeller = (upiId: string, redirectTo: string = "/sell/new") => {
+    setUserProfile((prev) => {
+      const next: UserProfile = {
+        ...prev,
+        role: "seller",
+        upiId: upiId.trim(),
+      };
+      try {
+        localStorage.setItem("kreate_user_profile", JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  };
+
   return (
     <BrowserRouter>
       <ScrollToTop />
@@ -353,19 +368,58 @@ export default function App() {
               }
             />
 
-            {/* 10. Sell Asset / Publish Studio */}
+            {/* 10. Sell Asset / Publish Studio & Upgrade to Seller Gateway */}
             <Route
-              path="/sell/new"
+              path="/upgrade-seller"
               element={
-                <SellNewAssetPage
-                  onAddListing={handleAddNewListing}
+                <UpgradeToSellerPage
                   userProfile={userProfile}
+                  onUpgradeToSeller={handleUpgradeToSeller}
                 />
               }
             />
             <Route
+              path="/upgrade"
+              element={<Navigate to="/upgrade-seller" replace />}
+            />
+            <Route
+              path="/upload"
+              element={
+                userProfile.role === "buyer" ? (
+                  <UpgradeToSellerPage
+                    userProfile={userProfile}
+                    onUpgradeToSeller={handleUpgradeToSeller}
+                  />
+                ) : (
+                  <Navigate to="/sell/new" replace />
+                )
+              }
+            />
+            <Route
+              path="/sell/new"
+              element={
+                userProfile.role === "buyer" ? (
+                  <UpgradeToSellerPage
+                    userProfile={userProfile}
+                    onUpgradeToSeller={handleUpgradeToSeller}
+                  />
+                ) : (
+                  <SellNewAssetPage
+                    onAddListing={handleAddNewListing}
+                    userProfile={userProfile}
+                  />
+                )
+              }
+            />
+            <Route
               path="/sell"
-              element={<Navigate to="/sell/new" replace />}
+              element={
+                userProfile.role === "buyer" ? (
+                  <Navigate to="/upgrade-seller" replace />
+                ) : (
+                  <Navigate to="/sell/new" replace />
+                )
+              }
             />
 
             {/* 11. Seller Studio Dashboard */}

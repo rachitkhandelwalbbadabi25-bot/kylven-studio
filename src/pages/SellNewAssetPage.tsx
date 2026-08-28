@@ -169,7 +169,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
       {/* 1. Page Title & Subtitle */}
       <div className="border-b border-[#202C44] pb-6" id="upload-header">
         <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight" id="upload-page-title">
-          List a New Asset
+          Upload Asset
         </h1>
         <p className="text-xs sm:text-sm text-[#7B8A90] mt-1" id="upload-page-subtitle">
           Fill in the details below — every listing is reviewed before going live.
@@ -209,7 +209,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               }}
               className="text-xs text-[#7B8A90] hover:text-white px-3 py-2"
             >
-              Publish Another Asset
+              Upload Another Asset
             </button>
           </div>
         </div>
@@ -462,7 +462,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               </div>
             </div>
 
-            {/* Primary Action: Large Cream "Publish Listing" Button */}
+            {/* Primary Action: Large Cream "Upload Asset" Button */}
             <div className="pt-2">
               <button
                 type="submit"
@@ -471,10 +471,10 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
                 className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-heading font-extrabold text-sm sm:text-base py-4 rounded-2xl shadow-xl transition-all active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
-                  <span>Publishing Listing...</span>
+                  <span>Uploading Asset...</span>
                 ) : (
                   <>
-                    <span>Publish Listing</span>
+                    <span>Upload Asset</span>
                     <ArrowRight className="w-5 h-5 text-[#000000]" />
                   </>
                 )}
