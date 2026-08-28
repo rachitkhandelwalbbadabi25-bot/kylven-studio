@@ -360,6 +360,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Search className="w-4 h-4" />
               </button>
 
+              {/* In Seller Mode: Quick Explore Assets Link in Header */}
+              {isSellerMode && (
+                <Link
+                  to="/browse"
+                  id="header-seller-explore-link"
+                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#202C44]/40 hover:bg-[#202C44] text-[#D3CCB0] hover:text-white border border-[#202C44] text-xs font-semibold transition-all"
+                  title="Explore Marketplace Assets"
+                >
+                  <Compass className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                  <span>Explore Assets</span>
+                </Link>
+              )}
+
               {/* If Logged Out: Keep "Sign In" Button Visible in Header */}
               {!isAuthenticated ? (
                 <div className="flex items-center gap-2" id="header-auth-actions">
@@ -442,8 +455,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           2. THE HAMBURGER MENU (SLIDE-IN DRAWER ON LEFT SIDE)
           - Sliding in smoothly from LEFT
           - Tailored specifically for Seller Mode vs. Buyer Mode:
-            * Seller Mode: Creator Dashboard, My Storefront, Marketplace, New Listing
-            * Buyer Mode: Explore Assets, Marketplace, Categories, My Library, Saved
+            * Seller Mode: Creator Dashboard, Profile, Upload Asset
+            * Buyer Mode: Explore Assets, Categories, My Library, Saved Items
          ========================================================= */}
       {isDrawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-start" id="hamburger-drawer-overlay">
@@ -558,11 +571,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/dashboard") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                     </Link>
 
-                    {/* 2. My Storefront */}
+                    {/* 2. Profile */}
                     <Link
                       to={`/profile/${currentUsername}`}
                       onClick={closeDrawer}
-                      id="drawer-link-storefront"
+                      id="drawer-link-profile"
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                         isActive(`/profile/${currentUsername}`)
                           ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
@@ -570,31 +583,13 @@ export const Navbar: React.FC<NavbarProps> = ({
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <Store className={`w-4 h-4 ${isActive(`/profile/${currentUsername}`) ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
-                        <span>My Storefront</span>
+                        <User className={`w-4 h-4 ${isActive(`/profile/${currentUsername}`) ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
+                        <span>Profile</span>
                       </div>
                       <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive(`/profile/${currentUsername}`) ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                     </Link>
 
-                    {/* 3. Marketplace */}
-                    <Link
-                      to="/browse"
-                      onClick={closeDrawer}
-                      id="drawer-link-marketplace"
-                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        isActive("/browse")
-                          ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
-                          : "text-slate-300 hover:text-white hover:bg-[#202C44]/60"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <ShoppingBag className={`w-4 h-4 ${isActive("/browse") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
-                        <span>Marketplace</span>
-                      </div>
-                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/browse") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
-                    </Link>
-
-                    {/* 4. Upload Asset */}
+                    {/* 3. Upload Asset */}
                     <Link
                       to="/sell/new"
                       onClick={closeDrawer}
@@ -609,11 +604,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <PlusCircle className={`w-4 h-4 ${isActive("/sell/new") ? "text-[#000000]" : "text-emerald-400"}`} />
                         <span>Upload Asset</span>
                       </div>
-                      <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded ${
-                        isActive("/sell/new") ? "bg-[#000000] text-emerald-400" : "bg-emerald-950 text-emerald-400 border border-emerald-900"
-                      }`}>
-                        Publish
-                      </span>
+                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/sell/new") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
+                    </Link>
+
+                    {/* 4. Explore Assets */}
+                    <Link
+                      to="/browse"
+                      onClick={closeDrawer}
+                      id="drawer-link-seller-explore"
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isActive("/browse")
+                          ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
+                          : "text-slate-300 hover:text-white hover:bg-[#202C44]/60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Compass className={`w-4 h-4 ${isActive("/browse") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
+                        <span>Explore Assets</span>
+                      </div>
+                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/browse") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                     </Link>
 
                   </div>
@@ -622,54 +631,35 @@ export const Navbar: React.FC<NavbarProps> = ({
                 /* =========================================================
                     BUYER MODE NAVIGATION (Focused Features):
                     1. Explore Assets
-                    2. Marketplace
-                    3. Categories
-                    4. My Library
-                    5. Saved Items
+                    2. Categories
+                    3. My Library
+                    4. Saved Items
                    ========================================================= */
                 <div className="space-y-1.5" id="drawer-buyer-links">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-[#D3CCB0] font-semibold px-1">
-                    Marketplace & Library
+                    Discover & Library
                   </span>
                   <div className="space-y-1">
                     
                     {/* 1. Explore Assets */}
                     <Link
-                      to="/"
+                      to="/browse"
                       onClick={closeDrawer}
                       id="drawer-link-explore"
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        isActive("/")
+                        isActive("/browse") || isActive("/")
                           ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
                           : "text-slate-300 hover:text-white hover:bg-[#202C44]/60"
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <Compass className={`w-4 h-4 ${isActive("/") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
+                        <Compass className={`w-4 h-4 ${isActive("/browse") || isActive("/") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
                         <span>Explore Assets</span>
                       </div>
-                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
+                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/browse") || isActive("/") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                     </Link>
 
-                    {/* 2. Marketplace */}
-                    <Link
-                      to="/browse"
-                      onClick={closeDrawer}
-                      id="drawer-link-marketplace-buyer"
-                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        isActive("/browse")
-                          ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
-                          : "text-slate-300 hover:text-white hover:bg-[#202C44]/60"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <ShoppingBag className={`w-4 h-4 ${isActive("/browse") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
-                        <span>Marketplace</span>
-                      </div>
-                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/browse") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
-                    </Link>
-
-                    {/* 3. Categories */}
+                    {/* 2. Categories */}
                     <Link
                       to="/categories"
                       onClick={closeDrawer}
@@ -766,9 +756,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <UploadCloud className="w-4 h-4 text-emerald-400" />
                         <span className="font-bold text-white">Start Selling</span>
                       </div>
-                      <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-900">
-                        90% Split
-                      </span>
+                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/upgrade-seller") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                     </Link>
 
                   </div>

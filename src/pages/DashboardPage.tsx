@@ -16,6 +16,10 @@ import {
   Sparkles,
   Calendar,
   Filter,
+  Compass,
+  ArrowRight,
+  Star,
+  Eye,
 } from "lucide-react";
 
 interface DashboardPageProps {
@@ -33,6 +37,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const upiVpa = userProfile.upiId || "ansh@okhdfcbank";
   const [chartTimeRange, setChartTimeRange] = useState<"7d" | "30d" | "12m">("12m");
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
+  const [exploreCategory, setExploreCategory] = useState<string>("All");
 
   // Filter listings belonging to this creator
   const myListings = listings.filter(
@@ -134,14 +139,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </p>
         </div>
 
-        <Link
-          to="/sell/new"
-          id="dashboard-list-asset-btn"
-          className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow flex items-center gap-1.5 self-start sm:self-auto active:scale-95"
-        >
-          <PlusCircle className="w-4 h-4 text-[#000000]" />
-          <span>Upload Asset</span>
-        </Link>
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <Link
+            to="/browse"
+            id="dashboard-explore-assets-btn"
+            className="bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] hover:text-white font-bold text-xs px-3.5 sm:px-4 py-2.5 rounded-xl transition-all border border-[#202C44] flex items-center gap-1.5 active:scale-95"
+          >
+            <Compass className="w-4 h-4 text-[#D3CCB0]" />
+            <span>Explore Assets</span>
+          </Link>
+          <Link
+            to="/sell/new"
+            id="dashboard-list-asset-btn"
+            className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow flex items-center gap-1.5 active:scale-95"
+          >
+            <PlusCircle className="w-4 h-4 text-[#000000]" />
+            <span>Upload Asset</span>
+          </Link>
+        </div>
       </div>
 
       {/* 2. Top Row: 4 Stats Cards */}
@@ -412,6 +427,149 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               })}
             </tbody>
           </table>
+        </div>
+
+      </div>
+
+      {/* 5. Explore Assets & Marketplace Trends Section in Seller Dashboard */}
+      <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl" id="seller-explore-assets-section">
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#202C44] pb-5">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-mono font-bold px-2 py-0.5 rounded">
+                Marketplace Discovery
+              </span>
+              <span className="text-[11px] text-[#7B8A90] font-mono">Creator Hub</span>
+            </div>
+            <h2 className="text-xl font-heading font-extrabold text-white flex items-center gap-2.5 mt-1.5" id="explore-assets-title">
+              <Compass className="w-5 h-5 text-[#D3CCB0]" />
+              <span>Explore Assets</span>
+            </h2>
+            <p className="text-xs text-[#7B8A90] mt-0.5">
+              Browse top-performing creative digital assets across the marketplace to discover trending formats, price benchmarks, and inspiration.
+            </p>
+          </div>
+
+          <Link
+            to="/browse"
+            id="seller-explore-all-btn"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#D3CCB0] hover:text-white bg-[#202C44]/60 hover:bg-[#202C44] border border-[#202C44] px-4 py-2 rounded-xl transition-all self-start sm:self-auto"
+          >
+            <span>View Full Marketplace</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {/* Category Filter Chips */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+          {["All", "UI/UX & Design", "Code & Dev", "3D Models & Renders", "Productivity & Notion"].map((cat) => {
+            const isSelected = exploreCategory === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setExploreCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-xl font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  isSelected
+                    ? "bg-[#D3CCB0] text-[#000000] shadow-sm font-bold"
+                    : "bg-[#202C44]/40 hover:bg-[#202C44] text-[#7B8A90] hover:text-white border border-[#202C44]"
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Asset Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" id="seller-explore-grid">
+          {listings
+            .filter((asset) => {
+              if (exploreCategory === "All") return true;
+              return (
+                asset.category?.toLowerCase().includes(exploreCategory.toLowerCase().split(" ")[0]) ||
+                asset.title?.toLowerCase().includes(exploreCategory.toLowerCase().split(" ")[0])
+              );
+            })
+            .slice(0, 4)
+            .map((asset) => (
+              <div
+                key={asset.id}
+                className="bg-[#181C24] border border-[#202C44] rounded-2xl overflow-hidden hover:border-[#D3CCB0]/60 transition-all flex flex-col group"
+              >
+                {/* Thumbnail Image */}
+                <div className="relative aspect-[16/10] overflow-hidden bg-[#202C44]">
+                  <img
+                    src={asset.thumbnailUrl || "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=600&q=80"}
+                    alt={asset.title}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-2.5 left-2.5">
+                    <span className="bg-[#111317]/90 backdrop-blur-md text-[#D3CCB0] text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border border-[#202C44]">
+                      {asset.fileType || ".ZIP"}
+                    </span>
+                  </div>
+                  <div className="absolute top-2.5 right-2.5">
+                    <span className="bg-[#111317]/90 backdrop-blur-md text-emerald-400 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border border-emerald-900 flex items-center gap-1">
+                      ₹{asset.priceInINR?.toLocaleString("en-IN") || 499}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                  <div>
+                    <span className="text-[10px] text-[#7B8A90] font-mono uppercase tracking-wider block mb-1 truncate">
+                      {asset.category || "Digital Asset"}
+                    </span>
+                    <h3 className="text-sm font-heading font-bold text-white group-hover:text-[#D3CCB0] transition-colors line-clamp-1">
+                      {asset.title}
+                    </h3>
+                    <p className="text-[11px] text-[#7B8A90] line-clamp-2 mt-1 leading-relaxed">
+                      {asset.shortDescription || asset.description || "High quality digital creator asset."}
+                    </p>
+                  </div>
+
+                  <div className="pt-2.5 border-t border-[#202C44]/80 flex items-center justify-between text-xs">
+                    <span className="text-[11px] text-[#7B8A90] font-mono truncate max-w-[120px]">
+                      @{asset.creator?.username || asset.seller?.handle?.replace("@", "") || "creator"}
+                    </span>
+                    <Link
+                      to={`/asset/${asset.id}`}
+                      className="text-[11px] font-bold text-[#D3CCB0] hover:text-white flex items-center gap-1 group-hover:underline"
+                    >
+                      <span>View</span>
+                      <ArrowUpRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        {/* Bottom Quick Callout Banner */}
+        <div className="bg-[#202C44]/30 border border-[#202C44] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-left">
+            <div className="w-9 h-9 rounded-xl bg-[#202C44] flex items-center justify-center text-[#D3CCB0] shrink-0 border border-[#202C44]">
+              <Sparkles className="w-4 h-4 text-[#D3CCB0]" />
+            </div>
+            <div>
+              <p className="text-xs text-white font-bold">
+                Looking for market inspiration or building something new?
+              </p>
+              <p className="text-[11px] text-[#7B8A90]">
+                Explore hundreds of design kits, full-stack templates, 3D assets, and developer boilerplates across India.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/browse"
+            className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-4 py-2 rounded-xl transition-all shadow shrink-0 active:scale-95"
+          >
+            Explore Assets Catalog
+          </Link>
         </div>
 
       </div>
