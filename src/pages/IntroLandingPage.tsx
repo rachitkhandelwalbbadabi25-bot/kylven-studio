@@ -1,5 +1,5 @@
-import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   Sparkles,
   ArrowRight,
@@ -21,9 +21,11 @@ import {
   Flame,
   Check,
   Star,
-  Users
+  Users,
+  X,
+  LogOut
 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 
 interface IntroLandingPageProps {
   onGetStarted: (intent?: "buyer" | "seller") => void;
@@ -31,6 +33,24 @@ interface IntroLandingPageProps {
 
 export const IntroLandingPage: React.FC<IntroLandingPageProps> = ({ onGetStarted }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [showSignedOutToast, setShowSignedOutToast] = useState(
+    searchParams.get("signedOut") === "true" || location.state?.signedOut === true
+  );
+
+  useEffect(() => {
+    if (showSignedOutToast) {
+      const timer = setTimeout(() => {
+        setShowSignedOutToast(false);
+        if (searchParams.get("signedOut")) {
+          searchParams.delete("signedOut");
+          setSearchParams(searchParams, { replace: true });
+        }
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSignedOutToast, searchParams, setSearchParams]);
 
   const handleStartBuyer = () => {
     navigate("/signup?role=buyer");
@@ -85,8 +105,49 @@ export const IntroLandingPage: React.FC<IntroLandingPageProps> = ({ onGetStarted
   ];
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white selection:bg-[#202C44] selection:text-[#D3CCB0]" id="intro-landing-root">
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-[#202C44] selection:text-[#D3CCB0] relative" id="intro-landing-root">
       
+      {/* Sign Out Confirmation Toast */}
+      <AnimatePresence>
+        {showSignedOutToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.96 }}
+            transition={{ duration: 0.25 }}
+            id="signed-out-toast"
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-[calc(100%-2rem)] bg-[#111317] border border-emerald-900/80 shadow-[0_10px_40px_rgba(0,0,0,0.8)] rounded-2xl p-4 flex items-start gap-3.5 backdrop-blur-md"
+          >
+            <div className="w-8 h-8 rounded-xl bg-emerald-950/80 border border-emerald-800 flex items-center justify-center shrink-0 text-emerald-400">
+              <LogOut className="w-4 h-4" />
+            </div>
+            <div className="flex-1 min-w-0 pr-2">
+              <h4 className="text-xs font-heading font-bold text-white flex items-center gap-1.5">
+                <span>You have been signed out</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span>
+              </h4>
+              <p className="text-[11px] text-[#7B8A90] mt-0.5 leading-relaxed">
+                Your session tokens and cache have been securely cleared. All marketplace and studio access is locked.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowSignedOutToast(false);
+                if (searchParams.get("signedOut")) {
+                  searchParams.delete("signedOut");
+                  setSearchParams(searchParams, { replace: true });
+                }
+              }}
+              className="text-[#7B8A90] hover:text-white p-1 rounded-lg hover:bg-[#202C44]/60 transition-colors shrink-0 cursor-pointer"
+              aria-label="Close notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* 1. HERO SECTION (Massive Headline + Subtext) */}
       <section className="relative pt-20 pb-20 md:pt-28 md:pb-28 overflow-hidden border-b border-[#202C44]" id="intro-hero">
         {/* Subtle Ambient Background Gradients */}

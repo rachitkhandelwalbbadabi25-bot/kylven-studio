@@ -61,10 +61,10 @@ export const CategoriesPage: React.FC = () => {
           <span>Category Directory</span>
         </div>
         <h1 className="text-3xl sm:text-4xl font-heading font-extrabold text-white tracking-tight">
-          Explore All Marketplace Categories
+          Categories
         </h1>
         <p className="text-sm text-[#7B8A90] mt-2 max-w-2xl leading-relaxed">
-          Comprehensive catalog of Indian creator assets spanning full-stack codebases, machine learning pipelines, UI kits, 3D meshes, cinematic LUTs, and agency operating systems.
+          Comprehensive catalog of verified creator assets spanning developer codebases, machine learning pipelines, UI kits, 3D meshes, cinematic LUTs, productivity dashboards, and creative tools.
         </p>
       </div>
 
@@ -77,8 +77,13 @@ export const CategoriesPage: React.FC = () => {
           >
             <div>
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-[#202C44] border border-[#202C44] flex items-center justify-center group-hover:scale-105 transition-transform">
-                  {getCategoryIcon(cat.iconName)}
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-[#202C44] border border-[#202C44] flex items-center justify-center group-hover:scale-105 transition-transform">
+                    {getCategoryIcon(cat.iconName)}
+                  </div>
+                  <span className="text-xs font-mono font-bold text-[#D3CCB0] bg-[#202C44] px-2.5 py-0.5 rounded-lg border border-[#202C44]">
+                    Group #{cat.id}
+                  </span>
                 </div>
                 <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-2.5 py-1 rounded-full border border-[#202C44]">
                   {cat.count} listings
@@ -86,7 +91,7 @@ export const CategoriesPage: React.FC = () => {
               </div>
 
               <h2 className="text-lg font-heading font-bold text-white mb-2 group-hover:text-[#D3CCB0] transition-colors">
-                {cat.name}
+                {cat.id}. {cat.name}
               </h2>
 
               <p className="text-xs text-[#7B8A90] leading-relaxed mb-4">

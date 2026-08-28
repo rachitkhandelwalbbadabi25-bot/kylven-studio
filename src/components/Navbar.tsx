@@ -30,7 +30,6 @@ interface NavbarProps {
   onSearchSubmit?: (q?: string) => void;
   onOpenAuthModal?: (mode?: "signin" | "signup") => void;
   onLogout?: () => void;
-  onToggleRole?: (newRole?: UserRole) => void;
   savedCount?: number;
   purchasesCount?: number;
 }
@@ -68,7 +67,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
   setSearchQuery,
   onLogout,
-  onToggleRole,
   savedCount = 0,
   purchasesCount = 0,
 }) => {
@@ -156,19 +154,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     if (path === "/sell/new") return location.pathname === "/sell/new" || location.pathname === "/sell";
     if (path.startsWith("/profile")) return location.pathname.startsWith("/profile");
     return location.pathname === path;
-  };
-
-  const handleToggleMode = () => {
-    const nextRole: UserRole = isSellerMode ? "buyer" : "seller";
-    if (onToggleRole) {
-      onToggleRole(nextRole);
-    }
-    setIsDrawerOpen(false);
-    if (nextRole === "seller") {
-      navigate("/dashboard");
-    } else {
-      navigate("/browse");
-    }
   };
 
   const closeDrawer = () => setIsDrawerOpen(false);
@@ -360,16 +345,40 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Search className="w-4 h-4" />
               </button>
 
-              {/* In Seller Mode: Quick Explore Assets Link in Header */}
+              {/* In Seller Mode: Quick "Upload Asset" & Explore links in Header */}
               {isSellerMode && (
+                <div className="hidden md:flex items-center gap-2">
+                  <Link
+                    to="/sell/new"
+                    id="header-seller-upload-btn"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-black border border-emerald-400 text-xs font-heading font-black transition-all shadow-md active:scale-95"
+                    title="Upload New Asset"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>Upload Asset</span>
+                  </Link>
+                  <Link
+                    to="/browse"
+                    id="header-seller-explore-link"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#202C44]/40 hover:bg-[#202C44] text-[#D3CCB0] hover:text-white border border-[#202C44] text-xs font-semibold transition-all"
+                    title="Explore Marketplace Assets"
+                  >
+                    <Compass className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                    <span>Explore</span>
+                  </Link>
+                </div>
+              )}
+
+              {/* In Buyer Mode (Logged In): Quick "Start Selling" link */}
+              {isAuthenticated && !isSellerMode && (
                 <Link
-                  to="/browse"
-                  id="header-seller-explore-link"
-                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#202C44]/40 hover:bg-[#202C44] text-[#D3CCB0] hover:text-white border border-[#202C44] text-xs font-semibold transition-all"
-                  title="Explore Marketplace Assets"
+                  to="/upgrade-seller"
+                  id="header-buyer-start-selling"
+                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#202C44]/40 hover:bg-[#202C44] text-emerald-400 hover:text-emerald-300 border border-emerald-900/60 text-xs font-semibold transition-all"
+                  title="Upgrade to Seller Account"
                 >
-                  <Compass className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                  <span>Explore Assets</span>
+                  <UploadCloud className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Start Selling</span>
                 </Link>
               )}
 
@@ -397,7 +406,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <Link
                   to={isSellerMode ? "/dashboard" : "/purchases"}
                   id="header-user-badge"
-                  title={`Logged in as ${userProfile?.name || "User"} (${isSellerMode ? "Seller" : "Buyer"})`}
+                  title={`Logged in as ${userProfile?.name || "User"} (${isSellerMode ? "Seller Studio" : "Buyer Library"})`}
                   className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/60 transition-all"
                 >
                   <div
@@ -415,10 +424,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </span>
                     <span
                       className={`text-[9px] font-mono leading-none mt-0.5 flex items-center gap-1 ${
-                        isSellerMode ? "text-emerald-400" : "text-[#D3CCB0]"
+                        isSellerMode ? "text-emerald-400 font-semibold" : "text-[#D3CCB0]"
                       }`}
                     >
-                      {isSellerMode ? "Seller Studio" : "Buyer Mode"}
+                      {isSellerMode ? "Seller Studio" : "Buyer"}
                     </span>
                   </div>
                 </Link>
@@ -741,7 +750,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       )}
                     </Link>
 
-                    {/* 6. Upload Asset / Start Selling Gateway */}
+                    {/* 5. Start Selling Gateway */}
                     <Link
                       to="/upgrade-seller"
                       onClick={closeDrawer}
@@ -760,53 +769,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </Link>
 
                   </div>
-                </div>
-              )}
-
-              {/* Mode Switcher Button (One-Click Toggle) */}
-              {isAuthenticated && (
-                <div className="pt-2 border-t border-[#202C44]" id="drawer-role-switcher">
-                  {!isSellerMode ? (
-                    <button
-                      type="button"
-                      id="drawer-switch-to-seller"
-                      onClick={handleToggleMode}
-                      className="w-full text-left p-3 rounded-2xl bg-[#202C44]/40 hover:bg-[#202C44] border border-[#202C44] hover:border-emerald-500/60 transition-all group cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
-                          <Store className="w-4 h-4" />
-                          <span>Switch to Seller Studio</span>
-                        </div>
-                        <span className="text-[9px] font-mono text-emerald-400 bg-emerald-950 px-1.5 py-0.5 rounded border border-emerald-900">
-                          90% Split
-                        </span>
-                      </div>
-                      <p className="text-[10.5px] text-[#7B8A90] leading-snug">
-                        Sell digital assets and manage payouts.
-                      </p>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      id="drawer-switch-to-buyer"
-                      onClick={handleToggleMode}
-                      className="w-full text-left p-3 rounded-2xl bg-[#202C44]/40 hover:bg-[#202C44] border border-[#202C44] hover:border-[#D3CCB0] transition-all group cursor-pointer"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2 text-[#D3CCB0] font-bold text-xs">
-                          <ShoppingBag className="w-4 h-4" />
-                          <span>Switch to Buyer Mode</span>
-                        </div>
-                        <span className="text-[9px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded">
-                          Browse
-                        </span>
-                      </div>
-                      <p className="text-[10.5px] text-[#7B8A90] leading-snug">
-                        Discover & purchase verified assets.
-                      </p>
-                    </button>
-                  )}
                 </div>
               )}
 

@@ -104,7 +104,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
       // Mandatory Role Selection on Sign Up
       if (!role) {
-        setErrorMessage("Please select whether you want to join as a Buyer or Seller.");
+        setErrorMessage("Please select whether you want to register as a Buyer or a Seller.");
         return;
       }
 
@@ -115,11 +115,11 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           return;
         }
         if (!upiId.includes("@")) {
-          setErrorMessage("Please enter a valid UPI ID (e.g. yourname@okhdfcbank or 9876543210@paytm).");
+          setErrorMessage("Please enter a valid UPI ID format (e.g. yourname@okhdfcbank or 9876543210@paytm).");
           return;
         }
         if (!agreedSellerPolicy) {
-          setErrorMessage("Please agree to the Seller Policy to create a creator account.");
+          setErrorMessage("Please agree to the Seller Policy to create a verified creator account.");
           return;
         }
       }
@@ -127,7 +127,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     setIsSubmitting(true);
 
-    const chosenRole: "buyer" | "seller" = role || "buyer";
+    // If signing in, check if there is an existing profile in localStorage or match role
+    let chosenRole: "buyer" | "seller" = role || "buyer";
+    if (!isSignUp) {
+      try {
+        const saved = localStorage.getItem("kreate_user_profile");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.role === "seller" || parsed.role === "buyer") {
+            chosenRole = parsed.role;
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
     const displayName = isSignUp && name.trim() ? name.trim() : email.split("@")[0];
     const cleanUsername = displayName.toLowerCase().replace(/[^a-z0-9]/g, "_");
 
@@ -139,9 +154,9 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
       bio:
         chosenRole === "seller"
-          ? "Digital creator on Kreate Studio. 90% revenue split verified."
+          ? "Verified Digital Creator on Kreate Studio. 90% direct UPI revenue split."
           : "Verified Digital Asset Buyer on Kreate Studio.",
-      upiId: chosenRole === "seller" ? upiId.trim() : undefined,
+      upiId: chosenRole === "seller" ? (upiId.trim() || "creator@okhdfcbank") : undefined,
       hasCompletedOnboarding: true,
     };
 
@@ -154,7 +169,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       } else if (chosenRole === "seller") {
         navigate("/dashboard");
       } else {
-        navigate("/browse");
+        navigate("/explore");
       }
     }, 450);
   };
@@ -434,18 +449,18 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 >
                   <span className="text-xs shrink-0">💡</span>
                   <p className="text-[10.5px] leading-tight text-slate-200">
-                    As a buyer you can purchase creative assets. You can switch to seller anytime from account settings!
+                    As a Buyer, your account is configured to explore and purchase verified digital assets. If you later wish to sell, you can register your UPI via the formal Upgrade to Seller gateway.
                   </p>
                 </div>
               )}
               {role === "seller" && (
                 <div
                   id="seller-tip-box"
-                  className="bg-[#202C44] text-white border border-[#202C44]/80 p-2.5 rounded-xl text-[11px] flex items-start gap-2 transition-all animate-in fade-in"
+                  className="bg-emerald-950/40 text-emerald-300 border border-emerald-800/80 p-2.5 rounded-xl text-[11px] flex items-start gap-2 transition-all animate-in fade-in"
                 >
-                  <span className="text-xs shrink-0">✅</span>
-                  <p className="text-[10.5px] leading-tight text-slate-200">
-                    As a seller you can both sell your work AND buy from other creators!
+                  <span className="text-xs shrink-0">⚡</span>
+                  <p className="text-[10.5px] leading-tight text-emerald-200">
+                    As a Seller, your workspace will be locked to the Creator Studio dashboard with 90% direct UPI revenue settlements.
                   </p>
                 </div>
               )}

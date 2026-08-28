@@ -131,19 +131,23 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
           All Sectors ({listings.length})
         </button>
 
-        {CATEGORIES_LIST.map((cat) => (
-          <button
-            key={cat.name}
-            onClick={() => setSelectedCategory(cat.name)}
-            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
-              selectedCategory === cat.name
-                ? "bg-[#D3CCB0] text-[#000000] border-[#D3CCB0] shadow"
-                : "bg-[#202C44] text-[#7B8A90] hover:text-white border-[#202C44]"
-            }`}
-          >
-            {cat.name}
-          </button>
-        ))}
+        {CATEGORIES_LIST.map((cat) => {
+          const displayLabel = cat.id === 7 ? "Other (Planners, Presets, eBooks)" : cat.name;
+          return (
+            <button
+              key={cat.name}
+              onClick={() => setSelectedCategory(cat.name)}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
+                selectedCategory === cat.name
+                  ? "bg-[#D3CCB0] text-[#000000] border-[#D3CCB0] shadow"
+                  : "bg-[#202C44] text-[#7B8A90] hover:text-white border-[#202C44]"
+              }`}
+            >
+              <span className="font-mono opacity-60 mr-1">{cat.id}.</span>
+              {displayLabel}
+            </button>
+          );
+        })}
       </div>
 
       {/* Filter Toolbar (Formats & Search Active Badges) */}

@@ -1,6 +1,7 @@
 import { AssetListing, CoreCategory, CreatorProfile, SalesRecord, SellerStats } from "../types";
 
 export const CATEGORIES_LIST: {
+  id: number;
   name: CoreCategory;
   count: number;
   description: string;
@@ -9,6 +10,7 @@ export const CATEGORIES_LIST: {
   popularTags: string[];
 }[] = [
   {
+    id: 1,
     name: "Software & Development",
     count: 48,
     description: "Production-ready Flutter apps, React & Next.js templates, backend microservices, and scripts.",
@@ -17,7 +19,8 @@ export const CATEGORIES_LIST: {
     popularTags: ["flutter", "react", "nextjs", "supabase", "tailwindcss", "apis"],
   },
   {
-    name: "AI/ML & Data Science",
+    id: 2,
+    name: "AI, ML & Data Science",
     count: 36,
     description: "Jupyter notebooks, Llama fine-tuning scripts, RAG pipelines, and vision datasets.",
     subcategories: ["Jupyter Notebooks", "RAG Pipelines", "LoRA Weights", "Data Scrapers", "Prompt Libraries"],
@@ -25,51 +28,64 @@ export const CATEGORIES_LIST: {
     popularTags: ["llama3", "pytorch", "rag", "colab", "langchain", "qlora"],
   },
   {
+    id: 3,
     name: "UI/UX & Design",
-    count: 64,
+    count: 54,
     description: "Design systems, Figma component libraries, mobile UI kits, and vector icon sets.",
     subcategories: ["Figma UI Kits", "Design Systems", "Mobile App UI", "Icon Sets", "Wireframe Kits"],
     iconName: "Palette",
     popularTags: ["figma", "dark-mode", "fintech", "design-system", "ecommerce"],
   },
   {
+    id: 4,
     name: "3D & CAD",
-    count: 29,
+    count: 26,
     description: "Blender 3D assets, low-poly game models, CAD schematics, and PBR shader materials.",
     subcategories: ["Blender Files (.blend)", "Low-Poly Models", "CAD Schematics", "Textures & Shader Packs", "Unreal Engine Assets"],
     iconName: "Box",
     popularTags: ["blender", "pbr", "3d-model", "unreal-engine", "game-assets"],
   },
   {
-    name: "Video/Motion & Audio",
-    count: 38,
+    id: 5,
+    name: "Video, Motion & Audio",
+    count: 30,
     description: "Premiere Pro presets, Cinematic LUTs, After Effects motion graphics, and audio stems.",
     subcategories: ["Cinematic LUTs", "Premiere Presets", "After Effects Motion", "Sound FX & Audio Stems", "Thumbnail Templates"],
     iconName: "Video",
     popularTags: ["luts", "premiere", "after-effects", "youtube", "color-grading"],
   },
   {
+    id: 6,
     name: "Productivity & Business",
-    count: 24,
+    count: 23,
     description: "Notion OS dashboards, GST invoice macros, agency proposal decks, and client workflows.",
     subcategories: ["Notion Templates", "Excel & GST Macros", "Pitch Decks", "Agency Contracts", "Automation Workflows"],
     iconName: "Briefcase",
     popularTags: ["notion", "freelance", "gst", "agency", "crm", "productivity"],
+  },
+  {
+    id: 7,
+    name: "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)",
+    count: 22,
+    description: "Digital planners, embroidery files, Lightroom presets, and eBooks/Guides for creators.",
+    subcategories: ["Digital Planners", "Embroidery Files", "Lightroom Presets", "eBooks / Guides", "Printable Assets"],
+    iconName: "Sparkles",
+    popularTags: ["planners", "embroidery", "lightroom", "ebooks", "presets", "goodnotes"],
   },
 ];
 
 export const FILE_FORMATS_CATALOG = [
   { ext: ".fig", label: "Figma UI Kit", category: "UI/UX & Design", color: "#F24E1E" },
   { ext: ".dart", label: "Flutter App Source", category: "Software & Development", color: "#02569B" },
-  { ext: ".ipynb", label: "Jupyter Notebook", category: "AI/ML & Data Science", color: "#F37626" },
+  { ext: ".ipynb", label: "Jupyter Notebook", category: "AI, ML & Data Science", color: "#F37626" },
   { ext: ".blend", label: "Blender 3D Project", category: "3D & CAD", color: "#EA7600" },
-  { ext: ".cube", label: "3D LUT Presets", category: "Video/Motion & Audio", color: "#7B8A90" },
+  { ext: ".cube", label: "3D LUT Presets", category: "Video, Motion & Audio", color: "#7B8A90" },
   { ext: ".notion", label: "Notion Workspace", category: "Productivity & Business", color: "#D3CCB0" },
   { ext: ".tsx", label: "React / Next.js Source", category: "Software & Development", color: "#00D8FF" },
-  { ext: ".aep", label: "After Effects Motion", category: "Video/Motion & Audio", color: "#9999FF" },
-  { ext: ".psd", label: "Photoshop Asset", category: "UI/UX & Design", color: "#31A8FF" },
-  { ext: ".fbx", label: "3D Mesh Asset", category: "3D & CAD", color: "#00E5A3" },
-  { ext: ".py", label: "Python Source Code", category: "AI/ML & Data Science", color: "#3776AB" },
+  { ext: ".aep", label: "After Effects Motion", category: "Video, Motion & Audio", color: "#9999FF" },
+  { ext: ".dng", label: "Lightroom Preset", category: "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)", color: "#FF7B00" },
+  { ext: ".pdf", label: "Digital Planner / eBook", category: "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)", color: "#E53E3E" },
+  { ext: ".dst", label: "Embroidery Pattern", category: "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)", color: "#9F7AEA" },
   { ext: ".zip", label: "Full Asset Bundle", category: "All", color: "#D3CCB0" },
 ];
 
@@ -576,6 +592,89 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=1200&q=80"
     ],
     downloadUrl: "https://kreatestudio.dev/downloads/free-indic-nlp-starter.zip",
+    reviewList: []
+  },
+  {
+    id: "asset-10",
+    title: "2026 Minimalist Digital iPad Planner & Habit Journal",
+    slug: "2026-minimalist-digital-ipad-planner-habit-journal",
+    creator: CREATORS_DIRECTORY.rishabh_notion,
+    seller: CREATORS_DIRECTORY.rishabh_notion,
+    category: "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)",
+    subcategory: "Digital Planners",
+    tags: ["goodnotes", "notability", "digital-planner", "ipad", "habits", "productivity"],
+    fileType: ".pdf",
+    fileFormatTags: [".pdf", ".zip"],
+    fileSizeBytes: "45 MB",
+    shortDescription: "Hyperlinked PDF digital life & productivity planner with 600+ pages for GoodNotes, Notability, and iPad.",
+    fullDescription: "Designed for seamless daily, weekly, and monthly goal planning. Includes hyperlinked tabs, habit trackers, finance sheets, and 200+ digital sticker elements.",
+    description: "Hyperlinked PDF digital life & productivity planner with 600+ pages for GoodNotes and iPad.",
+    detailedFeatures: [
+      "600+ Hyperlinked interactive pages",
+      "Compatible with GoodNotes 5/6, Notability, Noteshelf",
+      "Habit trackers, budget sheets, and project logs",
+      "Includes 200+ PNG digital stickers and color covers"
+    ],
+    priceInINR: 349,
+    rating: 4.9,
+    reviewCount: 38,
+    salesCount: 290,
+    reviewStatus: "Verified & Approved",
+    softwareCompatibility: ["GoodNotes", "Notability", "iPad / Android Tablet", "Acrobat Reader"],
+    compatibleWith: ["GoodNotes", "Notability", "PDF"],
+    licenseType: "Commercial License",
+    deliveryType: "Instant ZIP Download",
+    createdAt: "2026-08-03",
+    updatedAt: "2026-08-10",
+    featured: true,
+    isNew: true,
+    thumbnailUrl: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=1000&q=80",
+    previewImages: [
+      "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=1200&q=80"
+    ],
+    downloadUrl: "https://kreatestudio.dev/downloads/2026-digital-planner.zip",
+    reviewList: []
+  },
+  {
+    id: "asset-11",
+    title: "Desi Street & Portrait Lightroom Presets Pack",
+    slug: "desi-street-portrait-lightroom-presets",
+    creator: CREATORS_DIRECTORY.kabir_visuals,
+    seller: CREATORS_DIRECTORY.kabir_visuals,
+    category: "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)",
+    subcategory: "Lightroom Presets",
+    tags: ["lightroom", "presets", "dng", "photography", "mobile", "desi"],
+    fileType: ".dng",
+    fileFormatTags: [".dng", ".xmp", ".zip"],
+    fileSizeBytes: "28 MB",
+    shortDescription: "20 master Lightroom Mobile & Desktop presets tuned for vibrant Indian street photography, skin tones, and golden sunsets.",
+    fullDescription: "Calibrated for Sony, Canon, iPhone, and Fujifilm cameras. Delivers rich warm tones, skin tone protection, and film grain textures.",
+    description: "20 master Lightroom Mobile & Desktop presets tuned for vibrant Indian street photography and sunsets.",
+    detailedFeatures: [
+      "20 .DNG mobile presets + 20 .XMP desktop presets",
+      "One-click Lightroom Mobile & Classic installation",
+      "Skin tone preservation AI mask settings",
+      "Step-by-step PDF installation guide"
+    ],
+    priceInINR: 399,
+    rating: 4.95,
+    reviewCount: 52,
+    salesCount: 380,
+    reviewStatus: "Verified & Approved",
+    softwareCompatibility: ["Lightroom Mobile (Free & Pro)", "Lightroom Classic", "Photoshop Camera Raw"],
+    compatibleWith: ["Lightroom Mobile", "Lightroom CC"],
+    licenseType: "Commercial License",
+    deliveryType: "Instant ZIP Download",
+    createdAt: "2026-08-01",
+    updatedAt: "2026-08-08",
+    featured: true,
+    isNew: false,
+    thumbnailUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80",
+    previewImages: [
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
+    ],
+    downloadUrl: "https://kreatestudio.dev/downloads/desi-lightroom-presets.zip",
     reviewList: []
   }
 ];

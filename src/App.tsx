@@ -157,17 +157,6 @@ export default function App() {
     }
   };
 
-  const handleToggleRole = (newRole?: UserRole) => {
-    const targetRole = newRole || (userProfile.role === "seller" ? "buyer" : "seller");
-    setUserProfile((prev) => {
-      const next = { ...prev, role: targetRole };
-      try {
-        localStorage.setItem("kreate_user_profile", JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
-  };
-
   const handleSelectRoleOnboarding = (role: UserRole) => {
     setUserProfile((prev) => {
       const next = { ...prev, role, hasCompletedOnboarding: true };
@@ -234,7 +223,6 @@ export default function App() {
           onSearchSubmit={(q) => {}}
           onOpenAuthModal={() => {}}
           onLogout={handleSignOut}
-          onToggleRole={handleToggleRole}
           savedCount={savedIds.length}
           purchasesCount={purchases.length}
         />
@@ -255,7 +243,6 @@ export default function App() {
                   <DashboardPage
                     listings={listings}
                     userProfile={userProfile}
-                    onToggleRole={handleToggleRole}
                   />
                 ) : (
                   <BrowsePage
@@ -265,6 +252,19 @@ export default function App() {
                     onBuyNowDirect={(listing) => {}}
                   />
                 )
+              }
+            />
+
+            {/* 2. Explore / Marketplace Discovery (Standard Buyer Entrypoint) */}
+            <Route
+              path="/explore"
+              element={
+                <BrowsePage
+                  listings={listings}
+                  savedIds={savedIds}
+                  onToggleSave={handleToggleSave}
+                  onBuyNowDirect={(listing) => {}}
+                />
               }
             />
 
@@ -422,20 +422,29 @@ export default function App() {
               }
             />
 
-            {/* 11. Seller Studio Dashboard */}
+            {/* 11. Seller Studio Dashboard - Strict Protected Route */}
             <Route
               path="/dashboard"
               element={
-                <DashboardPage
-                  listings={listings}
-                  userProfile={userProfile}
-                  onToggleRole={handleToggleRole}
-                />
+                userProfile.role === "buyer" ? (
+                  <Navigate to="/upgrade-seller" replace />
+                ) : (
+                  <DashboardPage
+                    listings={listings}
+                    userProfile={userProfile}
+                  />
+                )
               }
             />
             <Route
               path="/seller"
-              element={<Navigate to="/dashboard" replace />}
+              element={
+                userProfile.role === "buyer" ? (
+                  <Navigate to="/upgrade-seller" replace />
+                ) : (
+                  <Navigate to="/dashboard" replace />
+                )
+              }
             />
 
             {/* 12. Buyer Purchases Library */}

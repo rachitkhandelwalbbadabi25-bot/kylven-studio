@@ -25,13 +25,11 @@ import {
 interface DashboardPageProps {
   listings: AssetListing[];
   userProfile: UserProfile;
-  onToggleRole?: (newRole?: "buyer" | "seller") => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   listings,
   userProfile,
-  onToggleRole,
 }) => {
   const navigate = useNavigate();
   const upiVpa = userProfile.upiId || "ansh@okhdfcbank";
@@ -88,40 +86,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8" id="seller-dashboard-page">
-      
-      {/* Buyer Mode Notice Banner if user is currently in Buyer Mode */}
-      {userProfile.role === "buyer" && (
-        <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[#202C44] flex items-center justify-center text-[#D3CCB0] shrink-0">
-              <ShoppingBag className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-xs text-white font-bold">
-                You are currently in Buyer Mode
-              </p>
-              <p className="text-[11px] text-[#7B8A90]">
-                Switch your active role to Seller Studio to enable publishing assets and receiving payouts.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => onToggleRole && onToggleRole("seller")}
-              className="bg-emerald-400 hover:bg-emerald-300 text-[#000000] text-xs font-bold px-3 py-1.5 rounded-xl transition-all font-heading"
-            >
-              Switch to Seller Mode
-            </button>
-            <Link
-              to="/browse"
-              className="bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] text-xs font-medium px-3 py-1.5 rounded-xl transition-all"
-            >
-              Back to Marketplace
-            </Link>
-          </div>
-        </div>
-      )}
-
       {/* 1. Header: Title & Subtitle + Action */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#202C44] pb-6" id="dashboard-header">
         <div>

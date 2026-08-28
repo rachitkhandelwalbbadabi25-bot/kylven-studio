@@ -1,10 +1,14 @@
 export type CoreCategory =
   | "Software & Development"
+  | "AI, ML & Data Science"
   | "AI/ML & Data Science"
   | "UI/UX & Design"
   | "3D & CAD"
+  | "Video, Motion & Audio"
   | "Video/Motion & Audio"
-  | "Productivity & Business";
+  | "Productivity & Business"
+  | "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)"
+  | "Other";
 
 export interface CreatorProfile {
   id: string;
