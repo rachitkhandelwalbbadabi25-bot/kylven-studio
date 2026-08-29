@@ -23,10 +23,10 @@ export const FeatureHighlights: React.FC = () => {
     {
       icon: <Percent className="w-6 h-6 text-[#D3CCB0]" />,
       flag: "💰",
-      title: "90% Creator Split",
+      title: "87.5% Seller Split",
       badge: "Fair Economics",
       description:
-        "We believe creators should keep the lion's share. Only a flat 12.5% platform fee for buyers. No hidden charges or foreign exchange markups.",
+        "We believe sellers should keep the lion's share. Transparent 12.5% platform fee for buyers. Zero hidden charges or foreign exchange markups.",
     },
     {
       icon: <Zap className="w-6 h-6 text-amber-400" />,
@@ -49,7 +49,7 @@ export const FeatureHighlights: React.FC = () => {
             <span>THE KREATE ADVANTAGE</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-white tracking-tight">
-            Why Indian Creators Choose Kreate Studio
+            Why Indian Sellers Choose Kreate Studio
           </h2>
           <p className="text-sm sm:text-base text-[#7B8A90] font-normal leading-relaxed">
             We redesigned digital asset commerce from first principles to eliminate high global fees, PayPal delays, and currency friction.

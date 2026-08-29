@@ -111,7 +111,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <Percent className="w-5 h-5" />
               </div>
               <div className="space-y-0.5">
-                <h4 className="font-heading font-bold text-white text-sm">90% Creator Earnings</h4>
+                <h4 className="font-heading font-bold text-white text-sm">87.5% Seller Earnings</h4>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
                   Direct weekly UPI bank settlement.
                 </p>

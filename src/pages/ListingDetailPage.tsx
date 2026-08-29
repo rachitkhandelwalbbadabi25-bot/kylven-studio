@@ -74,8 +74,8 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
 
   const pricing = calculatePricing(listing.priceInINR);
   const isSaved = savedIds.includes(listing.id);
-  const creatorUsername = listing.creator?.username || listing.seller?.handle?.replace("@", "") || "creator";
-  const creatorName = listing.creator?.name || listing.seller?.name || "Verified Creator";
+  const creatorUsername = listing.creator?.username || listing.seller?.handle?.replace("@", "") || "seller";
+  const creatorName = listing.creator?.name || listing.seller?.name || "Verified Seller";
   const creatorAvatar = listing.creator?.avatar || listing.seller?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80";
   
   // Ensure gallery images
@@ -389,11 +389,11 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
 
           </div>
 
-          {/* Quick Creator Box */}
+          {/* Quick Seller Box */}
           <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-mono uppercase tracking-wider text-[#7B8A90]">
-                Creator Profile
+                Seller Profile
               </span>
               <span className="text-xs font-mono text-[#D3CCB0] font-bold">
                 ★ {listing.creator?.rating || 4.9} Rating
@@ -418,7 +418,7 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               to={`/profile/${creatorUsername}`}
               className="block w-full text-center bg-[#202C44] hover:bg-[#202C44]/80 text-[#D3CCB0] text-xs font-bold py-2.5 rounded-xl border border-[#202C44] transition-colors"
             >
-              Explore Creator's Work
+              Explore Seller's Work
             </Link>
           </div>
 

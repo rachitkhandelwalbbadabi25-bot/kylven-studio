@@ -11,15 +11,19 @@ import {
   TrendingUp,
   Percent,
   Lock,
-  Clock
+  Clock,
+  Sliders
 } from "lucide-react";
 
 export const PricingPage: React.FC = () => {
   const [calculatorInput, setCalculatorInput] = useState<number>(1499);
-  const pricing = calculatePricing(calculatorInput || 0);
+  
+  // Safe sanitized numeric value
+  const sanitizedInput = Math.max(0, Number(calculatorInput) || 0);
+  const pricing = calculatePricing(sanitizedInput);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12" id="pricing-page-root">
       
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
@@ -31,29 +35,29 @@ export const PricingPage: React.FC = () => {
           Simple, Fair & Transparent Marketplace Fees
         </h1>
         <p className="text-sm sm:text-base text-[#7B8A90] leading-relaxed">
-          Zero upfront listing fees. Creators keep 90% net revenue from every sale. Buyers pay a small 10% platform processing & verification fee.
+          Zero upfront listing fees. Sellers keep 87.5% net revenue from every sale. Platform processing & verification fee is fixed at 12.5%.
         </p>
       </div>
 
-      {/* 2 Core Columns: Creator Terms vs Buyer Terms */}
+      {/* 2 Core Columns: Seller Terms vs Buyer Terms */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
         
-        {/* Creator Card */}
+        {/* Seller Card */}
         <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-8 space-y-6 relative overflow-hidden shadow-2xl">
           <div className="space-y-2">
             <span className="bg-[#202C44] text-[#D3CCB0] text-xs font-mono font-bold px-3 py-1 rounded-full border border-[#202C44]">
-              FOR CREATORS & DEVELOPERS
+              FOR SELLERS & DEVELOPERS
             </span>
             <h2 className="text-2xl font-heading font-extrabold text-white">
-              90% Guaranteed Net Payout
+              87.5% Guaranteed Net Payout
             </h2>
             <p className="text-xs text-[#7B8A90] leading-relaxed">
-              Monetize your code, 3D models, UI kits, and presets with maximum creator earnings.
+              Monetize your code, 3D models, UI kits, and presets with transparent seller earnings.
             </p>
           </div>
 
           <div className="text-3xl font-heading font-extrabold text-[#D3CCB0] font-mono">
-            90% <span className="text-xs font-sans text-[#7B8A90] font-normal">of listed asset price</span>
+            87.5% <span className="text-xs font-sans text-[#7B8A90] font-normal">of listed asset price</span>
           </div>
 
           <ul className="space-y-3 text-xs text-[#7B8A90] border-t border-[#202C44] pt-4">
@@ -86,7 +90,7 @@ export const PricingPage: React.FC = () => {
               FOR ASSET BUYERS
             </span>
             <h2 className="text-2xl font-heading font-extrabold text-white">
-              10% Quality & Platform Fee
+              12.5% Quality & Platform Fee
             </h2>
             <p className="text-xs text-[#7B8A90] leading-relaxed">
               Transparent per-transaction processing fee covering security reviews, ClamAV antivirus scanning, and 24/7 file availability.
@@ -94,7 +98,7 @@ export const PricingPage: React.FC = () => {
           </div>
 
           <div className="text-3xl font-heading font-extrabold text-white font-mono">
-            + 10% <span className="text-xs font-sans text-[#7B8A90] font-normal">added at UPI checkout</span>
+            + 12.5% <span className="text-xs font-sans text-[#7B8A90] font-normal">added at UPI checkout</span>
           </div>
 
           <ul className="space-y-3 text-xs text-[#7B8A90] border-t border-[#202C44] pt-4">
@@ -123,7 +127,7 @@ export const PricingPage: React.FC = () => {
       </div>
 
       {/* Interactive Pricing Calculator */}
-      <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-8 max-w-4xl mx-auto space-y-6">
+      <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-8 max-w-4xl mx-auto space-y-6" id="interactive-pricing-calculator">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#202C44] pb-4">
           <div>
             <h3 className="text-lg font-heading font-bold text-white flex items-center gap-2">
@@ -131,89 +135,130 @@ export const PricingPage: React.FC = () => {
               <span>Interactive Fee & Split Calculator</span>
             </h3>
             <p className="text-xs text-[#7B8A90] mt-0.5">
-              Test how any price is calculated between seller net and buyer total.
+              Test how any price is calculated between seller net payout and buyer checkout total.
             </p>
           </div>
-          <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-3 py-1 rounded-full border border-[#202C44]">
-            10% Fee • 90% Net Split
+          <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-3 py-1 rounded-full border border-[#202C44] self-start sm:self-auto font-semibold">
+            12.5% Platform Fee • 87.5% Seller Net Split
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          {/* Input Control */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          {/* Input Controls */}
+          <div className="space-y-5">
             <div>
-              <label className="block text-xs font-mono text-[#7B8A90] uppercase mb-1">
-                Enter Base Listed Price (₹ INR)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="calculator-price-input" className="block text-xs font-mono text-[#7B8A90] uppercase">
+                  Base Listed Price (₹ INR)
+                </label>
+                <span className="text-xs font-mono text-[#D3CCB0] font-bold">
+                  ₹{sanitizedInput.toLocaleString("en-IN")}
+                </span>
+              </div>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#D3CCB0]">₹</span>
                 <input
+                  id="calculator-price-input"
                   type="number"
-                  min={100}
-                  max={50000}
+                  min={0}
+                  max={100000}
                   step={50}
-                  value={calculatorInput}
-                  onChange={(e) => setCalculatorInput(Number(e.target.value) || 0)}
-                  className="w-full bg-[#000000] text-white text-base font-mono font-bold pl-8 pr-4 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                  value={calculatorInput === 0 ? "" : calculatorInput}
+                  onChange={(e) => {
+                    const val = e.target.value === "" ? 0 : Number(e.target.value);
+                    setCalculatorInput(isNaN(val) ? 0 : Math.max(0, val));
+                  }}
+                  className="w-full bg-[#000000] text-white text-base font-mono font-bold pl-8 pr-4 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] transition-colors"
+                  placeholder="Enter price in ₹"
                 />
               </div>
             </div>
 
-            {/* Quick buttons */}
-            <div className="flex items-center gap-2">
-              {[499, 999, 1499, 2999, 4999].map((amt) => (
-                <button
-                  key={amt}
-                  type="button"
-                  onClick={() => setCalculatorInput(amt)}
-                  className={`text-[11px] font-mono px-2.5 py-1 rounded-lg border transition-all ${
-                    calculatorInput === amt
-                      ? "bg-[#D3CCB0] text-[#000000] border-[#D3CCB0] font-bold"
-                      : "bg-[#202C44] text-[#7B8A90] hover:text-white border-[#202C44]"
-                  }`}
-                >
-                  ₹{amt}
-                </button>
-              ))}
+            {/* Range Slider for smooth real-time drag */}
+            <div>
+              <div className="flex items-center justify-between text-[11px] text-[#7B8A90] mb-1">
+                <span className="flex items-center gap-1">
+                  <Sliders className="w-3 h-3 text-[#D3CCB0]" />
+                  <span>Drag Slider</span>
+                </span>
+                <span>₹100 – ₹10,000</span>
+              </div>
+              <input
+                type="range"
+                min={100}
+                max={10000}
+                step={50}
+                value={Math.min(10000, Math.max(100, sanitizedInput))}
+                onChange={(e) => setCalculatorInput(Number(e.target.value))}
+                className="w-full h-2 bg-[#202C44] rounded-lg appearance-none cursor-pointer accent-[#D3CCB0]"
+              />
+            </div>
+
+            {/* Quick preset buttons */}
+            <div>
+              <span className="block text-[10px] font-mono uppercase text-[#7B8A90] mb-2 font-semibold">
+                Quick Price Benchmarks:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {[499, 999, 1499, 2999, 4999, 9999].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setCalculatorInput(amt)}
+                    className={`text-xs font-mono px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                      sanitizedInput === amt
+                        ? "bg-[#D3CCB0] text-[#000000] border-[#D3CCB0] font-bold shadow"
+                        : "bg-[#202C44] text-slate-300 hover:text-white hover:bg-[#202C44]/80 border-[#202C44]"
+                    }`}
+                  >
+                    ₹{amt.toLocaleString("en-IN")}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Real-time Calculation Breakdown Box */}
-          <div className="bg-[#202C44]/80 border border-[#202C44] rounded-2xl p-5 space-y-3 text-xs">
+          <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-5 space-y-3.5 text-xs shadow-inner">
             <div className="flex items-center justify-between text-[#7B8A90]">
-              <span>Creator Listed Price:</span>
-              <span className="font-mono text-white font-bold">₹{pricing.listedPriceINR.toLocaleString("en-IN")}</span>
+              <span>Seller Listed Base Price:</span>
+              <span className="font-mono text-white font-bold text-sm">
+                ₹{pricing.listedPriceINR.toLocaleString("en-IN")}
+              </span>
             </div>
 
             <div className="flex items-center justify-between text-emerald-400 font-medium">
-              <span>Creator Net Earnings (90%):</span>
-              <span className="font-mono font-bold">₹{pricing.sellerNetINR.toLocaleString("en-IN")}</span>
+              <span>Seller Net Take-Home (87.5%):</span>
+              <span className="font-mono font-bold text-sm">
+                ₹{pricing.sellerNetINR.toLocaleString("en-IN")}
+              </span>
             </div>
 
             <div className="flex items-center justify-between text-[#7B8A90]">
-              <span>Platform Processing Fee (10%):</span>
-              <span className="font-mono text-[#D3CCB0]">₹{pricing.platformFeeINR.toLocaleString("en-IN")}</span>
+              <span>Platform Processing Fee (12.5%):</span>
+              <span className="font-mono text-[#D3CCB0] font-semibold">
+                + ₹{pricing.platformFeeINR.toLocaleString("en-IN")}
+              </span>
             </div>
 
             <div className="pt-3 border-t border-[#202C44] flex items-center justify-between text-sm font-bold text-white">
-              <span>Total Buyer Pays (UPI):</span>
+              <span>Total Buyer Checkout (UPI):</span>
               <span className="text-lg font-heading font-extrabold text-[#D3CCB0]">
                 ₹{pricing.buyerTotalINR.toLocaleString("en-IN")}
               </span>
             </div>
 
-            <div className="text-[10px] text-[#7B8A90] font-mono pt-1 text-right">
-              Calculation: ₹{pricing.listedPriceINR} + ₹{pricing.platformFeeINR} = ₹{pricing.buyerTotalINR}
+            <div className="text-[10px] text-[#7B8A90] font-mono pt-1 text-right bg-[#000000]/40 p-2 rounded-lg border border-[#202C44]/60">
+              Formula: ₹{pricing.listedPriceINR.toLocaleString("en-IN")} (Base) + ₹{pricing.platformFeeINR.toLocaleString("en-IN")} (12.5% Fee) = ₹{pricing.buyerTotalINR.toLocaleString("en-IN")}
             </div>
 
             {/* Metric Glossary & Terms Explanation */}
-            <div className="mt-3 pt-3 border-t border-[#202C44] space-y-2 text-[11px] text-[#7B8A90] bg-[#111317]/60 p-3 rounded-xl">
+            <div className="mt-3 pt-3 border-t border-[#202C44] space-y-2 text-[11px] text-[#7B8A90] bg-[#000000]/60 p-3 rounded-xl">
               <p className="font-bold text-white text-xs">Metric Breakdown Glossary:</p>
-              <ul className="space-y-1 text-[11px]">
-                <li><strong className="text-white">Seller List Price:</strong> The exact catalog price set by the creator/author.</li>
-                <li><strong className="text-emerald-400">Seller Net (90%):</strong> The guaranteed net amount settled to the seller's UPI account.</li>
-                <li><strong className="text-[#D3CCB0]">Platform Fee (10%):</strong> Covers high-speed CDN hosting, security file scans, and UPI transaction processing.</li>
+              <ul className="space-y-1.5 text-[11px]">
+                <li><strong className="text-white">Seller List Price:</strong> The catalog base price set by the seller.</li>
+                <li><strong className="text-emerald-400">Seller Net (87.5%):</strong> The guaranteed net payout settled directly to the seller's UPI account.</li>
+                <li><strong className="text-[#D3CCB0]">Platform Fee (12.5%):</strong> Covers high-speed CDN hosting, ClamAV file scans, and UPI transaction processing.</li>
                 <li><strong className="text-white">Buyer Total:</strong> The complete, final sum paid by the customer at UPI checkout.</li>
               </ul>
             </div>
@@ -229,7 +274,7 @@ export const PricingPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <div className="bg-[#111317] border border-[#202C44] p-5 rounded-2xl space-y-2">
-            <h4 className="font-bold text-white text-sm">When do creators receive payouts?</h4>
+            <h4 className="font-bold text-white text-sm">When do sellers receive payouts?</h4>
             <p className="text-[#7B8A90] leading-relaxed">
               Payouts are calculated weekly on Mondays and settled directly to your registered UPI Virtual Payment Address (VPA) or IMPS bank transfer for all cleared sales.
             </p>
@@ -252,7 +297,7 @@ export const PricingPage: React.FC = () => {
           <div className="bg-[#111317] border border-[#202C44] p-5 rounded-2xl space-y-2">
             <h4 className="font-bold text-white text-sm">Are there any hidden or monthly fees?</h4>
             <p className="text-[#7B8A90] leading-relaxed">
-              None. Listing on Kreate Studio is 100% free with no monthly subscription. The platform only takes its 10% fee when a sale is successfully transacted.
+              None. Listing on Kreate Studio is 100% free with no monthly subscription. The platform fee of 12.5% only applies when a sale is successfully transacted.
             </p>
           </div>
         </div>
@@ -268,7 +313,7 @@ export const PricingPage: React.FC = () => {
             Ready to publish your creative assets?
           </h3>
           <p className="text-xs sm:text-sm text-[#7B8A90] max-w-lg mx-auto leading-relaxed">
-            Upgrade your account in seconds, enter your UPI ID, and receive 90% direct payouts with zero upfront fees.
+            Upgrade your account in seconds, enter your UPI ID, and receive 87.5% direct payouts with zero upfront fees.
           </p>
         </div>
 

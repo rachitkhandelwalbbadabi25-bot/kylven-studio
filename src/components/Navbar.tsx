@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Search,
@@ -14,13 +14,16 @@ import {
   User,
   Store,
   TrendingUp,
-  FileCode,
   ShieldCheck,
   ChevronRight,
   Sparkles,
   UploadCloud,
+  ArrowRight,
+  CheckCircle2,
+  Package,
 } from "lucide-react";
 import { UserProfile, UserRole } from "../types";
+import { MOCK_LISTINGS, CREATORS_DIRECTORY } from "../data/mockData";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -33,33 +36,6 @@ interface NavbarProps {
   savedCount?: number;
   purchasesCount?: number;
 }
-
-const AUTOCOMPLETE_POPULAR = [
-  { label: "Figma Fintech UI Kit", type: "Popular Search", query: "Figma Fintech UI Kit" },
-  { label: "Neo Bharat Cyberpunk", type: "Trending Kit", query: "Cyberpunk" },
-  { label: "ML Fine-Tuning Notebook", type: "AI / ML", query: "Fine-Tuning" },
-  { label: "Cinematic India LUT Pack", type: "Video", query: "LUT" },
-  { label: "Blender Auto-Rickshaw Pack", type: "3D Asset", query: "Blender" },
-  { label: "Notion Freelancer OS", type: "Productivity", query: "Notion" },
-];
-
-const AUTOCOMPLETE_CATEGORIES = [
-  { name: "Software & Development", count: "48 assets", path: "/browse?category=Software%20%26%20Development" },
-  { name: "AI / ML & Data Science", count: "36 assets", path: "/browse?category=AI%2FML%20%26%20Data%20Science" },
-  { name: "UI/UX & Design", count: "64 assets", path: "/browse?category=UI%2FUX%20%26%20Design" },
-  { name: "3D & CAD", count: "29 assets", path: "/browse?category=3D%20%26%20CAD" },
-  { name: "Video & Motion", count: "38 assets", path: "/browse?category=Video%2FMotion%20%26%20Audio" },
-  { name: "Productivity & Business", count: "24 assets", path: "/browse?category=Productivity%20%26%20Business" },
-];
-
-const AUTOCOMPLETE_FORMATS = [
-  { ext: ".fig", label: "Figma Kit" },
-  { ext: ".ipynb", label: "Jupyter Notebook" },
-  { ext: ".dart", label: "Flutter App" },
-  { ext: ".blend", label: "Blender 3D" },
-  { ext: ".cube", label: "LUT Presets" },
-  { ext: ".notion", label: "Notion Workspace" },
-];
 
 export const Navbar: React.FC<NavbarProps> = ({
   isAuthenticated = false,
@@ -80,7 +56,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const isSellerMode = userProfile?.role === "seller";
-  const currentUsername = userProfile?.username || "creator";
+  const currentUsername = userProfile?.username || "buildwithansh";
 
   // Close search suggestions on click outside
   useEffect(() => {
@@ -135,11 +111,57 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const handleSelectSuggestion = (queryText: string) => {
-    setSearchQuery(queryText);
+  // Matching creators & users
+  const allCreators = useMemo(() => Object.values(CREATORS_DIRECTORY), []);
+
+  const matchingUsers = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) {
+      return allCreators.slice(0, 3);
+    }
+    return allCreators
+      .filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          c.username.toLowerCase().includes(q) ||
+          (c.handle && c.handle.toLowerCase().includes(q)) ||
+          (c.bio && c.bio.toLowerCase().includes(q)) ||
+          (c.skills && c.skills.some((s) => s.toLowerCase().includes(q))) ||
+          (c.location && c.location.toLowerCase().includes(q))
+      )
+      .slice(0, 4);
+  }, [allCreators, searchQuery]);
+
+  // Matching digital assets
+  const matchingAssets = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) {
+      return MOCK_LISTINGS.slice(0, 4);
+    }
+    return MOCK_LISTINGS
+      .filter(
+        (a) =>
+          a.title.toLowerCase().includes(q) ||
+          a.category.toLowerCase().includes(q) ||
+          (a.subcategory && a.subcategory.toLowerCase().includes(q)) ||
+          (a.tags && a.tags.some((t) => t.toLowerCase().includes(q))) ||
+          (a.shortDescription && a.shortDescription.toLowerCase().includes(q)) ||
+          (a.creator?.name && a.creator.name.toLowerCase().includes(q)) ||
+          (a.seller?.name && a.seller.name.toLowerCase().includes(q))
+      )
+      .slice(0, 5);
+  }, [searchQuery]);
+
+  const handleSelectUser = (username: string) => {
     setIsSearchFocused(false);
     setMobileSearchVisible(false);
-    navigate(`/browse?q=${encodeURIComponent(queryText)}`);
+    navigate(`/profile/${username}`);
+  };
+
+  const handleSelectAsset = (assetId: string) => {
+    setIsSearchFocused(false);
+    setMobileSearchVisible(false);
+    navigate(`/asset/${assetId}`);
   };
 
   const isActive = (path: string) => {
@@ -229,121 +251,199 @@ export const Navbar: React.FC<NavbarProps> = ({
               </Link>
             </div>
 
-            {/* Center: Global Search Bar with Autocomplete Suggestions */}
-            <div
-              className="flex-1 max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl relative hidden sm:block"
-              ref={searchContainerRef}
-            >
-              <form onSubmit={handleSearch} className="relative w-full" id="global-search-form">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7B8A90]" />
-                <input
-                  id="global-search-input"
-                  type="text"
-                  placeholder={
-                    isSellerMode
-                      ? "Search your assets, templates, codebases…"
-                      : "Search UI kits, templates, 3D models…"
-                  }
-                  value={searchQuery}
-                  onFocus={() => setIsSearchFocused(true)}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#111317] text-white text-xs pl-10 pr-20 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] placeholder-[#7B8A90] transition-all"
-                />
-                <button
-                  type="submit"
-                  id="global-search-submit"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#202C44] hover:bg-[#D3CCB0] text-[#D3CCB0] hover:text-[#000000] text-[11px] font-mono font-bold px-3 py-1 rounded-lg transition-colors cursor-pointer"
-                >
-                  Search
-                </button>
-              </form>
+            {/* Center: Global Search Bar with Users & Assets Autocomplete (Authenticated Only) */}
+            {isAuthenticated ? (
+              <div
+                className="flex-1 max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl relative hidden sm:block"
+                ref={searchContainerRef}
+              >
+                <form onSubmit={handleSearch} className="relative w-full" id="global-search-form">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7B8A90]" />
+                  <input
+                    id="global-search-input"
+                    type="text"
+                    placeholder="Search users, sellers, assets, templates…"
+                    value={searchQuery}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-[#111317] text-white text-xs pl-10 pr-20 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] placeholder-[#7B8A90] transition-all"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-16 top-1/2 -translate-y-1/2 text-[#7B8A90] hover:text-white p-1"
+                      title="Clear search"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    id="global-search-submit"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#202C44] hover:bg-[#D3CCB0] text-[#D3CCB0] hover:text-[#000000] text-[11px] font-mono font-bold px-3 py-1 rounded-lg transition-colors cursor-pointer"
+                  >
+                    Search
+                  </button>
+                </form>
 
-              {/* Autocomplete Dropdown */}
-              {isSearchFocused && (
-                <div
-                  id="search-autocomplete-dropdown"
-                  className="absolute top-full left-0 right-0 mt-2 bg-[#111317] border border-[#202C44] rounded-2xl shadow-2xl p-4 z-50 text-xs space-y-4 max-h-[380px] overflow-y-auto animate-in fade-in"
-                >
-                  <div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold">
-                      <TrendingUp className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                      <span>Popular Searches</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {AUTOCOMPLETE_POPULAR.map((item) => (
-                        <button
-                          key={item.label}
-                          type="button"
-                          onClick={() => handleSelectSuggestion(item.query)}
-                          className="text-left px-2.5 py-1.5 rounded-lg bg-[#202C44]/40 hover:bg-[#202C44] text-white text-[11px] flex items-center justify-between transition-colors cursor-pointer"
-                        >
-                          <span className="truncate">{item.label}</span>
-                          <span className="text-[9px] text-[#7B8A90] font-mono shrink-0 ml-1">{item.type}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                {/* Autocomplete Dropdown - Users & Assets */}
+                {isSearchFocused && (
+                  <div
+                    id="search-autocomplete-dropdown"
+                    className="absolute top-full left-0 right-0 mt-2 bg-[#111317] border border-[#202C44] rounded-2xl shadow-2xl p-3 sm:p-4 z-50 text-xs space-y-4 max-h-[420px] overflow-y-auto animate-in fade-in"
+                  >
+                    {/* 1. Users / Sellers Section */}
+                    {matchingUsers.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold px-1">
+                          <div className="flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                            <span>{searchQuery ? "Matching Users & Sellers" : "Featured Sellers"}</span>
+                          </div>
+                          <span className="text-[9px] text-[#7B8A90]">{matchingUsers.length} found</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {matchingUsers.map((user) => (
+                            <button
+                              key={user.id || user.username}
+                              type="button"
+                              onClick={() => handleSelectUser(user.username)}
+                              className="w-full text-left p-2 rounded-xl bg-[#202C44]/30 hover:bg-[#202C44] border border-[#202C44]/60 hover:border-[#D3CCB0]/40 transition-all flex items-center justify-between group cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <img
+                                  src={user.avatar}
+                                  alt={user.name}
+                                  className="w-7 h-7 rounded-full object-cover border border-[#202C44] shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-white text-xs font-semibold truncate group-hover:text-[#D3CCB0] transition-colors">
+                                      {user.name}
+                                    </span>
+                                    <span className="bg-emerald-950/80 text-emerald-400 border border-emerald-800/80 text-[9px] font-mono px-1.5 py-0.5 rounded-md shrink-0">
+                                      {user.badge || "Seller"}
+                                    </span>
+                                  </div>
+                                  <span className="text-[10px] text-[#7B8A90] font-mono block truncate">
+                                    @{user.username} {user.location ? `• ${user.location}` : ""}
+                                  </span>
+                                </div>
+                              </div>
+                              <ChevronRight className="w-3.5 h-3.5 text-[#7B8A90] group-hover:text-[#D3CCB0] shrink-0" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                  <div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold">
-                      <FileCode className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                      <span>Filter By File Type</span>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {AUTOCOMPLETE_FORMATS.map((fmt) => (
+                    {/* 2. Digital Assets Section */}
+                    {matchingAssets.length > 0 && (
+                      <div>
+                        <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold px-1">
+                          <div className="flex items-center gap-1.5">
+                            <Package className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                            <span>{searchQuery ? "Matching Assets" : "Popular Assets"}</span>
+                          </div>
+                          <span className="text-[9px] text-[#7B8A90]">{matchingAssets.length} found</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {matchingAssets.map((asset) => (
+                            <button
+                              key={asset.id}
+                              type="button"
+                              onClick={() => handleSelectAsset(asset.id)}
+                              className="w-full text-left p-2 rounded-xl bg-[#202C44]/30 hover:bg-[#202C44] border border-[#202C44]/60 hover:border-[#D3CCB0]/40 transition-all flex items-center justify-between group cursor-pointer"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <img
+                                  src={asset.thumbnailUrl}
+                                  alt={asset.title}
+                                  className="w-8 h-8 rounded-lg object-cover border border-[#202C44] shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <span className="text-white text-xs font-semibold truncate block group-hover:text-[#D3CCB0] transition-colors">
+                                    {asset.title}
+                                  </span>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[10px] text-[#7B8A90] truncate">
+                                      {asset.category}
+                                    </span>
+                                    <span className="text-[9px] font-mono font-bold text-[#D3CCB0] bg-[#000000]/60 px-1.5 py-0.5 rounded border border-[#202C44]">
+                                      {asset.priceInINR === 0 ? "FREE" : `₹${asset.priceInINR}`}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              <ChevronRight className="w-3.5 h-3.5 text-[#7B8A90] group-hover:text-[#D3CCB0] shrink-0" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No Matches State */}
+                    {matchingUsers.length === 0 && matchingAssets.length === 0 && (
+                      <div className="p-4 text-center space-y-2">
+                        <p className="text-xs text-[#7B8A90]">
+                          No users or assets found matching <strong className="text-white">"{searchQuery}"</strong>
+                        </p>
                         <button
-                          key={fmt.ext}
                           type="button"
                           onClick={() => {
                             setIsSearchFocused(false);
-                            navigate(`/browse?format=${encodeURIComponent(fmt.ext)}`);
+                            navigate("/browse");
                           }}
-                          className="px-2.5 py-1 rounded-md bg-[#202C44] hover:bg-[#D3CCB0] text-[#D3CCB0] hover:text-[#000000] text-[11px] font-mono font-bold transition-colors cursor-pointer"
+                          className="text-xs text-[#D3CCB0] hover:underline font-semibold"
                         >
-                          {fmt.ext} <span className="font-sans font-normal text-[10px] opacity-80">({fmt.label})</span>
+                          Explore all marketplace assets →
                         </button>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
+                    )}
 
-                  <div>
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] mb-2 font-semibold">
-                      <Layers className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                      <span>Browse Core Sectors</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1">
-                      {AUTOCOMPLETE_CATEGORIES.map((cat) => (
+                    {/* Footer / Search All Action */}
+                    {searchQuery.trim() && (
+                      <div className="pt-2 border-t border-[#202C44]">
                         <button
-                          key={cat.name}
                           type="button"
                           onClick={() => {
                             setIsSearchFocused(false);
-                            navigate(cat.path);
+                            navigate(`/browse?q=${encodeURIComponent(searchQuery.trim())}`);
                           }}
-                          className="text-left px-2.5 py-1.5 rounded-lg hover:bg-[#202C44]/60 text-[#7B8A90] hover:text-white text-[11px] flex items-center justify-between transition-colors cursor-pointer"
+                          className="w-full py-2 px-3 bg-[#202C44]/50 hover:bg-[#D3CCB0] text-[#D3CCB0] hover:text-[#000000] font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 active:scale-[0.99]"
                         >
-                          <span className="truncate">{cat.name}</span>
-                          <span className="text-[9px] text-[#7B8A90] font-mono">{cat.count}</span>
+                          <span>Search all assets for "{searchQuery}"</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </button>
-                      ))}
-                    </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex-1 max-w-xs sm:max-w-md md:max-w-lg hidden sm:flex items-center justify-center">
+                {/* Clean spacer on public landing page */}
+                <span className="text-[11px] font-mono text-[#7B8A90]/70 uppercase tracking-widest hidden md:inline">
+                  India’s Creative & Digital Assets Hub
+                </span>
+              </div>
+            )}
 
             {/* Right: Quick User Account / Sign In */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               
-              {/* Mobile Search Toggle (Visible only on small screens) */}
-              <button
-                type="button"
-                onClick={() => setMobileSearchVisible(!mobileSearchVisible)}
-                className="sm:hidden p-2 rounded-xl bg-[#111317] border border-[#202C44] text-[#7B8A90] hover:text-white"
-                aria-label="Search"
-              >
-                <Search className="w-4 h-4" />
-              </button>
+              {/* Mobile Search Toggle (Visible only when authenticated on small screens) */}
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchVisible(!mobileSearchVisible)}
+                  className="sm:hidden p-2 rounded-xl bg-[#111317] border border-[#202C44] text-[#7B8A90] hover:text-white"
+                  aria-label="Search"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+              )}
 
               {/* In Seller Mode: Quick "Upload Asset" & Explore links in Header */}
               {isSellerMode && (
@@ -369,19 +469,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               )}
 
-              {/* In Buyer Mode (Logged In): Quick "Start Selling" link */}
-              {isAuthenticated && !isSellerMode && (
-                <Link
-                  to="/upgrade-seller"
-                  id="header-buyer-start-selling"
-                  className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#202C44]/40 hover:bg-[#202C44] text-emerald-400 hover:text-emerald-300 border border-emerald-900/60 text-xs font-semibold transition-all"
-                  title="Upgrade to Seller Account"
-                >
-                  <UploadCloud className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Start Selling</span>
-                </Link>
-              )}
-
               {/* If Logged Out: Keep "Sign In" Button Visible in Header */}
               {!isAuthenticated ? (
                 <div className="flex items-center gap-2" id="header-auth-actions">
@@ -404,13 +491,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 /* If Logged In: Compact Profile Avatar Button */
                 <Link
-                  to={isSellerMode ? "/dashboard" : "/purchases"}
+                  to={`/profile/${currentUsername}`}
                   id="header-user-badge"
-                  title={`Logged in as ${userProfile?.name || "User"} (${isSellerMode ? "Seller Studio" : "Buyer Library"})`}
-                  className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/60 transition-all"
+                  title={`Logged in as ${userProfile?.name || "User"} (${isSellerMode ? "Seller Profile" : "User Profile"})`}
+                  className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/60 transition-all group"
                 >
                   <div
-                    className={`w-7 h-7 rounded-lg font-mono font-bold text-xs flex items-center justify-center border ${
+                    className={`w-7 h-7 rounded-lg font-mono font-bold text-xs flex items-center justify-center border transition-transform group-hover:scale-105 ${
                       isSellerMode
                         ? "bg-emerald-950 text-emerald-400 border-emerald-800"
                         : "bg-[#202C44] text-[#D3CCB0] border-[#202C44]"
@@ -419,7 +506,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {userProfile?.name?.slice(0, 2).toUpperCase() || "US"}
                   </div>
                   <div className="hidden md:flex flex-col text-left">
-                    <span className="text-xs text-white font-medium max-w-[90px] truncate leading-tight">
+                    <span className="text-xs text-white font-medium max-w-[90px] truncate leading-tight group-hover:text-[#D3CCB0] transition-colors">
                       {userProfile?.name || "My Account"}
                     </span>
                     <span
@@ -438,16 +525,26 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Mobile Search Row (if toggled on mobile) */}
           {mobileSearchVisible && (
-            <div className="sm:hidden py-2.5 pb-3 border-t border-[#202C44] animate-in fade-in">
+            <div className="sm:hidden py-2.5 pb-3 border-t border-[#202C44] animate-in fade-in space-y-3">
               <form onSubmit={handleSearch} className="relative w-full">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#7B8A90]" />
                 <input
                   type="text"
-                  placeholder="Search UI kits, templates, models…"
+                  placeholder="Search users, sellers, assets…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#111317] text-white text-xs pl-10 pr-16 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                  className="w-full bg-[#111317] text-white text-xs pl-10 pr-20 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-14 top-1/2 -translate-y-1/2 text-[#7B8A90] hover:text-white p-1"
+                    title="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <button
                   type="submit"
                   className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#D3CCB0] text-[#000000] text-[11px] font-mono font-bold px-2.5 py-1 rounded-lg"
@@ -455,6 +552,68 @@ export const Navbar: React.FC<NavbarProps> = ({
                   Go
                 </button>
               </form>
+
+              {/* Mobile Autocomplete Results */}
+              <div className="bg-[#111317] border border-[#202C44] rounded-xl p-3 space-y-3 max-h-72 overflow-y-auto">
+                {/* Users / Sellers */}
+                {matchingUsers.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] font-semibold">
+                      <User className="w-3 h-3 text-[#D3CCB0]" />
+                      <span>{searchQuery ? "Users & Sellers" : "Featured Sellers"}</span>
+                    </div>
+                    {matchingUsers.map((user) => (
+                      <button
+                        key={user.id || user.username}
+                        type="button"
+                        onClick={() => handleSelectUser(user.username)}
+                        className="w-full text-left p-1.5 rounded-lg bg-[#202C44]/30 hover:bg-[#202C44] flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <img
+                            src={user.avatar}
+                            alt={user.name}
+                            className="w-6 h-6 rounded-full object-cover shrink-0"
+                          />
+                          <span className="text-white text-xs truncate">{user.name}</span>
+                          <span className="text-[9px] text-[#7B8A90] font-mono shrink-0">@{user.username}</span>
+                        </div>
+                        <ChevronRight className="w-3 h-3 text-[#7B8A90] shrink-0" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Assets */}
+                {matchingAssets.length > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-[#7B8A90] font-semibold">
+                      <Package className="w-3 h-3 text-[#D3CCB0]" />
+                      <span>{searchQuery ? "Assets" : "Popular Assets"}</span>
+                    </div>
+                    {matchingAssets.map((asset) => (
+                      <button
+                        key={asset.id}
+                        type="button"
+                        onClick={() => handleSelectAsset(asset.id)}
+                        className="w-full text-left p-1.5 rounded-lg bg-[#202C44]/30 hover:bg-[#202C44] flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <img
+                            src={asset.thumbnailUrl}
+                            alt={asset.title}
+                            className="w-6 h-6 rounded-md object-cover shrink-0"
+                          />
+                          <span className="text-white text-xs truncate">{asset.title}</span>
+                        </div>
+                        <span className="text-[9px] font-mono font-bold text-[#D3CCB0] shrink-0 ml-1">
+                          {asset.priceInINR === 0 ? "FREE" : `₹${asset.priceInINR}`}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -520,10 +679,16 @@ export const Navbar: React.FC<NavbarProps> = ({
               
               {/* User Identity / Account Summary (if authenticated) */}
               {isAuthenticated && (
-                <div className="p-3 rounded-2xl bg-[#000000]/60 border border-[#202C44] flex items-center justify-between">
+                <Link
+                  to={`/profile/${currentUsername}`}
+                  onClick={closeDrawer}
+                  id="drawer-user-badge"
+                  title="View your profile"
+                  className="p-3 rounded-2xl bg-[#000000]/60 border border-[#202C44] hover:border-[#D3CCB0]/60 flex items-center justify-between transition-all group cursor-pointer"
+                >
                   <div className="flex items-center gap-2.5 truncate">
                     <div
-                      className={`w-8 h-8 rounded-xl font-mono font-bold text-xs flex items-center justify-center border shrink-0 ${
+                      className={`w-8 h-8 rounded-xl font-mono font-bold text-xs flex items-center justify-center border shrink-0 transition-transform group-hover:scale-105 ${
                         isSellerMode
                           ? "bg-emerald-950 text-emerald-400 border-emerald-800"
                           : "bg-[#202C44] text-[#D3CCB0] border-[#202C44]"
@@ -531,38 +696,102 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       {userProfile?.name?.slice(0, 2).toUpperCase() || "US"}
                     </div>
-                    <div className="truncate">
-                      <p className="text-xs font-bold text-white truncate">{userProfile?.name || "User"}</p>
-                      <p className="text-[10px] text-[#7B8A90] font-mono truncate">{userProfile?.email}</p>
+                    <div className="truncate text-left">
+                      <p className="text-xs font-bold text-white group-hover:text-[#D3CCB0] transition-colors truncate">
+                        {userProfile?.name || "User"}
+                      </p>
+                      <p className="text-[10px] text-[#7B8A90] font-mono truncate">@{currentUsername}</p>
                     </div>
                   </div>
-                  <span
-                    className={`text-[9px] px-2 py-0.5 rounded-full font-mono font-bold shrink-0 ${
-                      isSellerMode
-                        ? "text-emerald-400 bg-emerald-950 border border-emerald-800"
-                        : "text-[#D3CCB0] bg-[#202C44] border border-[#202C44]"
-                    }`}
-                  >
-                    {isSellerMode ? "Seller" : "Buyer"}
-                  </span>
-                </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className={`text-[9px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                        isSellerMode
+                          ? "text-emerald-400 bg-emerald-950 border border-emerald-800"
+                          : "text-[#D3CCB0] bg-[#202C44] border border-[#202C44]"
+                      }`}
+                    >
+                      {isSellerMode ? "Seller" : "Buyer"}
+                    </span>
+                    <ChevronRight className="w-3.5 h-3.5 text-[#7B8A90] group-hover:text-[#D3CCB0] transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                </Link>
               )}
 
               {/* =========================================================
-                  SELLER MODE NAVIGATION (4 Focused Features):
-                  1. Creator Dashboard
-                  2. My Storefront
-                  3. Marketplace
-                  4. New Listing
+                  DRAWER LINKS:
+                  1. Unauthenticated: Public Navigation Links
+                  2. Authenticated Seller: Seller Studio Tools
+                  3. Authenticated Buyer: Buyer Marketplace & Library
                  ========================================================= */}
-              {isSellerMode ? (
+              {!isAuthenticated ? (
+                /* Public Visitor Navigation */
+                <div className="space-y-1.5" id="drawer-public-links">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-[#D3CCB0] font-semibold px-1">
+                    Public Overview
+                  </span>
+                  <div className="space-y-1">
+                    <Link
+                      to="/"
+                      onClick={closeDrawer}
+                      id="drawer-link-home"
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isActive("/")
+                          ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
+                          : "text-slate-300 hover:text-white hover:bg-[#202C44]/60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Sparkles className={`w-4 h-4 ${isActive("/") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
+                        <span>Platform Overview</span>
+                      </div>
+                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
+                    </Link>
+
+                    <Link
+                      to="/how-it-works"
+                      onClick={closeDrawer}
+                      id="drawer-link-how-it-works"
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isActive("/how-it-works")
+                          ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
+                          : "text-slate-300 hover:text-white hover:bg-[#202C44]/60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Compass className={`w-4 h-4 ${isActive("/how-it-works") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
+                        <span>How It Works</span>
+                      </div>
+                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/how-it-works") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
+                    </Link>
+
+                    <Link
+                      to="/pricing"
+                      onClick={closeDrawer}
+                      id="drawer-link-pricing"
+                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                        isActive("/pricing")
+                          ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
+                          : "text-slate-300 hover:text-white hover:bg-[#202C44]/60"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Layers className={`w-4 h-4 ${isActive("/pricing") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
+                        <span>Pricing & UPI Revenue Split</span>
+                      </div>
+                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/pricing") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
+                    </Link>
+                  </div>
+                </div>
+              ) : isSellerMode ? (
+                /* Authenticated Seller Studio Tools */
                 <div className="space-y-1.5" id="drawer-seller-links">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 font-semibold px-1">
                     Seller Studio Tools
                   </span>
                   <div className="space-y-1">
                     
-                    {/* 1. Creator Dashboard */}
+                    {/* 1. Seller Dashboard */}
                     <Link
                       to="/dashboard"
                       onClick={closeDrawer}
@@ -575,7 +804,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <div className="flex items-center gap-2.5">
                         <LayoutDashboard className={`w-4 h-4 ${isActive("/dashboard") ? "text-[#000000]" : "text-emerald-400"}`} />
-                        <span>Creator Dashboard</span>
+                        <span>Seller Dashboard</span>
                       </div>
                       <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/dashboard") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                     </Link>
@@ -637,13 +866,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                 </div>
               ) : (
-                /* =========================================================
-                    BUYER MODE NAVIGATION (Focused Features):
-                    1. Explore Assets
-                    2. Categories
-                    3. My Library
-                    4. Saved Items
-                   ========================================================= */
+                /* Authenticated Buyer Mode Navigation */
                 <div className="space-y-1.5" id="drawer-buyer-links">
                   <span className="text-[10px] font-mono uppercase tracking-wider text-[#D3CCB0] font-semibold px-1">
                     Discover & Library
@@ -656,16 +879,16 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onClick={closeDrawer}
                       id="drawer-link-explore"
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                        isActive("/browse") || isActive("/")
+                        isActive("/browse")
                           ? "bg-[#D3CCB0] text-[#000000] shadow-md font-bold"
                           : "text-slate-300 hover:text-white hover:bg-[#202C44]/60"
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <Compass className={`w-4 h-4 ${isActive("/browse") || isActive("/") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
+                        <Compass className={`w-4 h-4 ${isActive("/browse") ? "text-[#000000]" : "text-[#D3CCB0]"}`} />
                         <span>Explore Assets</span>
                       </div>
-                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/browse") || isActive("/") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
+                      <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/browse") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                     </Link>
 
                     {/* 2. Categories */}
@@ -686,7 +909,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <ChevronRight className={`w-3.5 h-3.5 opacity-60 ${isActive("/categories") ? "text-[#000000]" : "text-[#7B8A90]"}`} />
                     </Link>
 
-                    {/* 4. My Library (Purchases) */}
+                    {/* 3. My Library (Purchases) */}
                     <Link
                       to="/purchases"
                       onClick={closeDrawer}
@@ -714,7 +937,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       )}
                     </Link>
 
-                    {/* 5. Saved Items */}
+                    {/* 4. Saved Items */}
                     <Link
                       to="/saved"
                       onClick={closeDrawer}
@@ -778,7 +1001,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div>
                     <h3 className="font-heading font-bold text-white text-xs">Join Kreate Studio</h3>
                     <p className="text-[10.5px] text-[#7B8A90] mt-0.5">
-                      Buy assets or sell and keep 90% revenue.
+                      Buy assets or sell and keep 87.5% revenue.
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
@@ -814,8 +1037,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => {
                     closeDrawer();
                     if (onLogout) onLogout();
+                    navigate("/?signedOut=true", { replace: true, state: { signedOut: true } });
                   }}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-semibold text-xs border border-rose-500/20 transition-all cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 font-semibold text-xs border border-rose-500/20 transition-all cursor-pointer active:scale-98"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span>Sign Out</span>

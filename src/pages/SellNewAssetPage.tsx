@@ -59,7 +59,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
 
-  // 90% Net Payout Calculation
+  // 87.5% Net Payout Calculation
   const pricing = calculatePricing(priceInINR || 0);
 
   const selectedCategoryObj = CATEGORIES_LIST.find((c) => c.name === category);
@@ -434,14 +434,14 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               )}
             </div>
 
-            {/* Earnings Preview (Bottom of Form): Dark box showing "You'll receive ₹[90% of price]" and "90% of listed price" label */}
+            {/* Earnings Preview (Bottom of Form): Dark box showing "You'll receive ₹[87.5% of price]" and "87.5% of listed price" label */}
             <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-3 shadow-lg" id="earnings-preview-box">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase tracking-wider text-[#7B8A90]">
                   Earnings Preview
                 </span>
                 <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-2 py-0.5 rounded">
-                  90% Payout Rule
+                  87.5% Payout Rule
                 </span>
               </div>
 
@@ -451,7 +451,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
                     You'll receive ₹{pricing.sellerNetINR.toLocaleString("en-IN")}
                   </div>
                   <div className="text-xs text-[#7B8A90] mt-0.5" id="earnings-percentage-label">
-                    90% of listed price
+                    87.5% of listed price (guaranteed net)
                   </div>
                 </div>
 
@@ -584,7 +584,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Automated 90% payout direct to your UPI</span>
+              <span>Automated 87.5% payout direct to your UPI</span>
             </div>
           </div>
 

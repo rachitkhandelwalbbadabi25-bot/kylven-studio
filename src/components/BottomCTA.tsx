@@ -38,7 +38,7 @@ export const BottomCTA: React.FC = () => {
 
             {/* Supporting Subtext */}
             <p className="text-sm sm:text-base text-[#7B8A90] font-normal max-w-xl mx-auto leading-relaxed">
-              Join 5,000+ Indian creators, engineers, and designers accelerating production with verified assets and 90% seller payouts.
+              Join 5,000+ Indian sellers, engineers, and designers accelerating production with verified assets and 87.5% seller payouts.
             </p>
 
             {/* Exact Required Large Cream CTA Button & Secondary CTA */}
@@ -57,7 +57,7 @@ export const BottomCTA: React.FC = () => {
                 id="bottom-cta-sell-btn"
                 className="w-full sm:w-auto bg-[#202C44] hover:bg-[#202C44]/80 text-white text-sm font-heading font-bold px-8 py-4 rounded-xl border border-[#202C44] hover:border-[#D3CCB0]/50 transition-all flex items-center justify-center gap-2"
               >
-                <span>Start Selling (Keep 90%)</span>
+                <span>Start Selling (Keep 87.5%)</span>
               </Link>
             </div>
 

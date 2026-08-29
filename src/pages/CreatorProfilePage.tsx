@@ -429,7 +429,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
             <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl">
               <span className="text-[11px] text-[#7B8A90] font-mono block">Estimated Earnings</span>
               <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">₹12,450</span>
-              <span className="text-[10px] text-[#7B8A90]">90% net creator share</span>
+              <span className="text-[10px] text-[#7B8A90]">87.5% net seller share</span>
             </div>
             <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl">
               <span className="text-[11px] text-[#7B8A90] font-mono block">Pending Payout</span>

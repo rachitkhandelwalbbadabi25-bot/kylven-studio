@@ -80,10 +80,10 @@ export const IntroLandingPage: React.FC<IntroLandingPageProps> = ({ onGetStarted
     {
       icon: <Percent className="w-6 h-6 text-amber-400" />,
       flag: "💰",
-      title: "90% Creator Split",
+      title: "87.5% Seller Split",
       badge: "Fair Economics",
       description:
-        "We believe creators should keep the lion's share. Direct weekly UPI settlements to Indian bank accounts with ₹0 listing fees.",
+        "We believe sellers should keep the lion's share. Direct weekly UPI settlements to Indian bank accounts with ₹0 listing fees and transparent 12.5% platform fee.",
     },
     {
       icon: <Zap className="w-6 h-6 text-[#D3CCB0]" />,
@@ -349,7 +349,7 @@ export const IntroLandingPage: React.FC<IntroLandingPageProps> = ({ onGetStarted
                     I want to Earn
                   </h3>
                   <p className="text-sm text-[#7B8A90] mt-2 leading-relaxed">
-                    Monetize your codebases, UI systems, models, and presets with fair economics. Keep 90% of every sale with direct weekly bank settlements.
+                    Monetize your codebases, UI systems, models, and presets with fair economics. Keep 87.5% of every sale with direct weekly bank settlements.
                   </p>
                 </div>
 
@@ -358,8 +358,8 @@ export const IntroLandingPage: React.FC<IntroLandingPageProps> = ({ onGetStarted
                   <div className="flex items-start gap-3 text-xs">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="text-white block font-medium">Industry-Leading 90% Payout</strong>
-                      <span className="text-[#7B8A90]">Keep 90% of your listed price. No hidden wire transfer fees.</span>
+                      <strong className="text-white block font-medium">Industry-Leading 87.5% Payout</strong>
+                      <span className="text-[#7B8A90]">Keep 87.5% of your listed price. No hidden wire transfer fees.</span>
                     </div>
                   </div>
 
@@ -374,7 +374,7 @@ export const IntroLandingPage: React.FC<IntroLandingPageProps> = ({ onGetStarted
                   <div className="flex items-start gap-3 text-xs">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="text-white block font-medium">Manual Review & Creator Shield</strong>
+                      <strong className="text-white block font-medium">Manual Review & Seller Shield</strong>
                       <span className="text-[#7B8A90]">Protect your intellectual property with verified commercial licenses.</span>
                     </div>
                   </div>
@@ -390,7 +390,7 @@ export const IntroLandingPage: React.FC<IntroLandingPageProps> = ({ onGetStarted
                   id="intro-start-seller-btn"
                   className="w-full bg-[#202C44] hover:bg-[#202C44]/80 text-white font-heading font-bold text-sm py-4 px-6 rounded-2xl border border-[#202C44] hover:border-emerald-400 transition-all shadow-xl active:scale-98 flex items-center justify-center gap-2"
                 >
-                  <span>Start Selling (Keep 90%)</span>
+                  <span>Start Selling (Keep 87.5%)</span>
                   <ArrowRight className="w-4 h-4 text-emerald-400" />
                 </button>
               </div>
@@ -411,7 +411,7 @@ export const IntroLandingPage: React.FC<IntroLandingPageProps> = ({ onGetStarted
               <span>THE KREATE ADVANTAGE</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-heading font-extrabold text-white tracking-tight">
-              Why Indian Creators Choose Kreate Studio
+              Why Indian Sellers Choose Kreate Studio
             </h2>
             <p className="text-sm sm:text-base text-[#7B8A90]">
               We redesigned digital asset commerce from first principles to eliminate high global fees, PayPal delays, and currency friction.

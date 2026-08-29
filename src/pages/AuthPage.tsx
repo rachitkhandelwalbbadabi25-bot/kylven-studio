@@ -19,17 +19,34 @@ import {
 interface AuthPageProps {
   onLoginSuccess: (profile: UserProfile) => void;
   defaultMode?: "signin" | "signup";
+  isAuthenticated?: boolean;
+  userProfile?: UserProfile;
 }
 
 export const AuthPage: React.FC<AuthPageProps> = ({
   onLoginSuccess,
   defaultMode = "signup",
+  isAuthenticated = false,
+  userProfile,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "";
   const roleParam = searchParams.get("role");
+
+  // If already authenticated, automatically forward to appropriate workspace
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (redirectUrl) {
+        navigate(redirectUrl, { replace: true });
+      } else if (userProfile?.role === "seller") {
+        navigate("/dashboard", { replace: true });
+      } else {
+        navigate("/browse", { replace: true });
+      }
+    }
+  }, [isAuthenticated, userProfile, redirectUrl, navigate]);
 
   // Determine mode from pathname or defaultMode prop
   const isSignUpInitial =
@@ -119,7 +136,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           return;
         }
         if (!agreedSellerPolicy) {
-          setErrorMessage("Please agree to the Seller Policy to create a verified creator account.");
+          setErrorMessage("Please agree to the Seller Policy to create a verified seller account.");
           return;
         }
       }
@@ -154,7 +171,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
       bio:
         chosenRole === "seller"
-          ? "Verified Digital Creator on Kreate Studio. 90% direct UPI revenue split."
+          ? "Verified Seller on Kreate Studio. 87.5% direct UPI revenue split."
           : "Verified Digital Asset Buyer on Kreate Studio.",
       upiId: chosenRole === "seller" ? (upiId.trim() || "creator@okhdfcbank") : undefined,
       hasCompletedOnboarding: true,
@@ -435,7 +452,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     </div>
                   </div>
                   <p className={`text-[10px] leading-tight line-clamp-1 ${role === "seller" ? "text-[#000000]/80" : "text-[#7B8A90]"}`}>
-                    Sell & keep 90% revenue
+                    Sell & keep 87.5% revenue
                   </p>
                 </button>
 
@@ -460,7 +477,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 >
                   <span className="text-xs shrink-0">⚡</span>
                   <p className="text-[10.5px] leading-tight text-emerald-200">
-                    As a Seller, your workspace will be locked to the Creator Studio dashboard with 90% direct UPI revenue settlements.
+                    As a Seller, your workspace will be locked to the Seller Portal dashboard with 87.5% direct UPI revenue settlements.
                   </p>
                 </div>
               )}

@@ -20,6 +20,7 @@ import { PurchasesPage } from "./pages/PurchasesPage";
 import { SavedPage } from "./pages/SavedPage";
 import { AuthPage } from "./pages/AuthPage";
 import { UpgradeToSellerPage } from "./pages/UpgradeToSellerPage";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 
 // Automatically scroll to top on route change
 function ScrollToTop() {
@@ -230,249 +231,36 @@ export default function App() {
         {/* Canonical Multi-Page Routes */}
         <main className="flex-1">
           <Routes>
-            {/* 1. Root Route:
-                - If logged out: Intro Tour Landing Page (no listings or dashboards)
-                - If logged in as Buyer: Marketplace Browse Feed
-                - If logged in as Seller: Seller Dashboard */}
+            {/* 1. Public Marketing Landing Page (Root Route)
+                - If logged out: Intro Tour Landing Page (General Overview)
+                - If logged in as Seller: Redirected to /dashboard
+                - If logged in as Buyer: Redirected to /browse */}
             <Route
               path="/"
               element={
                 !isAuthenticated ? (
                   <IntroLandingPage onGetStarted={() => {}} />
                 ) : userProfile.role === "seller" ? (
-                  <DashboardPage
-                    listings={listings}
-                    userProfile={userProfile}
-                  />
+                  <Navigate to="/dashboard" replace />
                 ) : (
-                  <BrowsePage
-                    listings={listings}
-                    savedIds={savedIds}
-                    onToggleSave={handleToggleSave}
-                    onBuyNowDirect={(listing) => {}}
-                  />
+                  <Navigate to="/browse" replace />
                 )
               }
             />
 
-            {/* 2. Explore / Marketplace Discovery (Standard Buyer Entrypoint) */}
-            <Route
-              path="/explore"
-              element={
-                <BrowsePage
-                  listings={listings}
-                  savedIds={savedIds}
-                  onToggleSave={handleToggleSave}
-                  onBuyNowDirect={(listing) => {}}
-                />
-              }
-            />
-
-            {/* 2. Onboarding Workspace Classification */}
-            <Route
-              path="/onboarding"
-              element={
-                <OnboardingPage
-                  userProfile={userProfile}
-                  onSelectRole={handleSelectRoleOnboarding}
-                />
-              }
-            />
-
-            {/* 3. Feature Tour / How it Works */}
+            {/* 2. Public Information Pages (Accessible without login) */}
             <Route path="/how-it-works" element={<HowItWorksPage />} />
-
-            {/* 4. Browse Marketplace Feed */}
-            <Route
-              path="/browse"
-              element={
-                <BrowsePage
-                  listings={listings}
-                  savedIds={savedIds}
-                  onToggleSave={handleToggleSave}
-                  onBuyNowDirect={(listing) => {}}
-                />
-              }
-            />
-
-            {/* 5. Category Directory */}
-            <Route path="/categories" element={<CategoriesPage />} />
-
-            {/* 6. Listing Detail Page (by slug or id) */}
-            <Route
-              path="/listing/:slug"
-              element={
-                <ListingDetailPage
-                  listings={listings}
-                  onBuyNowDirect={(listing) => {}}
-                  savedIds={savedIds}
-                  onToggleSave={handleToggleSave}
-                />
-              }
-            />
-            {/* Alias /asset/:id compatibility */}
-            <Route
-              path="/asset/:id"
-              element={
-                <ListingDetailPage
-                  listings={listings}
-                  onBuyNowDirect={(listing) => {}}
-                  savedIds={savedIds}
-                  onToggleSave={handleToggleSave}
-                />
-              }
-            />
-
-            {/* 7. Checkout & UPI Payment */}
-            <Route
-              path="/checkout/:listingId"
-              element={
-                <CheckoutPage
-                  listings={listings}
-                  onCompletePurchase={handleCompletePurchase}
-                  buyerEmail={userProfile.email}
-                />
-              }
-            />
-
-            {/* 8. Pricing & Fee Calculator */}
             <Route path="/pricing" element={<PricingPage />} />
 
-            {/* 9. Public Creator Profile */}
-            <Route
-              path="/profile/:username"
-              element={
-                <CreatorProfilePage
-                  listings={listings}
-                  savedIds={savedIds}
-                  onToggleSave={handleToggleSave}
-                  onBuyNowDirect={(listing) => {}}
-                  userProfile={userProfile}
-                  onUpdateUserProfile={handleUpdateUserProfile}
-                  purchases={purchases}
-                />
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <CreatorProfilePage
-                  listings={listings}
-                  savedIds={savedIds}
-                  onToggleSave={handleToggleSave}
-                  onBuyNowDirect={(listing) => {}}
-                  userProfile={userProfile}
-                  onUpdateUserProfile={handleUpdateUserProfile}
-                  purchases={purchases}
-                />
-              }
-            />
-
-            {/* 10. Sell Asset / Publish Studio & Upgrade to Seller Gateway */}
-            <Route
-              path="/upgrade-seller"
-              element={
-                <UpgradeToSellerPage
-                  userProfile={userProfile}
-                  onUpgradeToSeller={handleUpgradeToSeller}
-                />
-              }
-            />
-            <Route
-              path="/upgrade"
-              element={<Navigate to="/upgrade-seller" replace />}
-            />
-            <Route
-              path="/upload"
-              element={
-                userProfile.role === "buyer" ? (
-                  <UpgradeToSellerPage
-                    userProfile={userProfile}
-                    onUpgradeToSeller={handleUpgradeToSeller}
-                  />
-                ) : (
-                  <Navigate to="/sell/new" replace />
-                )
-              }
-            />
-            <Route
-              path="/sell/new"
-              element={
-                userProfile.role === "buyer" ? (
-                  <UpgradeToSellerPage
-                    userProfile={userProfile}
-                    onUpgradeToSeller={handleUpgradeToSeller}
-                  />
-                ) : (
-                  <SellNewAssetPage
-                    onAddListing={handleAddNewListing}
-                    userProfile={userProfile}
-                  />
-                )
-              }
-            />
-            <Route
-              path="/sell"
-              element={
-                userProfile.role === "buyer" ? (
-                  <Navigate to="/upgrade-seller" replace />
-                ) : (
-                  <Navigate to="/sell/new" replace />
-                )
-              }
-            />
-
-            {/* 11. Seller Studio Dashboard - Strict Protected Route */}
-            <Route
-              path="/dashboard"
-              element={
-                userProfile.role === "buyer" ? (
-                  <Navigate to="/upgrade-seller" replace />
-                ) : (
-                  <DashboardPage
-                    listings={listings}
-                    userProfile={userProfile}
-                  />
-                )
-              }
-            />
-            <Route
-              path="/seller"
-              element={
-                userProfile.role === "buyer" ? (
-                  <Navigate to="/upgrade-seller" replace />
-                ) : (
-                  <Navigate to="/dashboard" replace />
-                )
-              }
-            />
-
-            {/* 12. Buyer Purchases Library */}
-            <Route
-              path="/purchases"
-              element={<PurchasesPage purchases={purchases} />}
-            />
-
-            {/* 13. Saved Wishlist */}
-            <Route
-              path="/saved"
-              element={
-                <SavedPage
-                  listings={listings}
-                  savedIds={savedIds}
-                  onToggleSave={handleToggleSave}
-                  onBuyNowDirect={(listing) => {}}
-                />
-              }
-            />
-
-            {/* 14. Auth (Sign In & Sign Up) */}
+            {/* 3. Authentication Routes */}
             <Route
               path="/signin"
               element={
                 <AuthPage
                   onLoginSuccess={handleSignInSuccess}
                   defaultMode="signin"
+                  isAuthenticated={isAuthenticated}
+                  userProfile={userProfile}
                 />
               }
             />
@@ -482,11 +270,233 @@ export default function App() {
                 <AuthPage
                   onLoginSuccess={handleSignInSuccess}
                   defaultMode="signup"
+                  isAuthenticated={isAuthenticated}
+                  userProfile={userProfile}
                 />
               }
             />
+            <Route path="/login" element={<Navigate to="/signin" replace />} />
+            <Route path="/register" element={<Navigate to="/signup" replace />} />
 
-            {/* Catch-all fallback */}
+            {/* 4. Protected Private Marketplace Routes */}
+            <Route
+              path="/browse"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <BrowsePage
+                    listings={listings}
+                    savedIds={savedIds}
+                    onToggleSave={handleToggleSave}
+                    onBuyNowDirect={(listing) => {}}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/explore"
+              element={<Navigate to="/browse" replace />}
+            />
+
+            <Route
+              path="/categories"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <CategoriesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 5. Protected Listing Detail Routes */}
+            <Route
+              path="/listing/:slug"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <ListingDetailPage
+                    listings={listings}
+                    onBuyNowDirect={(listing) => {}}
+                    savedIds={savedIds}
+                    onToggleSave={handleToggleSave}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/asset/:id"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <ListingDetailPage
+                    listings={listings}
+                    onBuyNowDirect={(listing) => {}}
+                    savedIds={savedIds}
+                    onToggleSave={handleToggleSave}
+                  />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 6. Protected Checkout */}
+            <Route
+              path="/checkout/:listingId"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <CheckoutPage
+                    listings={listings}
+                    onCompletePurchase={handleCompletePurchase}
+                    buyerEmail={userProfile.email}
+                  />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 7. Protected Profile Views */}
+            <Route
+              path="/profile/:username"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <CreatorProfilePage
+                    listings={listings}
+                    savedIds={savedIds}
+                    onToggleSave={handleToggleSave}
+                    onBuyNowDirect={(listing) => {}}
+                    userProfile={userProfile}
+                    onUpdateUserProfile={handleUpdateUserProfile}
+                    purchases={purchases}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <CreatorProfilePage
+                    listings={listings}
+                    savedIds={savedIds}
+                    onToggleSave={handleToggleSave}
+                    onBuyNowDirect={(listing) => {}}
+                    userProfile={userProfile}
+                    onUpdateUserProfile={handleUpdateUserProfile}
+                    purchases={purchases}
+                  />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 8. Protected Onboarding */}
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <OnboardingPage
+                    userProfile={userProfile}
+                    onSelectRole={handleSelectRoleOnboarding}
+                  />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 9. Protected Upgrade to Seller */}
+            <Route
+              path="/upgrade-seller"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <UpgradeToSellerPage
+                    userProfile={userProfile}
+                    onUpgradeToSeller={handleUpgradeToSeller}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/upgrade" element={<Navigate to="/upgrade-seller" replace />} />
+
+            {/* 10. Protected Seller Creation & Studio */}
+            <Route
+              path="/sell/new"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated} requiredRole="seller" userProfile={userProfile}>
+                  <SellNewAssetPage
+                    onAddListing={handleAddNewListing}
+                    userProfile={userProfile}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/upload"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  {userProfile.role === "buyer" ? (
+                    <UpgradeToSellerPage
+                      userProfile={userProfile}
+                      onUpgradeToSeller={handleUpgradeToSeller}
+                    />
+                  ) : (
+                    <Navigate to="/sell/new" replace />
+                  )}
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sell"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  {userProfile.role === "buyer" ? (
+                    <Navigate to="/upgrade-seller" replace />
+                  ) : (
+                    <Navigate to="/sell/new" replace />
+                  )}
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 11. Protected Seller Dashboard */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated} requiredRole="seller" userProfile={userProfile}>
+                  <DashboardPage
+                    listings={listings}
+                    userProfile={userProfile}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/seller"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated} requiredRole="seller" userProfile={userProfile}>
+                  <DashboardPage
+                    listings={listings}
+                    userProfile={userProfile}
+                  />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 12. Protected Buyer Library & Wishlist */}
+            <Route
+              path="/purchases"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <PurchasesPage purchases={purchases} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/saved"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <SavedPage
+                    listings={listings}
+                    savedIds={savedIds}
+                    onToggleSave={handleToggleSave}
+                    onBuyNowDirect={(listing) => {}}
+                  />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

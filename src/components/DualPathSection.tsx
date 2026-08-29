@@ -114,10 +114,10 @@ export const DualPathSection: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="inline-flex items-center gap-2 bg-[#202C44] text-[#D3CCB0] text-xs font-mono font-bold px-3 py-1.5 rounded-xl border border-[#202C44]">
                   <Code2 className="w-4 h-4" />
-                  <span>FOR CREATORS & BUILDERS</span>
+                  <span>FOR SELLERS & BUILDERS</span>
                 </div>
                 <span className="text-xs font-mono text-[#D3CCB0] font-bold bg-[#202C44] border border-[#202C44] px-2.5 py-1 rounded-lg">
-                  90% Payout
+                  87.5% Payout
                 </span>
               </div>
 
@@ -127,7 +127,7 @@ export const DualPathSection: React.FC = () => {
                   Turn your code into capital.
                 </h3>
                 <p className="text-sm text-[#7B8A90] leading-relaxed">
-                  List your assets in minutes, keep 90% of every sale, and get direct bank payouts every Monday. No PayPal, no USD conversions.
+                  List your assets in minutes, keep 87.5% of every sale, and get direct bank payouts every Monday. No PayPal, no USD conversions.
                 </p>
               </div>
 
@@ -136,7 +136,7 @@ export const DualPathSection: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <CheckCircle2 className="w-4 h-4 text-[#D3CCB0] shrink-0 mt-0.5" />
                   <span className="text-xs text-white">
-                    <strong className="text-white">90% Creator Revenue Split:</strong> The highest creator take-home in India. Keep 90% net of your listed price.
+                    <strong className="text-white">87.5% Seller Revenue Split:</strong> The highest seller take-home in India. Keep 87.5% net of your listed price with 12.5% platform fee.
                   </span>
                 </div>
 

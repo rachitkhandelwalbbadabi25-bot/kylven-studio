@@ -31,8 +31,8 @@ export const HowItWorksPage: React.FC = () => {
       a: "When you click 'Buy Now' or proceed to checkout, you can pay directly via Google Pay, PhonePe, Paytm, BHIM, or by entering your UPI ID. There are zero international transaction fees, no credit card requirement, and zero currency conversion markups.",
     },
     {
-      q: "When and how do sellers receive their 90% payout?",
-      a: "Sellers receive 90% of the listed price on every asset sold. Payouts are batched and transferred automatically every Monday directly to your registered Indian Bank Account or UPI VPA.",
+      q: "When and how do sellers receive their 87.5% payout?",
+      a: "Sellers receive 87.5% of the listed price on every asset sold. Payouts are batched and transferred automatically every Monday directly to your registered Indian Bank Account or UPI VPA. Platform processing & verification fee is fixed at 12.5%.",
     },
     {
       q: "What is the manual review process for new listings?",
@@ -203,20 +203,20 @@ export const HowItWorksPage: React.FC = () => {
                   <div className="w-full bg-[#111317] border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xl">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-mono font-bold text-[#000000] bg-emerald-400 px-2.5 py-1 rounded-md">
-                        FOR CREATORS
+                        FOR SELLERS
                       </span>
                       <UploadCloud className="w-5 h-5 text-emerald-400" />
                     </div>
                     <h3 className="text-xl font-heading font-bold text-white">
-                      Upload ZIP, Pass Review & Get Paid 90%
+                      Upload ZIP, Pass Review & Get Paid 87.5%
                     </h3>
                     <p className="text-xs text-[#7B8A90] leading-relaxed">
                       1. Drag and drop your project ZIP, set your INR price, and pick tags.<br />
                       2. Automated syntax & malware scan completes in &lt;24 hours.<br />
-                      3. Receive 90% payout automatically every Monday directly to your Indian bank / UPI.
+                      3. Receive 87.5% payout automatically every Monday directly to your Indian bank / UPI.
                     </p>
                     <div className="flex flex-wrap gap-1.5 pt-2">
-                      <span className="text-[10px] font-mono bg-[#000000] text-emerald-400 px-2 py-0.5 rounded border border-[#202C44]">90% Creator Split</span>
+                      <span className="text-[10px] font-mono bg-[#000000] text-emerald-400 px-2 py-0.5 rounded border border-[#202C44]">87.5% Seller Split</span>
                       <span className="text-[10px] font-mono bg-[#000000] text-[#D3CCB0] px-2 py-0.5 rounded border border-[#202C44]">₹0 Listing Fee</span>
                     </div>
                   </div>
@@ -263,7 +263,7 @@ export const HowItWorksPage: React.FC = () => {
                     Lifetime Updates & Store Analytics
                   </h3>
                   <p className="text-xs text-[#7B8A90] leading-relaxed">
-                    Buyers get free access to version updates published by creators. Sellers get detailed real-time telemetry on impressions, orders, and customer ratings.
+                    Buyers get free access to version updates published by sellers. Sellers get detailed real-time telemetry on impressions, orders, and customer ratings.
                   </p>
                 </div>
               </div>
@@ -283,7 +283,7 @@ export const HowItWorksPage: React.FC = () => {
               Frequently Asked Questions
             </h2>
             <p className="text-xs sm:text-sm text-[#7B8A90]">
-              Everything you need to know about payments, licensing, and creator economics.
+              Everything you need to know about payments, licensing, and seller economics.
             </p>
           </div>
 
@@ -326,7 +326,7 @@ export const HowItWorksPage: React.FC = () => {
               Ready to pick your workspace?
             </h2>
             <p className="text-xs sm:text-sm text-[#7B8A90] max-w-md mx-auto">
-              Get started as a buyer or creator in seconds with instant UPI integration.
+              Get started as a buyer or seller in seconds with instant UPI integration.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
@@ -340,7 +340,7 @@ export const HowItWorksPage: React.FC = () => {
                 to="/signup?role=seller"
                 className="w-full sm:w-auto bg-[#202C44] hover:bg-[#202C44]/80 text-white font-heading font-bold text-xs px-7 py-3.5 rounded-xl border border-[#202C44] transition-all flex items-center justify-center gap-2"
               >
-                <span>Enter as Creator</span>
+                <span>Enter as Seller</span>
                 <ArrowRight className="w-4 h-4 text-emerald-400" />
               </Link>
             </div>

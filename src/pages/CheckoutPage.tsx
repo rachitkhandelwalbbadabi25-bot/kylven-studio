@@ -69,7 +69,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
   // Calculate pricing using 12.5% platform + payment fee
   const pricing = calculatePricing(listing.priceInINR);
-  const creatorName = listing.creator?.name || listing.seller?.name || "Verified Creator";
+  const creatorName = listing.creator?.name || listing.seller?.name || "Verified Seller";
 
   const handlePay = (e: React.FormEvent) => {
     e.preventDefault();

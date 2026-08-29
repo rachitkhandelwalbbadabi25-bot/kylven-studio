@@ -91,9 +91,16 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="bg-[#202C44] text-[#D3CCB0] text-xs font-mono font-bold px-2.5 py-0.5 rounded border border-[#202C44]">
-              Creator Studio
+              Seller Portal
             </span>
-            <span className="text-xs text-[#7B8A90] font-mono">@{userProfile.username || "buildwithansh"}</span>
+            <Link
+              to={`/profile/${userProfile.username || "buildwithansh"}`}
+              className="text-xs text-[#7B8A90] hover:text-[#D3CCB0] font-mono transition-colors flex items-center gap-1 group"
+              title="View your public seller profile"
+            >
+              <span className="group-hover:underline">@{userProfile.username || "buildwithansh"}</span>
+              <ExternalLink className="w-3 h-3 opacity-70 group-hover:opacity-100" />
+            </Link>
           </div>
           <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight mt-1.5" id="dashboard-title">
             Seller Dashboard
@@ -104,6 +111,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          <Link
+            to={`/profile/${userProfile.username || "buildwithansh"}`}
+            id="dashboard-view-profile-btn"
+            className="bg-[#111317] hover:bg-[#202C44] text-[#D3CCB0] hover:text-white font-bold text-xs px-3.5 sm:px-4 py-2.5 rounded-xl transition-all border border-[#202C44] flex items-center gap-1.5 active:scale-95"
+          >
+            <Eye className="w-4 h-4 text-[#D3CCB0]" />
+            <span>View Profile</span>
+          </Link>
           <Link
             to="/browse"
             id="dashboard-explore-assets-btn"
@@ -137,7 +152,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </p>
           <p className="text-[10px] text-[#7B8A90] font-mono flex items-center gap-1">
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            <span>90% net creator take-home</span>
+            <span>87.5% net seller take-home</span>
           </p>
         </div>
 
@@ -404,7 +419,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-mono font-bold px-2 py-0.5 rounded">
                 Marketplace Discovery
               </span>
-              <span className="text-[11px] text-[#7B8A90] font-mono">Creator Hub</span>
+              <span className="text-[11px] text-[#7B8A90] font-mono">Seller Hub</span>
             </div>
             <h2 className="text-xl font-heading font-extrabold text-white flex items-center gap-2.5 mt-1.5" id="explore-assets-title">
               <Compass className="w-5 h-5 text-[#D3CCB0]" />
@@ -420,7 +435,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             id="seller-explore-all-btn"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-[#D3CCB0] hover:text-white bg-[#202C44]/60 hover:bg-[#202C44] border border-[#202C44] px-4 py-2 rounded-xl transition-all self-start sm:self-auto"
           >
-            <span>View Full Marketplace</span>
+            <span>View Explore Assets</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -511,29 +526,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </div>
               </div>
             ))}
-        </div>
-
-        {/* Bottom Quick Callout Banner */}
-        <div className="bg-[#202C44]/30 border border-[#202C44] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-left">
-            <div className="w-9 h-9 rounded-xl bg-[#202C44] flex items-center justify-center text-[#D3CCB0] shrink-0 border border-[#202C44]">
-              <Sparkles className="w-4 h-4 text-[#D3CCB0]" />
-            </div>
-            <div>
-              <p className="text-xs text-white font-bold">
-                Looking for market inspiration or building something new?
-              </p>
-              <p className="text-[11px] text-[#7B8A90]">
-                Explore hundreds of design kits, full-stack templates, 3D assets, and developer boilerplates across India.
-              </p>
-            </div>
-          </div>
-          <Link
-            to="/browse"
-            className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-xs px-4 py-2 rounded-xl transition-all shadow shrink-0 active:scale-95"
-          >
-            Explore Assets Catalog
-          </Link>
         </div>
 
       </div>

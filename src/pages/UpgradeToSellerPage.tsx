@@ -224,19 +224,19 @@ export const UpgradeToSellerPage: React.FC<UpgradeToSellerPageProps> = ({
                     Get paid directly to your UPI
                   </h3>
                   <p className="text-xs text-[#7B8A90] mt-0.5 leading-snug">
-                    Enjoy a 90% creator revenue split paid directly to your GPay, PhonePe, or Paytm VPA.
+                    Enjoy an 87.5% seller revenue split paid directly to your GPay, PhonePe, or Paytm VPA.
                   </p>
                 </div>
               </div>
 
-              {/* Card 3: Reach creators across India */}
+              {/* Card 3: Reach buyers across India */}
               <div className="p-4 rounded-2xl bg-[#111317] border border-[#202C44] flex items-center gap-4 transition-all hover:border-[#202C44]/90">
                 <div className="w-11 h-11 rounded-xl bg-[#202C44] border border-[#202C44] flex items-center justify-center shrink-0 text-[#D3CCB0]">
                   <TrendingUp className="w-5 h-5 stroke-[2]" />
                 </div>
                 <div>
                   <h3 className="font-heading font-bold text-sm text-white">
-                    Reach creators across India
+                    Reach buyers across India
                   </h3>
                   <p className="text-xs text-[#7B8A90] mt-0.5 leading-snug">
                     Get discovered by tens of thousands of active builders, startup teams, and designers.
@@ -276,7 +276,7 @@ export const UpgradeToSellerPage: React.FC<UpgradeToSellerPageProps> = ({
                   >
                     Your UPI ID <span className="text-red-400">*</span>
                   </label>
-                  <span className="text-[11px] font-mono text-emerald-400">90% Payout</span>
+                  <span className="text-[11px] font-mono text-emerald-400">87.5% Payout</span>
                 </div>
 
                 <div className="relative">
@@ -434,8 +434,8 @@ export const UpgradeToSellerPage: React.FC<UpgradeToSellerPageProps> = ({
 
               <div className="space-y-4 text-xs text-[#7B8A90] leading-relaxed">
                 <div className="p-3 rounded-xl bg-[#202C44]/30 border border-[#202C44] space-y-1">
-                  <p className="font-bold text-white">1. 90% Creator Revenue Guarantee</p>
-                  <p>Creators retain 90% of listed price for every sale. The remaining 10% covers UPI gateway processing, malware validation, and global CDN delivery bandwidth.</p>
+                  <p className="font-bold text-white">1. 87.5% Seller Revenue Guarantee</p>
+                  <p>Sellers retain 87.5% of listed price for every sale. The 12.5% platform fee covers UPI gateway processing, malware validation, and global CDN delivery bandwidth.</p>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[#202C44]/30 border border-[#202C44] space-y-1">

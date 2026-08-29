@@ -142,18 +142,18 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
   // Auto fee calculations
   const platformFee = Math.round((priceInINR || 0) * 0.125);
   const totalBuyerPayable = (priceInINR || 0) + platformFee;
-  const sellerNetEarnings = Math.round((priceInINR || 0) * 0.9);
+  const sellerNetEarnings = Math.round((priceInINR || 0) * 0.875);
 
   const handleCreateListing = (e: React.FormEvent) => {
     e.preventDefault();
 
     const creatorObj: CreatorProfile = {
       id: "sel-me",
-      name: "You (Studio Creator)",
+      name: "You (Verified Seller)",
       username: "my_studio",
       handle: "@my_studio",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      badge: "Verified Creator",
+      badge: "Verified Seller",
       verified: true,
       verifiedSeller: true,
       responseTime: "< 1 hour",
@@ -166,14 +166,14 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
     const createdAsset: AssetListing = {
       id: `asset-new-${Date.now()}`,
       slug: (title || "new-asset").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-      title: title || (attachedFile ? attachedFile.name : "New Custom Creator Asset"),
+      title: title || (attachedFile ? attachedFile.name : "New Custom Seller Asset"),
       category,
       subcategory,
       tags: [category.toLowerCase().split(" ")[0], "new"],
       fileType: attachedFile ? attachedFile.ext : ".zip",
-      shortDescription: description || "Verified creator digital asset ready for instant download.",
-      fullDescription: description || "Verified creator digital asset ready for instant download.",
-      description: description || "Verified creator digital asset ready for instant download.",
+      shortDescription: description || "Verified seller digital asset ready for instant download.",
+      fullDescription: description || "Verified seller digital asset ready for instant download.",
+      description: description || "Verified seller digital asset ready for instant download.",
       detailedFeatures: [
         `Includes raw ${attachedFile ? attachedFile.ext.toUpperCase() : "source"} package`,
         "Includes full commercial & team license",
@@ -224,7 +224,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="bg-[#202C44] text-[#D3CCB0] text-xs font-mono font-bold px-2.5 py-0.5 rounded border border-[#202C44]">
-              Creator Portal
+              Seller Portal
             </span>
             <span className="text-xs text-[#7B8A90]">/ Indian Bank Payouts Active</span>
           </div>
@@ -232,13 +232,13 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
             Seller Dashboard
           </h1>
           <p className="text-xs sm:text-sm text-[#7B8A90] mt-0.5">
-            Manage listings, track UPI earnings, and upload new digital creator assets.
+            Manage listings, track UPI earnings, and upload new digital seller assets.
           </p>
         </div>
 
         <button
           onClick={() => setShowUploadModal(true)}
-          className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-heading font-extrabold text-xs px-5 py-3 rounded-xl transition-all shadow-lg flex items-center gap-2 active:scale-95"
+          className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-heading font-extrabold text-xs px-5 py-3 rounded-xl transition-all shadow-lg flex items-center gap-2 active:scale-95 cursor-pointer"
         >
           <PlusCircle className="w-4 h-4" />
           <span>Upload New Asset Listing</span>
@@ -251,7 +251,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
         {/* Total Earned */}
         <div className="bg-[#202C44] border border-[#202C44] rounded-2xl p-5 space-y-2">
           <div className="flex items-center justify-between text-xs text-[#7B8A90]">
-            <span>Total Earned (90% Net)</span>
+            <span>Total Earned (87.5% Net)</span>
             <TrendingUp className="w-4 h-4 text-[#D3CCB0]" />
           </div>
           <div className="text-2xl sm:text-3xl font-heading font-extrabold text-[#D3CCB0]">
@@ -312,20 +312,20 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="bg-[#202C44] text-[#D3CCB0] text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded">
-              Creator Promise
+              Seller Promise
             </span>
             <h3 className="text-sm font-heading font-bold text-white">
-              Sellers Keep 90% Guaranteed Net Split
+              Sellers Keep 87.5% Guaranteed Net Split
             </h3>
           </div>
           <p className="text-xs text-[#7B8A90] leading-relaxed max-w-2xl">
-            When you list an item at ₹1,000, the buyer pays ₹1,125 (includes 12.5% platform & payment fee). You receive ₹900 directly into your Indian bank account with zero extra deductions.
+            When you list an item at ₹1,000, the buyer pays ₹1,125 (includes 12.5% platform & payment fee). You receive ₹875 directly into your Indian bank account with zero extra deductions.
           </p>
         </div>
 
         <div className="bg-[#202C44] border border-[#202C44] p-3 rounded-xl text-center shrink-0">
           <span className="text-[10px] text-[#7B8A90] uppercase font-mono block">Your Take-Home</span>
-          <span className="text-lg font-heading font-extrabold text-[#D3CCB0]">90% Net</span>
+          <span className="text-lg font-heading font-extrabold text-[#D3CCB0]">87.5% Net</span>
         </div>
       </div>
 
@@ -348,7 +348,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                   <th className="p-4">Buyer Location</th>
                   <th className="p-4">Listed Price</th>
                   <th className="p-4">Fee (12.5%)</th>
-                  <th className="p-4">Seller Net (90%)</th>
+                  <th className="p-4">Seller Net (87.5%)</th>
                   <th className="p-4">Payment</th>
                   <th className="p-4">Status</th>
                 </tr>
@@ -607,7 +607,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                       </div>
 
                       <div className="flex justify-between text-[#7B8A90]">
-                        <span>Your Net Take-Home Earnings (90%)</span>
+                        <span>Your Net Take-Home Earnings (87.5%)</span>
                         <span className="font-mono text-[#D3CCB0] font-bold">
                           ₹{sellerNetEarnings.toLocaleString("en-IN")}
                         </span>
@@ -809,7 +809,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                   <div className="text-white font-bold">{title || "New Custom Digital Asset"}</div>
                   <div className="text-[#7B8A90]">Category: {category}</div>
                   <div className="text-[#D3CCB0] font-mono font-bold">
-                    Price: ₹{priceInINR} (Your net 90%: ₹{sellerNetEarnings})
+                    Price: ₹{priceInINR} (Your net 87.5%: ₹{sellerNetEarnings})
                   </div>
                 </div>
 

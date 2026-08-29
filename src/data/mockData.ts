@@ -67,7 +67,7 @@ export const CATEGORIES_LIST: {
     id: 7,
     name: "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)",
     count: 22,
-    description: "Digital planners, embroidery files, Lightroom presets, and eBooks/Guides for creators.",
+    description: "Digital planners, embroidery files, Lightroom presets, and eBooks/Guides for sellers and builders.",
     subcategories: ["Digital Planners", "Embroidery Files", "Lightroom Presets", "eBooks / Guides", "Printable Assets"],
     iconName: "Sparkles",
     popularTags: ["planners", "embroidery", "lightroom", "ebooks", "presets", "goodnotes"],

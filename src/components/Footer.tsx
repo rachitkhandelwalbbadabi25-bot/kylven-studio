@@ -46,9 +46,9 @@ export const Footer: React.FC = () => {
               <IndianRupee className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-white font-bold text-sm mb-1 font-heading">90% Creator Revenue Split</h4>
+              <h4 className="text-white font-bold text-sm mb-1 font-heading">87.5% Seller Revenue Split</h4>
               <p className="text-[#7B8A90] text-xs leading-relaxed">
-                Sellers keep 90% net earnings paid directly into Indian bank accounts or UPI VPAs every Monday.
+                Sellers keep 87.5% net earnings paid directly into Indian bank accounts or UPI VPAs every Monday.
               </p>
             </div>
           </div>
@@ -122,10 +122,10 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Creators & Selling (2 cols) */}
+          {/* Sellers & Selling (2 cols) */}
           <div className="md:col-span-2 space-y-3">
             <h5 className="text-white font-semibold text-xs uppercase tracking-wider font-heading">
-              For Creators
+              For Sellers
             </h5>
             <ul className="space-y-2">
               <li>
@@ -136,12 +136,12 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link to="/dashboard" className="hover:text-[#D3CCB0] transition-colors">
-                  Creator Dashboard
+                  Seller Dashboard
                 </Link>
               </li>
               <li>
                 <Link to="/pricing" className="hover:text-[#D3CCB0] transition-colors">
-                  90% Revenue Split
+                  87.5% Revenue Split
                 </Link>
               </li>
               <li>
@@ -176,7 +176,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link to="/browse" className="hover:text-[#D3CCB0] transition-colors">
-                  Creator Stories & Blog
+                  Seller Stories & Blog
                 </Link>
               </li>
               <li>
@@ -233,7 +233,7 @@ export const Footer: React.FC = () => {
           <div className="flex items-center gap-2">
             <span>© {new Date().getFullYear()} Kreate Studio Technologies Pvt. Ltd.</span>
             <span>•</span>
-            <span className="text-[#D3CCB0]">Built with pride for Indian creators</span>
+            <span className="text-[#D3CCB0]">Built with pride for Indian sellers</span>
           </div>
           
           <div className="flex items-center gap-6">

@@ -86,28 +86,28 @@ export interface PricingBreakdown {
   listedPriceINR: number;
   platformFeeINR: number; // 12.5% platform + payment fee
   buyerTotalINR: number; // listedPriceINR + platformFeeINR
-  sellerNetINR: number; // 90% payout to creator
-  sellerSplitPercent: number; // 90%
+  sellerNetINR: number; // 87.5% payout to seller
+  sellerSplitPercent: number; // 87.5%
   platformFeePercent: number; // 12.5%
 }
 
 /**
  * Single source of truth for pricing across the entire Kreate Studio marketplace.
- * - Platform + payment fee: 12.5% (paid by buyer for UPI gateways, CDN bandwidth, malware scans, lifetime updates)
- * - Seller net payout: 90% of listed price guaranteed
+ * - Platform + payment fee: 12.5% (paid for UPI gateways, CDN bandwidth, malware scans, lifetime updates)
+ * - Seller net payout: 87.5% of listed price guaranteed
  */
 export function calculatePricing(priceInINR: number): PricingBreakdown {
   const listedPriceINR = Math.max(0, Math.round(Number(priceInINR) || 0));
   const platformFeeINR = Math.round(listedPriceINR * 0.125);
   const buyerTotalINR = listedPriceINR + platformFeeINR;
-  const sellerNetINR = Math.round(listedPriceINR * 0.90);
+  const sellerNetINR = Math.round(listedPriceINR * 0.875);
 
   return {
     listedPriceINR,
     platformFeeINR,
     buyerTotalINR,
     sellerNetINR,
-    sellerSplitPercent: 90,
+    sellerSplitPercent: 87.5,
     platformFeePercent: 12.5,
   };
 }
