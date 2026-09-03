@@ -20,7 +20,8 @@ import {
   ArrowRight,
   TrendingUp,
   Award,
-  Download
+  Download,
+  Mail
 } from "lucide-react";
 
 interface CreatorProfilePageProps {
@@ -75,6 +76,11 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   const [handle, setHandle] = useState(isOwner ? (userProfile?.username || cleanUsername) : cleanUsername);
   const [location, setLocation] = useState(mockMatch?.location || "Bengaluru, India");
 
+  // Derive profile email address
+  const profileEmail = isOwner
+    ? (userProfile?.email || "ansh.bhardwaj@kreatestudio.dev")
+    : (mockMatch?.email || `${cleanUsername}@kreatestudio.dev`);
+
   // Get Initials for Avatar
   const getInitials = (fullName: string) => {
     const parts = fullName.trim().split(" ");
@@ -117,15 +123,36 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   const followersCount = "1.2k";
   const salesCount = creatorListings.reduce((sum, item) => sum + (item.salesCount || 0), 34);
 
+  // Word limit helper for bio
+  const MAX_BIO_WORDS = 150;
+  const countWords = (text: string) => {
+    const trimmed = text.trim();
+    return trimmed ? trimmed.split(/\s+/).length : 0;
+  };
+
+  const handleBioChange = (newVal: string) => {
+    const words = newVal.trim() ? newVal.trim().split(/\s+/) : [];
+    if (words.length > MAX_BIO_WORDS) {
+      // Limit to exactly 150 words
+      const limited = words.slice(0, MAX_BIO_WORDS).join(" ");
+      setBio(limited);
+    } else {
+      setBio(newVal);
+    }
+  };
+
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
+    const words = bio.trim() ? bio.trim().split(/\s+/) : [];
+    const trimmedBio = words.slice(0, MAX_BIO_WORDS).join(" ");
     if (onUpdateUserProfile) {
       onUpdateUserProfile({
         name,
-        bio,
+        bio: trimmedBio,
         username: handle.replace("@", ""),
       });
     }
+    setBio(trimmedBio);
     setIsEditModalOpen(false);
   };
 
@@ -154,7 +181,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
             </div>
 
             {/* Seller Name, Handle & Badge */}
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight" id="seller-name-heading">
                   {name}
@@ -167,6 +194,15 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                 <span className="text-xs font-bold text-[#000000] bg-[#D3CCB0] px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-sm font-sans" id="seller-role-badge">
                   <Award className="w-3.5 h-3.5 text-[#000000]" />
                   <span>Seller</span>
+                </span>
+              </div>
+
+              {/* Enhanced Profile Information: Registered Email Address */}
+              <div className="flex items-center gap-1.5 text-xs text-[#7B8A90] font-mono" id="seller-profile-email">
+                <Mail className="w-3.5 h-3.5 text-[#7B8A90] shrink-0" />
+                <span className="text-[#7B8A90] select-all">{profileEmail}</span>
+                <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-1.5 py-0.2 rounded font-sans font-medium">
+                  Verified
                 </span>
               </div>
 
@@ -488,13 +524,28 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               </div>
 
               <div>
-                <label className="block text-[#7B8A90] mb-1 font-medium">Bio</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[#7B8A90] font-medium">Bio (Max 150 words)</label>
+                  <span
+                    className={`text-[11px] font-mono ${
+                      countWords(bio) >= MAX_BIO_WORDS ? "text-amber-400 font-bold" : "text-[#7B8A90]"
+                    }`}
+                  >
+                    {countWords(bio)} / {MAX_BIO_WORDS} words
+                  </span>
+                </div>
                 <textarea
-                  rows={3}
+                  rows={4}
                   value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  className="w-full bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                  onChange={(e) => handleBioChange(e.target.value)}
+                  placeholder="Describe your expertise, skills, and the digital assets you build (up to 150 words)..."
+                  className="w-full bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] text-xs leading-relaxed"
                 />
+                {countWords(bio) >= MAX_BIO_WORDS && (
+                  <p className="text-[10px] text-amber-400 mt-1 font-mono">
+                    Limit of 150 words reached.
+                  </p>
+                )}
               </div>
 
               <div>
@@ -506,6 +557,24 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                   placeholder="Bengaluru, India"
                   className="w-full bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-[#7B8A90] mb-1 font-medium">Registered Account Email</label>
+                <div className="relative">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7B8A90]">
+                    <Mail className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="email"
+                    disabled
+                    value={profileEmail}
+                    className="w-full bg-[#000000]/60 text-[#7B8A90] pl-9 pr-3.5 py-2.5 rounded-xl border border-[#202C44] font-mono cursor-not-allowed text-xs"
+                  />
+                </div>
+                <p className="text-[10px] text-[#7B8A90] mt-1 font-mono">
+                  Registered account email used for order deliveries and seller payout settlements.
+                </p>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#202C44]">

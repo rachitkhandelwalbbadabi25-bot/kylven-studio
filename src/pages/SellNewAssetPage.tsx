@@ -59,6 +59,30 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [publishedSlug, setPublishedSlug] = useState<string | null>(null);
 
+  // Word limits & word count validation
+  const MAX_TITLE_WORDS = 100;
+  const MAX_DESCRIPTION_WORDS = 2000;
+
+  const countWords = (text: string) => {
+    const trimmed = text.trim();
+    return trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0;
+  };
+
+  const titleWordCount = countWords(title);
+  const descWordCount = countWords(description);
+
+  const isTitleExceeded = titleWordCount > MAX_TITLE_WORDS;
+  const isDescExceeded = descWordCount > MAX_DESCRIPTION_WORDS;
+  const isTitleEmpty = title.trim().length === 0;
+  const isDescEmpty = description.trim().length === 0;
+
+  const isFormValid =
+    !isTitleExceeded &&
+    !isDescExceeded &&
+    !isTitleEmpty &&
+    !isDescEmpty &&
+    priceInINR >= 0;
+
   // 87.5% Net Payout Calculation
   const pricing = calculatePricing(priceInINR || 0);
 
@@ -86,8 +110,14 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || priceInINR < 0) {
-      alert("Please fill in all required fields before publishing.");
+    if (!isFormValid || isSubmitting) {
+      if (isTitleExceeded) {
+        alert("Title exceeds the maximum limit of 100 words.");
+      } else if (isDescExceeded) {
+        alert("Description exceeds the maximum limit of 2,000 words.");
+      } else {
+        alert("Please fill in all required fields before publishing.");
+      }
       return;
     }
 
@@ -222,11 +252,25 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
         <div className="lg:col-span-7 space-y-6">
           <form onSubmit={handleSubmit} className="space-y-6" id="upload-asset-form">
             
-            {/* Asset Title */}
+            {/* Asset Title (100 word limit) */}
             <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-2">
-              <label className="block text-xs font-medium text-white" htmlFor="field-title">
-                Title *
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-medium text-white" htmlFor="field-title">
+                  Listing Title *
+                </label>
+                <span
+                  id="title-word-counter"
+                  className={`text-xs font-mono font-medium transition-colors ${
+                    isTitleExceeded
+                      ? "text-rose-400 font-bold bg-rose-950/50 px-2 py-0.5 rounded border border-rose-800"
+                      : titleWordCount >= MAX_TITLE_WORDS * 0.9
+                      ? "text-amber-400 font-bold"
+                      : "text-[#7B8A90]"
+                  }`}
+                >
+                  Words remaining: {Math.max(0, MAX_TITLE_WORDS - titleWordCount)}/100
+                </span>
+              </div>
               <input
                 id="field-title"
                 type="text"
@@ -234,8 +278,18 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Neo Bharat Cyberpunk UI Kit"
-                className="w-full bg-[#000000] text-white text-xs px-4 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] transition-colors"
+                className={`w-full bg-[#000000] text-white text-xs px-4 py-3 rounded-xl border focus:outline-none transition-colors ${
+                  isTitleExceeded
+                    ? "border-rose-500 focus:border-rose-500 bg-rose-950/10"
+                    : "border-[#202C44] focus:border-[#D3CCB0]"
+                }`}
               />
+              {isTitleExceeded && (
+                <p className="text-[11px] text-rose-400 font-mono flex items-center gap-1.5 mt-1 font-semibold">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Title exceeds the maximum limit of {MAX_TITLE_WORDS} words (currently {titleWordCount} words).</span>
+                </p>
+              )}
             </div>
 
             {/* Category Selection & Subcategory */}
@@ -325,20 +379,61 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               </div>
             </div>
 
-            {/* Description text area */}
+            {/* Description text area (2,000 word limit) */}
             <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-2">
-              <label className="block text-xs font-medium text-white" htmlFor="field-description">
-                Description *
-              </label>
-              <textarea
-                id="field-description"
-                rows={4}
-                required
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Describe your digital asset, what's included, framework compatibility, and key features..."
-                className="w-full bg-[#000000] text-white text-xs px-4 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] leading-relaxed"
-              />
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-medium text-white" htmlFor="field-description">
+                  Listing Description *
+                </label>
+                <span className="text-[11px] text-[#7B8A90] font-mono">
+                  Max 2,000 words
+                </span>
+              </div>
+
+              {/* Textarea with bottom-right word counter badge */}
+              <div className="relative">
+                <textarea
+                  id="field-description"
+                  rows={6}
+                  required
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Describe your digital asset, what's included, framework compatibility, version requirements, and key features..."
+                  className={`w-full bg-[#000000] text-white text-xs px-4 pt-3 pb-8 rounded-xl border focus:outline-none leading-relaxed transition-colors ${
+                    isDescExceeded
+                      ? "border-rose-500 focus:border-rose-500 bg-rose-950/10"
+                      : "border-[#202C44] focus:border-[#D3CCB0]"
+                  }`}
+                />
+
+                {/* Large Bottom-Right Word Counter */}
+                <div
+                  id="desc-bottom-right-counter"
+                  className={`absolute right-3 bottom-3 px-2.5 py-1 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm transition-all pointer-events-none ${
+                    isDescExceeded
+                      ? "bg-rose-950/90 text-rose-400 border border-rose-800 animate-pulse"
+                      : descWordCount >= MAX_DESCRIPTION_WORDS * 0.9
+                      ? "bg-amber-950/90 text-amber-300 border border-amber-800"
+                      : "bg-[#111317]/90 text-[#D3CCB0] border border-[#202C44]"
+                  }`}
+                >
+                  <span>{descWordCount} / {MAX_DESCRIPTION_WORDS.toLocaleString()} words</span>
+                  <span className="text-[10px] opacity-75 font-normal">
+                    ({Math.max(0, MAX_DESCRIPTION_WORDS - descWordCount)} left)
+                  </span>
+                </div>
+              </div>
+
+              {isDescExceeded ? (
+                <p className="text-[11px] text-rose-400 font-mono flex items-center gap-1.5 mt-1 font-semibold">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Description exceeds the maximum limit of {MAX_DESCRIPTION_WORDS.toLocaleString()} words (currently {descWordCount} words). Please shorten your text to publish.</span>
+                </p>
+              ) : (
+                <p className="text-[10px] text-[#7B8A90]">
+                  Include detailed features, installation steps, and version requirements to help buyers make informed purchase decisions.
+                </p>
+              )}
             </div>
 
             {/* Preview Images upload area with a grid for multiple images and a "+" button */}
@@ -462,23 +557,37 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               </div>
             </div>
 
-            {/* Primary Action: Large Cream "Upload Asset" Button */}
-            <div className="pt-2">
+            {/* Primary Action: Large Cream "Publish Listing" Button */}
+            <div className="pt-2 space-y-2">
               <button
                 type="submit"
                 id="publish-listing-btn"
-                disabled={isSubmitting}
-                className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-heading font-extrabold text-sm sm:text-base py-4 rounded-2xl shadow-xl transition-all active:scale-98 disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={isSubmitting || !isFormValid}
+                className={`w-full font-heading font-extrabold text-sm sm:text-base py-4 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 ${
+                  !isFormValid || isSubmitting
+                    ? "bg-[#202C44] text-[#7B8A90] cursor-not-allowed opacity-60 border border-[#202C44]"
+                    : "bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] active:scale-98 cursor-pointer"
+                }`}
               >
                 {isSubmitting ? (
-                  <span>Uploading Asset...</span>
+                  <span>Publishing Listing...</span>
                 ) : (
                   <>
-                    <span>Upload Asset</span>
-                    <ArrowRight className="w-5 h-5 text-[#000000]" />
+                    <span>Publish Listing</span>
+                    <ArrowRight className="w-5 h-5 text-current" />
                   </>
                 )}
               </button>
+
+              {(!isFormValid && (isTitleExceeded || isDescExceeded)) && (
+                <p className="text-center text-[11px] text-rose-400 font-mono">
+                  {isTitleExceeded && isDescExceeded
+                    ? "Title and Description exceed allowed word limits."
+                    : isTitleExceeded
+                    ? `Title exceeds maximum limit of ${MAX_TITLE_WORDS} words.`
+                    : `Description exceeds maximum limit of ${MAX_DESCRIPTION_WORDS.toLocaleString()} words.`}
+                </p>
+              )}
             </div>
 
           </form>

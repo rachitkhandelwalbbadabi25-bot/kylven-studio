@@ -16,11 +16,14 @@ import {
   TrendingUp,
   ShieldCheck,
   ChevronRight,
+  ChevronDown,
   Sparkles,
   UploadCloud,
   ArrowRight,
   CheckCircle2,
   Package,
+  Mail,
+  Settings
 } from "lucide-react";
 import { UserProfile, UserRole } from "../types";
 import { MOCK_LISTINGS, CREATORS_DIRECTORY } from "../data/mockData";
@@ -49,20 +52,26 @@ export const Navbar: React.FC<NavbarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Navigation Drawer state
+  // Navigation Drawer & Account Dropdown state
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [mobileSearchVisible, setMobileSearchVisible] = useState(false);
+  const [accountDropdownOpen, setAccountDropdownOpen] = useState(false);
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const accountDropdownRef = useRef<HTMLDivElement>(null);
   const isSellerMode = userProfile?.role === "seller";
   const currentUsername = userProfile?.username || "buildwithansh";
+  const userEmail = userProfile?.email || "ansh.bhardwaj@kreatestudio.dev";
 
-  // Close search suggestions on click outside
+  // Close search suggestions & account dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
         setIsSearchFocused(false);
+      }
+      if (accountDropdownRef.current && !accountDropdownRef.current.contains(event.target as Node)) {
+        setAccountDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -74,6 +83,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     setIsDrawerOpen(false);
     setIsSearchFocused(false);
     setMobileSearchVisible(false);
+    setAccountDropdownOpen(false);
   }, [location.pathname]);
 
   // Lock body scroll when drawer is open
@@ -489,35 +499,155 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </Link>
                 </div>
               ) : (
-                /* If Logged In: Compact Profile Avatar Button */
-                <Link
-                  to={`/profile/${currentUsername}`}
-                  id="header-user-badge"
-                  title={`Logged in as ${userProfile?.name || "User"} (${isSellerMode ? "Seller Profile" : "User Profile"})`}
-                  className="flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/60 transition-all group"
-                >
-                  <div
-                    className={`w-7 h-7 rounded-lg font-mono font-bold text-xs flex items-center justify-center border transition-transform group-hover:scale-105 ${
-                      isSellerMode
-                        ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-                        : "bg-[#202C44] text-[#D3CCB0] border-[#202C44]"
+                /* If Logged In: Account Identity Trigger & Dropdown Menu */
+                <div className="relative" ref={accountDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setAccountDropdownOpen((prev) => !prev)}
+                    id="header-user-badge"
+                    aria-expanded={accountDropdownOpen}
+                    title={`Account: ${userProfile?.name || "User"}`}
+                    className={`flex items-center gap-2 p-1 sm:px-2.5 sm:py-1 rounded-xl bg-[#111317] border transition-all group ${
+                      accountDropdownOpen
+                        ? "border-[#D3CCB0] bg-[#161922]"
+                        : "border-[#202C44] hover:border-[#D3CCB0]/60"
                     }`}
                   >
-                    {userProfile?.name?.slice(0, 2).toUpperCase() || "US"}
-                  </div>
-                  <div className="hidden md:flex flex-col text-left">
-                    <span className="text-xs text-white font-medium max-w-[90px] truncate leading-tight group-hover:text-[#D3CCB0] transition-colors">
-                      {userProfile?.name || "My Account"}
-                    </span>
-                    <span
-                      className={`text-[9px] font-mono leading-none mt-0.5 flex items-center gap-1 ${
-                        isSellerMode ? "text-emerald-400 font-semibold" : "text-[#D3CCB0]"
+                    <div
+                      className={`w-7 h-7 rounded-lg font-mono font-bold text-xs flex items-center justify-center border transition-transform group-hover:scale-105 ${
+                        isSellerMode
+                          ? "bg-emerald-950 text-emerald-400 border-emerald-800"
+                          : "bg-[#202C44] text-[#D3CCB0] border-[#202C44]"
                       }`}
                     >
-                      {isSellerMode ? "Seller Studio" : "Buyer"}
-                    </span>
-                  </div>
-                </Link>
+                      {userProfile?.name?.slice(0, 2).toUpperCase() || "US"}
+                    </div>
+                    <div className="hidden md:flex flex-col text-left">
+                      <span className="text-xs text-white font-medium max-w-[100px] truncate leading-tight group-hover:text-[#D3CCB0] transition-colors">
+                        {userProfile?.name || "Ansh Bhardwaj"}
+                      </span>
+                      <span
+                        className={`text-[9px] font-mono leading-none mt-0.5 flex items-center gap-1 ${
+                          isSellerMode ? "text-emerald-400 font-semibold" : "text-[#D3CCB0]"
+                        }`}
+                      >
+                        {isSellerMode ? "Seller Studio" : "Buyer"}
+                      </span>
+                    </div>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-[#7B8A90] group-hover:text-white transition-transform ${
+                        accountDropdownOpen ? "rotate-180 text-[#D3CCB0]" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* Desktop Account Dropdown Menu */}
+                  {accountDropdownOpen && (
+                    <div
+                      id="account-dropdown-menu"
+                      className="absolute right-0 top-full mt-2 w-72 bg-[#111317] border border-[#202C44] rounded-2xl shadow-2xl p-3 z-50 animate-in fade-in slide-in-from-top-2 space-y-3"
+                    >
+                      {/* Identity Card: Large Name -> Muted Username -> Clean Email */}
+                      <div className="p-3 rounded-xl bg-[#000000]/70 border border-[#202C44] space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-[#D3CCB0] font-semibold">
+                            Account Profile
+                          </span>
+                          <span
+                            className={`text-[9px] px-2 py-0.5 rounded-md font-mono font-bold ${
+                              isSellerMode
+                                ? "text-emerald-400 bg-emerald-950 border border-emerald-800"
+                                : "text-[#D3CCB0] bg-[#202C44] border border-[#202C44]"
+                            }`}
+                          >
+                            {isSellerMode ? "Creator / Seller" : "Buyer"}
+                          </span>
+                        </div>
+
+                        {/* Large Name */}
+                        <p className="text-sm font-heading font-extrabold text-white tracking-tight truncate">
+                          {userProfile?.name || "Ansh Bhardwaj"}
+                        </p>
+
+                        {/* Muted Username */}
+                        <p className="text-xs text-[#7B8A90] font-mono">
+                          @{currentUsername}
+                        </p>
+
+                        {/* Email Address directly below */}
+                        <div className="flex items-center gap-1.5 text-xs text-[#7B8A90] font-mono pt-0.5 border-t border-[#202C44]/80">
+                          <Mail className="w-3.5 h-3.5 text-[#7B8A90] shrink-0" />
+                          <span className="text-[#A0AEC0] truncate select-all">{userEmail}</span>
+                        </div>
+                      </div>
+
+                      {/* Dropdown Navigation Links */}
+                      <div className="space-y-1">
+                        <Link
+                          to={`/profile/${currentUsername}`}
+                          onClick={() => setAccountDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-white hover:bg-[#202C44]/80 hover:text-[#D3CCB0] transition-colors"
+                        >
+                          <User className="w-4 h-4 text-[#7B8A90]" />
+                          <span>View Public Profile</span>
+                        </Link>
+
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setAccountDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-white hover:bg-[#202C44]/80 hover:text-[#D3CCB0] transition-colors"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-[#7B8A90]" />
+                          <span>{isSellerMode ? "Seller Analytics Dashboard" : "Buyer Dashboard"}</span>
+                        </Link>
+
+                        <Link
+                          to="/saved"
+                          onClick={() => setAccountDropdownOpen(false)}
+                          className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-white hover:bg-[#202C44]/80 hover:text-[#D3CCB0] transition-colors"
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <Heart className="w-4 h-4 text-[#7B8A90]" />
+                            <span>Saved Items</span>
+                          </div>
+                          {savedCount > 0 && (
+                            <span className="text-[10px] font-mono font-bold bg-[#D3CCB0] text-black px-1.5 py-0.2 rounded-full">
+                              {savedCount}
+                            </span>
+                          )}
+                        </Link>
+
+                        {isSellerMode && (
+                          <Link
+                            to="/sell"
+                            onClick={() => setAccountDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-[#D3CCB0] bg-[#202C44]/40 hover:bg-[#202C44] transition-colors"
+                          >
+                            <PlusCircle className="w-4 h-4 text-[#D3CCB0]" />
+                            <span>Upload New Asset</span>
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Sign Out Button */}
+                      {onLogout && (
+                        <div className="pt-1 border-t border-[#202C44]">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAccountDropdownOpen(false);
+                              onLogout();
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-rose-400 hover:bg-rose-950/30 transition-colors"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Sign Out</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
 
             </div>
@@ -684,11 +814,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={closeDrawer}
                   id="drawer-user-badge"
                   title="View your profile"
-                  className="p-3 rounded-2xl bg-[#000000]/60 border border-[#202C44] hover:border-[#D3CCB0]/60 flex items-center justify-between transition-all group cursor-pointer"
+                  className="p-3.5 rounded-2xl bg-[#000000]/80 border border-[#202C44] hover:border-[#D3CCB0]/60 flex items-center justify-between transition-all group cursor-pointer space-y-1"
                 >
-                  <div className="flex items-center gap-2.5 truncate">
+                  <div className="flex items-start gap-3 truncate">
                     <div
-                      className={`w-8 h-8 rounded-xl font-mono font-bold text-xs flex items-center justify-center border shrink-0 transition-transform group-hover:scale-105 ${
+                      className={`w-9 h-9 rounded-xl font-mono font-bold text-xs flex items-center justify-center border shrink-0 transition-transform group-hover:scale-105 mt-0.5 ${
                         isSellerMode
                           ? "bg-emerald-950 text-emerald-400 border-emerald-800"
                           : "bg-[#202C44] text-[#D3CCB0] border-[#202C44]"
@@ -696,14 +826,23 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       {userProfile?.name?.slice(0, 2).toUpperCase() || "US"}
                     </div>
-                    <div className="truncate text-left">
-                      <p className="text-xs font-bold text-white group-hover:text-[#D3CCB0] transition-colors truncate">
-                        {userProfile?.name || "User"}
+                    <div className="truncate text-left space-y-0.5">
+                      {/* 1. Large Name */}
+                      <p className="text-sm font-heading font-extrabold text-white group-hover:text-[#D3CCB0] transition-colors truncate">
+                        {userProfile?.name || "Ansh Bhardwaj"}
                       </p>
-                      <p className="text-[10px] text-[#7B8A90] font-mono truncate">@{currentUsername}</p>
+                      {/* 2. Muted Username */}
+                      <p className="text-xs text-[#7B8A90] font-mono truncate">
+                        @{currentUsername}
+                      </p>
+                      {/* 3. Email Address directly below */}
+                      <p className="text-[11px] text-[#A0AEC0] font-mono truncate flex items-center gap-1">
+                        <Mail className="w-3 h-3 text-[#7B8A90] shrink-0" />
+                        <span>{userEmail}</span>
+                      </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 self-start mt-1">
                     <span
                       className={`text-[9px] px-2 py-0.5 rounded-full font-mono font-bold ${
                         isSellerMode

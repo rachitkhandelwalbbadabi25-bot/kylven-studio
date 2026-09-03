@@ -26,6 +26,7 @@ export interface CreatorProfile {
   joinedDate: string;
   location: string;
   bio?: string;
+  email?: string;
   upiVpa?: string;
   skills?: string[];
 }
