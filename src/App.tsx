@@ -27,6 +27,7 @@ import {
   fetchListingsFromFirebase, 
   saveListingToFirebase, 
   saveUserProfileToFirebase,
+  fetchUserPurchasesFromFirebase,
   logoutUser 
 } from "./services/firebaseService";
 
@@ -129,6 +130,17 @@ export default function App() {
           email: firebaseUser.email || prev.email,
           name: firebaseUser.displayName || prev.name,
         }));
+
+        // Fetch verified user purchases from Firebase /users/{uid}/purchases (read allowed by rules)
+        fetchUserPurchasesFromFirebase(firebaseUser.uid).then((res) => {
+          if (isMounted && res.data && res.data.length > 0) {
+            setPurchases((prev) => {
+              const existingOrderIds = new Set(prev.map((p) => p.orderId));
+              const remoteNew = res.data!.filter((p) => !existingOrderIds.has(p.orderId));
+              return [...remoteNew, ...prev];
+            });
+          }
+        });
       }
     });
 
@@ -197,9 +209,15 @@ export default function App() {
   const handleAddNewListing = (newListing: AssetListing) => {
     setListings((prev) => [newListing, ...prev]);
     // Also sync to Firebase Realtime Database
-    saveListingToFirebase(newListing).catch((err) =>
-      console.warn("Could not sync listing to Firebase:", err)
-    );
+    saveListingToFirebase(newListing)
+      .then((res) => {
+        if (!res.success && res.error) {
+          console.warn("Could not sync listing to Firebase:", res.error);
+        }
+      })
+      .catch((err) =>
+        console.warn("Could not sync listing to Firebase:", err)
+      );
   };
 
   const handleCompletePurchase = (purchase: UserPurchase) => {

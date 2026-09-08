@@ -45,6 +45,16 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
   const totalBuyerPayable = listedPrice + platformFee;
   const sellerNetEarnings = Math.round(listedPrice * 0.9);
 
+  const creator = listing.creator || listing.seller || {
+    name: "Verified Creator",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+    handle: "@creator",
+    verified: false,
+    totalSales: 0,
+    rating: 5,
+    responseTime: "< 2 hours",
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
@@ -362,34 +372,34 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <img
-                  src={listing.seller.avatar}
-                  alt={listing.seller.name}
+                  src={creator.avatar}
+                  alt={creator.name}
                   className="w-12 h-12 rounded-xl object-cover border border-[#202C44]"
                 />
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-heading font-bold text-white text-base">{listing.seller.name}</h3>
-                    {listing.seller.verified && (
+                    <h3 className="font-heading font-bold text-white text-base">{creator.name}</h3>
+                    {creator.verified && (
                       <ShieldCheck className="w-4 h-4 text-[#D3CCB0]" title="Verified Creator" />
                     )}
                   </div>
-                  <span className="text-xs text-[#7B8A90] font-mono">{listing.seller.handle}</span>
+                  <span className="text-xs text-[#7B8A90] font-mono">{creator.handle}</span>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-3 text-xs">
                 <div className="bg-[#111317] border border-[#202C44] px-3 py-1.5 rounded-lg text-center">
-                  <span className="text-[#D3CCB0] font-bold block">{listing.seller.totalSales}</span>
+                  <span className="text-[#D3CCB0] font-bold block">{creator.totalSales}</span>
                   <span className="text-[10px] text-[#7B8A90]">Total Sales</span>
                 </div>
 
                 <div className="bg-[#111317] border border-[#202C44] px-3 py-1.5 rounded-lg text-center">
-                  <span className="text-white font-bold block">{listing.seller.rating}★</span>
+                  <span className="text-white font-bold block">{creator.rating}★</span>
                   <span className="text-[10px] text-[#7B8A90]">Rating</span>
                 </div>
 
                 <div className="bg-[#111317] border border-[#202C44] px-3 py-1.5 rounded-lg text-center">
-                  <span className="text-white font-bold block">{listing.seller.responseTime}</span>
+                  <span className="text-white font-bold block">{creator.responseTime}</span>
                   <span className="text-[10px] text-[#7B8A90]">Response</span>
                 </div>
               </div>
