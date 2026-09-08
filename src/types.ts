@@ -50,6 +50,7 @@ export type DeliveryType = "Instant ZIP Download" | "Direct Cloud Access" | "Git
 
 export interface AssetListing {
   id: string;
+  sellerId?: string; // Authenticated owner UID for Firebase security rules
   title: string;
   slug: string;
   creator: CreatorProfile;
@@ -80,7 +81,7 @@ export interface AssetListing {
   isNew?: boolean;
   detailedFeatures: string[];
   reviewList?: ReviewItem[];
-  downloadUrl?: string;
+  downloadUrl?: string; // Legacy/backward compatibility. Public listings must NOT expose deliverable URLs.
 }
 
 export interface PricingBreakdown {

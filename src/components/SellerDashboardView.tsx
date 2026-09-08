@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { AssetListing, CoreCategory, CreatorProfile, SalesRecord, SellerStats } from "../types";
 import { CATEGORIES_LIST, FILE_FORMATS_CATALOG } from "../data/mockData";
+import { auth } from "../lib/firebase";
 import {
   PlusCircle,
   TrendingUp,
@@ -147,24 +148,32 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
   const handleCreateListing = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid) {
+      alert("Authentication required: Please sign in to create listings.");
+      return;
+    }
+
     const creatorObj: CreatorProfile = {
-      id: "sel-me",
-      name: "You (Verified Seller)",
-      username: "my_studio",
-      handle: "@my_studio",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      badge: "Verified Seller",
-      verified: true,
-      verifiedSeller: true,
-      responseTime: "< 1 hour",
-      totalSales: stats.totalSalesCount + 1,
-      rating: 5.0,
-      joinedDate: "Today",
-      location: "Mumbai, MH"
+      id: currentUid,
+      name: auth.currentUser?.displayName || "Creator",
+      username: auth.currentUser?.email ? auth.currentUser.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "_") : "seller",
+      handle: `@${auth.currentUser?.email ? auth.currentUser.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "_") : "seller"}`,
+      avatar: auth.currentUser?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+      badge: "Seller",
+      verified: false,
+      verifiedSeller: false,
+      responseTime: "< 2 hours",
+      totalSales: 0,
+      rating: 0,
+      joinedDate: new Date().getFullYear().toString(),
+      location: "India"
     };
 
+    // Public listing: deliverable downloadUrl is omitted, metrics default to unreviewed
     const createdAsset: AssetListing = {
       id: `asset-new-${Date.now()}`,
+      sellerId: currentUid,
       slug: (title || "new-asset").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       title: title || (attachedFile ? attachedFile.name : "New Custom Seller Asset"),
       category,
@@ -180,7 +189,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
         "Virus scanned & quality verified by Kreate Studio"
       ],
       priceInINR: priceInINR || 999,
-      rating: 5.0,
+      rating: 0,
       reviewCount: 0,
       salesCount: 0,
       fileFormatTags: fileFormats.length > 0 ? fileFormats : [attachedFile ? attachedFile.ext : ".zip"],
@@ -189,17 +198,15 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
       previewImages: [thumbnailUrl],
       seller: creatorObj,
       creator: creatorObj,
-      reviewStatus: "Verified & Approved",
+      reviewStatus: "In Review",
       softwareCompatibility: ["Figma", "VS Code", "PDF Viewers", "All Standard Tools"],
       deliveryType: "Instant ZIP Download",
+      featured: false,
       isNew: true,
       reviewList: [],
       createdAt: new Date().toISOString().split("T")[0],
       licenseType: "Commercial License",
       compatibleWith: ["Figma", "VS Code", "PDF Viewers", "All Standard Tools"],
-      downloadUrl: attachedFile
-        ? `https://kreatestudio.dev/downloads/${encodeURIComponent(attachedFile.name)}`
-        : "https://kreatestudio.dev/downloads/my-new-asset.zip"
     };
 
     onAddNewListing(createdAsset);

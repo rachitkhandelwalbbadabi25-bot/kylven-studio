@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { AssetListing, CoreCategory, CreatorProfile, calculatePricing, UserProfile } from "../types";
 import { CATEGORIES_LIST } from "../data/mockData";
+import { auth } from "../lib/firebase";
 import {
   Upload,
   Plus,
@@ -121,6 +122,12 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
       return;
     }
 
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid) {
+      alert("Authentication required: Please sign in to list your assets.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     const slug =
@@ -129,34 +136,39 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/(^-|-$)/g, "") || `asset-${Date.now()}`;
 
+    // Secure public creator representation: no financial UPI or private email
     const creatorObj: CreatorProfile = {
-      id: "creator_ansh",
-      name: userProfile.name || "Ansh Bhardwaj",
-      username: userProfile.username || "buildwithansh",
-      handle: `@${userProfile.username || "buildwithansh"}`,
-      avatar: userProfile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      initials: "AB",
+      id: currentUid,
+      name: userProfile.name || auth.currentUser?.displayName || "Creator",
+      username: userProfile.username || (auth.currentUser?.email ? auth.currentUser.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "_") : "creator"),
+      handle: `@${userProfile.username || (auth.currentUser?.email ? auth.currentUser.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "_") : "creator")}`,
+      avatar: userProfile.avatar || auth.currentUser?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+      initials: (userProfile.name || "CR").split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "CR",
       badge: "Seller",
-      bio: userProfile.bio || "Full-stack developer and UI designer building production-grade digital assets.",
-      location: "Bengaluru, India",
-      rating: 5.0,
+      bio: userProfile.bio || "Digital creator building production-ready assets.",
+      location: userProfile.location || "India",
+      rating: 0,
       totalSales: 0,
-      responseTime: "< 1 hour",
-      joinedDate: "2026",
-      verified: true,
-      verifiedSeller: true,
+      responseTime: "< 2 hours",
+      joinedDate: new Date().getFullYear().toString(),
+      verified: false,
+      verifiedSeller: false,
+      skills: ["Digital Assets"],
     };
 
     const primaryThumbnail = images[0] || SAMPLE_PRESET_IMAGES[0];
 
+    // Note: downloadUrl is strictly omitted from the public listing.
+    // Untrusted client metrics (rating, salesCount, reviewStatus) are set to unverified defaults.
     const newListing: AssetListing = {
       id: `asset_${Date.now()}`,
+      sellerId: currentUid,
       slug,
       title: title.trim(),
       category,
       subcategory,
       priceInINR: Number(priceInINR),
-      rating: 5.0,
+      rating: 0,
       reviewCount: 0,
       salesCount: 0,
       seller: creatorObj,
@@ -169,7 +181,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
       fileType,
       fileSizeBytes,
       fileFormatTags: [fileType, ".zip"],
-      tags: [category.toLowerCase().split(" ")[0], subcategory.toLowerCase().replace(/[^a-z0-9]/g, ""), "verified"],
+      tags: [category.toLowerCase().split(" ")[0], subcategory.toLowerCase().replace(/[^a-z0-9]/g, ""), "asset"],
       detailedFeatures: [
         "Complete production-ready source files",
         "Clean architecture pattern & full commercial rights",
@@ -179,8 +191,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
       softwareCompatibility: ["Cross-Platform", "Figma 2026", "VS Code"],
       licenseType: "Commercial License",
       deliveryType: "Instant ZIP Download",
-      reviewStatus: "Verified & Approved",
-      downloadUrl: "https://kreatestudio.dev/downloads/asset-package.zip",
+      reviewStatus: "In Review",
       featured: false,
       isNew: true,
       createdAt: new Date().toISOString().split("T")[0],
