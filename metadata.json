@@ -1,0 +1,6 @@
+{
+  "name": "Kreate Studio",
+  "description": "India's mobile-first marketplace for digital creator assets",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
