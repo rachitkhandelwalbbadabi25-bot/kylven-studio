@@ -20,7 +20,15 @@ import { PurchasesPage } from "./pages/PurchasesPage";
 import { SavedPage } from "./pages/SavedPage";
 import { AuthPage } from "./pages/AuthPage";
 import { UpgradeToSellerPage } from "./pages/UpgradeToSellerPage";
+import { BuyerProfilePage } from "./pages/BuyerProfilePage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { 
+  subscribeToAuthState, 
+  fetchListingsFromFirebase, 
+  saveListingToFirebase, 
+  saveUserProfileToFirebase,
+  logoutUser 
+} from "./services/firebaseService";
 
 // Automatically scroll to top on route change
 function ScrollToTop() {
@@ -32,34 +40,17 @@ function ScrollToTop() {
 }
 
 const DEFAULT_PROFILE: UserProfile = {
-  name: "Ansh Bhardwaj",
-  email: "rrachitkhandelwal8@gmail.com",
-  username: "buildwithansh",
-  role: "seller",
-  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-  bio: "Full-stack developer and UI designer building production-grade digital assets, cyberpunk kits, and developer starters.",
-  location: "Bengaluru, India",
-  upiId: "ansh@okhdfcbank",
+  name: "Rachit Khandelwal20",
+  email: "kavishkhandelwal9@gmail.com",
+  username: "rachitkhandelwal20",
+  role: "buyer",
+  avatar: "",
+  bio: "",
+  location: "India",
   hasCompletedOnboarding: true,
 };
 
-const INITIAL_PURCHASES: UserPurchase[] = [
-  {
-    orderId: "KRT-892104",
-    listingId: "asset-1",
-    title: "BharatPay — Fintech & UPI Payments Figma UI Kit",
-    thumbnailUrl: "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop&q=80",
-    category: "UI/UX & Design",
-    fileType: ".fig",
-    downloadUrl: "https://kreatestudio.dev/downloads/bharatpay-fintech-kit.zip",
-    licenseKey: "KREATE-COMM-2026-BHARAT-8921",
-    purchaseDate: "2026-08-10",
-    pricePaidINR: 561,
-    sellerNetINR: 449,
-    platformFeeINR: 62,
-    paymentMethod: "UPI (GPay)",
-  },
-];
+const INITIAL_PURCHASES: UserPurchase[] = [];
 
 export default function App() {
   // Global Listings State (persisted with initial seed)
@@ -113,11 +104,39 @@ export default function App() {
     } catch (e) {
       console.error(e);
     }
-    return ["asset-1", "asset-3"];
+    return [];
   });
 
   // Global Search in Navbar
   const [globalSearch, setGlobalSearch] = useState("");
+
+  // Firebase Realtime Database: Initial fetch of listings
+  useEffect(() => {
+    let isMounted = true;
+    fetchListingsFromFirebase().then((res) => {
+      if (isMounted && res.data && res.data.length > 0) {
+        setListings(res.data);
+      }
+    });
+
+    // Subscribe to Firebase Auth state
+    const unsubscribeAuth = subscribeToAuthState((firebaseUser) => {
+      if (firebaseUser) {
+        setIsAuthenticated(true);
+        // Sync email and name if available
+        setUserProfile((prev) => ({
+          ...prev,
+          email: firebaseUser.email || prev.email,
+          name: firebaseUser.displayName || prev.name,
+        }));
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribeAuth();
+    };
+  }, []);
 
   // Persist State Changes
   useEffect(() => {
@@ -151,6 +170,7 @@ export default function App() {
 
   const handleSignOut = () => {
     setIsAuthenticated(false);
+    logoutUser().catch((err) => console.warn("Firebase logout error:", err));
     try {
       localStorage.setItem("kreate_is_authenticated", "false");
     } catch (e) {
@@ -176,6 +196,10 @@ export default function App() {
 
   const handleAddNewListing = (newListing: AssetListing) => {
     setListings((prev) => [newListing, ...prev]);
+    // Also sync to Firebase Realtime Database
+    saveListingToFirebase(newListing).catch((err) =>
+      console.warn("Could not sync listing to Firebase:", err)
+    );
   };
 
   const handleCompletePurchase = (purchase: UserPurchase) => {
@@ -192,6 +216,11 @@ export default function App() {
       try {
         localStorage.setItem("kreate_user_profile", JSON.stringify(next));
       } catch (e) {}
+      if (next.username) {
+        saveUserProfileToFirebase(next.username, next).catch((err) =>
+          console.warn("Could not sync user profile to Firebase:", err)
+        );
+      }
       return next;
     });
   };
@@ -350,6 +379,21 @@ export default function App() {
 
             {/* 7. Protected Profile Views */}
             <Route
+              path="/buyer-profile"
+              element={
+                <ProtectedRoute isAuthenticated={isAuthenticated}>
+                  <BuyerProfilePage
+                    userProfile={userProfile}
+                    onUpdateUserProfile={handleUpdateUserProfile}
+                    purchases={purchases}
+                    savedIds={savedIds}
+                    onToggleSave={handleToggleSave}
+                    listings={listings}
+                  />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/profile/:username"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
@@ -369,15 +413,26 @@ export default function App() {
               path="/profile"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <CreatorProfilePage
-                    listings={listings}
-                    savedIds={savedIds}
-                    onToggleSave={handleToggleSave}
-                    onBuyNowDirect={(listing) => {}}
-                    userProfile={userProfile}
-                    onUpdateUserProfile={handleUpdateUserProfile}
-                    purchases={purchases}
-                  />
+                  {userProfile.role === "buyer" ? (
+                    <BuyerProfilePage
+                      userProfile={userProfile}
+                      onUpdateUserProfile={handleUpdateUserProfile}
+                      purchases={purchases}
+                      savedIds={savedIds}
+                      onToggleSave={handleToggleSave}
+                      listings={listings}
+                    />
+                  ) : (
+                    <CreatorProfilePage
+                      listings={listings}
+                      savedIds={savedIds}
+                      onToggleSave={handleToggleSave}
+                      onBuyNowDirect={(listing) => {}}
+                      userProfile={userProfile}
+                      onUpdateUserProfile={handleUpdateUserProfile}
+                      purchases={purchases}
+                    />
+                  )}
                 </ProtectedRoute>
               }
             />

@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CoreCategory } from "../types";
 import { ShieldCheck, Zap, Smartphone, ArrowUpRight, CheckCircle2, IndianRupee, Heart } from "lucide-react";
+import { BrandMark } from "./BrandLogo";
 
 export const Footer: React.FC = () => {
   const navigate = useNavigate();
@@ -60,9 +61,11 @@ export const Footer: React.FC = () => {
           {/* Brand Info & Mission (4 cols) */}
           <div className="md:col-span-4 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#202C44] border border-[#202C44] flex items-center justify-center">
-                <span className="font-heading font-extrabold text-base text-[#D3CCB0]">K</span>
-              </div>
+              <BrandMark
+                size={34}
+                variant="navy"
+                className="rounded-xl border border-[#202C44]"
+              />
               <span className="font-heading font-bold text-lg text-white tracking-tight">
                 Kreate <span className="text-[#D3CCB0]">Studio</span>
               </span>
