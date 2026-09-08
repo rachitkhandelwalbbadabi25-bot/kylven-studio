@@ -88,7 +88,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <span className="text-[10px] text-[#7B8A90] bg-[#202C44] px-2 py-0.5 rounded font-mono">
                     {listing.category}
                   </span>
-                  <span className="text-[10px] text-[#7B8A90]">By {listing.seller.name}</span>
+                  <span className="text-[10px] text-[#7B8A90]">
+                    By {listing.seller?.name || listing.creator?.name || "Verified Creator"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -271,9 +273,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               )}
             </div>
 
-            {/* Download Button */}
+            {/* Download Button: In production, served via authenticated server-generated signed URL */}
             <a
-              href={listing.downloadUrl || "https://kreatestudio.dev/downloads/asset-package.zip"}
+              href={`https://kreatestudio.dev/deliveries/${listing.id}.zip`}
               download
               target="_blank"
               rel="noopener noreferrer"

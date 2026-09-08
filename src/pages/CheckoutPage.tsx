@@ -84,6 +84,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       const orderId = `KRT-${Math.floor(100000 + Math.random() * 900000)}`;
       const licenseKey = `KREATE-COMM-2026-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
+      // PRODUCTION ARCHITECTURE SPECIFICATION:
+      // In production, the client does NOT generate the downloadUrl or the purchase record.
+      // The production payment pipeline requires:
+      //   1. Browser initiates payment with Razorpay / Stripe
+      //   2. Payment Gateway calls Server Webhook
+      //   3. Server verifies payment signature
+      //   4. Server uses Firebase Admin SDK to write record to /users/{uid}/purchases/{orderId}
+      //   5. Authenticated buyer requests download -> server verifies purchase -> generates short-lived signed URL
+      // This simulated flow operates locally in client memory and localStorage for demonstration
+      // without performing unauthorized client-side Firebase writes (which are denied by .write = false).
+      const secureDeliverableUrl = `https://kreatestudio.dev/deliveries/${listing.id}.zip`;
+
       const newPurchase: UserPurchase = {
         orderId,
         listingId: listing.id,
@@ -91,7 +103,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         thumbnailUrl: listing.thumbnailUrl,
         category: listing.category,
         fileType: listing.fileType,
-        downloadUrl: listing.downloadUrl || "https://kreatestudio.in/downloads/asset-package.zip",
+        downloadUrl: secureDeliverableUrl,
         licenseKey,
         purchaseDate: new Date().toLocaleDateString("en-GB", {
           day: "numeric",

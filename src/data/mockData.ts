@@ -106,7 +106,6 @@ export const CREATORS_DIRECTORY: Record<string, CreatorProfile> = {
     joinedDate: "Jan 2024",
     location: "Bengaluru, KA",
     bio: "Full-stack developer and UI designer building production-grade digital assets, cyberpunk kits, and developer starters.",
-    upiVpa: "ansh@okhdfcbank",
     skills: ["UI/UX Design", "React & Next.js", "Figma", "Fintech"],
   },
   aarav_ui: {
@@ -123,7 +122,6 @@ export const CREATORS_DIRECTORY: Record<string, CreatorProfile> = {
     joinedDate: "Jan 2024",
     location: "Bengaluru, KA",
     bio: "Lead Product Designer crafting accessible fintech design systems, payment flow interfaces, and dark-mode Figma components.",
-    upiVpa: "aarav@okhdfcbank",
   },
   priya_flutter: {
     id: "sel-2",
@@ -139,7 +137,6 @@ export const CREATORS_DIRECTORY: Record<string, CreatorProfile> = {
     joinedDate: "Mar 2024",
     location: "Chennai, TN",
     bio: "Full stack mobile developer specializing in high-performance Flutter 3.x apps, Riverpod state architecture, and Razorpay/UPI gateway hooks.",
-    upiVpa: "priya.dev@axisbank",
   },
   vikram_ai: {
     id: "sel-3",
@@ -155,7 +152,6 @@ export const CREATORS_DIRECTORY: Record<string, CreatorProfile> = {
     joinedDate: "Nov 2023",
     location: "Hyderabad, TS",
     bio: "AI researcher and engineer publishing production-tested QLoRA fine-tuning notebooks, Indic language tokenizers, and fast LangChain pipelines.",
-    upiVpa: "vikram.ai@icici",
   },
   kabir_visuals: {
     id: "sel-4",
@@ -171,7 +167,6 @@ export const CREATORS_DIRECTORY: Record<string, CreatorProfile> = {
     joinedDate: "Feb 2024",
     location: "Mumbai, MH",
     bio: "Commercial colorist and motion designer creating LUT packs, Premiere transition presets, and YouTube thumbnail master kits.",
-    upiVpa: "kabir.studio@paytm",
   },
   rishabh_notion: {
     id: "sel-5",
@@ -187,7 +182,6 @@ export const CREATORS_DIRECTORY: Record<string, CreatorProfile> = {
     joinedDate: "Dec 2023",
     location: "Delhi, NCR",
     bio: "Productivity consultant building operating systems for Indian agencies, GST-compliant financial trackers, and freelancer workflows.",
-    upiVpa: "rishabh@okaxis",
   },
   tanya_3d: {
     id: "sel-6",
@@ -203,13 +197,13 @@ export const CREATORS_DIRECTORY: Record<string, CreatorProfile> = {
     joinedDate: "Apr 2024",
     location: "Pune, MH",
     bio: "3D hard-surface modeler and texture artist crafting low-poly game assets, cyberpunk street props, and Cycles shader libraries.",
-    upiVpa: "tanya3d@sbi",
   },
 };
 
 export const MOCK_LISTINGS: AssetListing[] = [
   {
     id: "asset-1",
+    sellerId: CREATORS_DIRECTORY.aarav_ui.id,
     title: "Neo Bharat Cyberpunk UI Kit",
     slug: "neo-bharat-cyberpunk-ui-kit",
     creator: CREATORS_DIRECTORY.aarav_ui,
@@ -248,7 +242,6 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/neo-bharat-cyberpunk.zip",
     reviewList: [
       {
         id: "rev-1",
@@ -263,6 +256,7 @@ export const MOCK_LISTINGS: AssetListing[] = [
   },
   {
     id: "asset-2",
+    sellerId: CREATORS_DIRECTORY.aarav_ui.id,
     title: "Figma Fintech UI Kit",
     slug: "figma-fintech-ui-kit",
     creator: CREATORS_DIRECTORY.aarav_ui,
@@ -300,11 +294,11 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/figma-fintech-kit.zip",
     reviewList: []
   },
   {
     id: "asset-3",
+    sellerId: CREATORS_DIRECTORY.vikram_ai.id,
     title: "ML Fine-Tuning Notebook",
     slug: "ml-fine-tuning-notebook",
     creator: CREATORS_DIRECTORY.vikram_ai,
@@ -342,11 +336,11 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/ml-fine-tuning-notebook.zip",
     reviewList: []
   },
   {
     id: "asset-4",
+    sellerId: CREATORS_DIRECTORY.kabir_visuals.id,
     title: "Cinematic India LUT Pack",
     slug: "cinematic-india-lut-pack",
     creator: CREATORS_DIRECTORY.kabir_visuals,
@@ -384,11 +378,11 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "https://images.unsplash.com/photo-1518173946687-a4c8a383392e?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/cinematic-india-luts.zip",
     reviewList: []
   },
   {
     id: "asset-5",
+    sellerId: CREATORS_DIRECTORY.tanya_3d.id,
     title: "Blender Auto-Rickshaw Asset Pack",
     slug: "blender-auto-rickshaw-asset-pack",
     creator: CREATORS_DIRECTORY.tanya_3d,
@@ -426,11 +420,11 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/blender-auto-rickshaw.zip",
     reviewList: []
   },
   {
     id: "asset-6",
+    sellerId: CREATORS_DIRECTORY.rishabh_notion.id,
     title: "Notion Freelancer OS",
     slug: "notion-freelancer-os",
     creator: CREATORS_DIRECTORY.rishabh_notion,
@@ -469,11 +463,11 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/notion-freelancer-os.zip",
     reviewList: []
   },
   {
     id: "asset-7",
+    sellerId: CREATORS_DIRECTORY.priya_flutter.id,
     title: "QuickServe — Flutter Quick Commerce App Template",
     slug: "quickserve-flutter-quick-commerce-app-template",
     creator: CREATORS_DIRECTORY.priya_flutter,
@@ -510,11 +504,11 @@ export const MOCK_LISTINGS: AssetListing[] = [
     previewImages: [
       "https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/quickserve-flutter.zip",
     reviewList: []
   },
   {
     id: "asset-8",
+    sellerId: CREATORS_DIRECTORY.aarav_ui.id,
     title: "Free Indian Bank & UPI Vector Icons Pack",
     slug: "free-indian-bank-upi-vector-icons-pack",
     creator: CREATORS_DIRECTORY.aarav_ui,
@@ -551,11 +545,11 @@ export const MOCK_LISTINGS: AssetListing[] = [
     previewImages: [
       "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/free-indian-bank-icons.zip",
     reviewList: []
   },
   {
     id: "asset-9",
+    sellerId: CREATORS_DIRECTORY.vikram_ai.id,
     title: "Free PyTorch Indic NLP Tokenizer & Starter Notebook",
     slug: "free-pytorch-indic-nlp-tokenizer-starter",
     creator: CREATORS_DIRECTORY.vikram_ai,
@@ -591,11 +585,11 @@ export const MOCK_LISTINGS: AssetListing[] = [
     previewImages: [
       "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/free-indic-nlp-starter.zip",
     reviewList: []
   },
   {
     id: "asset-10",
+    sellerId: CREATORS_DIRECTORY.rishabh_notion.id,
     title: "2026 Minimalist Digital iPad Planner & Habit Journal",
     slug: "2026-minimalist-digital-ipad-planner-habit-journal",
     creator: CREATORS_DIRECTORY.rishabh_notion,
@@ -633,11 +627,11 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=1200&q=80",
       "https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/2026-digital-planner.zip",
     reviewList: []
   },
   {
     id: "asset-11",
+    sellerId: CREATORS_DIRECTORY.kabir_visuals.id,
     title: "Desi Street & Portrait Lightroom Presets Pack",
     slug: "desi-street-portrait-lightroom-presets",
     creator: CREATORS_DIRECTORY.kabir_visuals,
@@ -674,7 +668,6 @@ export const MOCK_LISTINGS: AssetListing[] = [
     previewImages: [
       "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
     ],
-    downloadUrl: "https://kreatestudio.dev/downloads/desi-lightroom-presets.zip",
     reviewList: []
   }
 ];
@@ -820,7 +813,6 @@ export const CREATOR_PROFILES_MOCK: Record<string, CreatorProfile> = {
     location: "Bengaluru, India",
     bio: "Full-stack developer and UI designer building production-grade digital assets, cyberpunk kits, and developer starters.",
     skills: ["UI/UX Design", "Figma", "Next.js", "Flutter"],
-    upiVpa: "ansh@okhdfcbank",
   },
   aarav_ui: {
     id: "creator-1",
@@ -839,7 +831,6 @@ export const CREATOR_PROFILES_MOCK: Record<string, CreatorProfile> = {
     location: "Bengaluru, Karnataka",
     bio: "Lead UI Engineer & Design Systems Architect building fintech kits, design tokens, and Flutter component architectures for top Indian startups.",
     skills: ["Figma Design Systems", "Flutter Apps", "Fintech UI", "Tokens"],
-    upiVpa: "aarav@okhdfcbank",
   },
   vikram_dev: {
     id: "creator-2",
@@ -858,7 +849,6 @@ export const CREATOR_PROFILES_MOCK: Record<string, CreatorProfile> = {
     location: "Gurugram, Haryana",
     bio: "Full-stack Flutter & React Native architect. Creator of production e-commerce, food delivery, and logistics application templates.",
     skills: ["Flutter", "Dart", "Bloc Architecture", "Payment Gateways"],
-    upiVpa: "vikram@okaxis",
   },
   ai_priya: {
     id: "creator-3",
@@ -877,7 +867,6 @@ export const CREATOR_PROFILES_MOCK: Record<string, CreatorProfile> = {
     location: "Hyderabad, Telangana",
     bio: "AI researcher & engineer specializing in open-source LLM fine-tuning (QLoRA), Indian language datasets, and high-throughput RAG systems.",
     skills: ["PyTorch", "Llama 3", "QLoRA", "LangChain", "Jupyter"],
-    upiVpa: "priyanair@icici",
   },
 };
 

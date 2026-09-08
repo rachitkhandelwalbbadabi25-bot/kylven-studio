@@ -55,7 +55,7 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
           const q = searchQuery.toLowerCase();
           const matchesTitle = item.title.toLowerCase().includes(q);
           const matchesDesc = item.description.toLowerCase().includes(q);
-          const matchesSeller = item.seller.name.toLowerCase().includes(q);
+          const matchesSeller = (item.creator?.name || item.seller?.name || "").toLowerCase().includes(q);
           const matchesSub = item.subcategory.toLowerCase().includes(q);
           const matchesFormat = item.fileFormatTags.some((f) => f.toLowerCase().includes(q));
 
