@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link, useSearchParams } from "react-router-dom";
 import { UserProfile } from "../types";
+import { BrandMark } from "../components/BrandLogo";
 import {
   User,
   Mail,
@@ -15,6 +16,7 @@ import {
   Store,
   AtSign,
 } from "lucide-react";
+import { loginWithEmail, registerWithEmail, loginWithGoogle } from "../services/firebaseService";
 
 interface AuthPageProps {
   onLoginSuccess: (profile: UserProfile) => void;
@@ -177,18 +179,58 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       hasCompletedOnboarding: true,
     };
 
-    setTimeout(() => {
-      onLoginSuccess(newProfile);
-      setIsSubmitting(false);
+    (async () => {
+      try {
+        if (isSignUp) {
+          await registerWithEmail(email.trim(), password, newProfile);
+        } else {
+          await loginWithEmail(email.trim(), password);
+        }
+        onLoginSuccess(newProfile);
+        setIsSubmitting(false);
 
+        if (redirectUrl) {
+          navigate(redirectUrl);
+        } else if (chosenRole === "seller") {
+          navigate("/dashboard");
+        } else {
+          navigate("/explore");
+        }
+      } catch (authErr: any) {
+        console.warn("Firebase Auth operation encountered error:", authErr);
+        // Show Firebase message or code
+        const msg = authErr.code ? `[${authErr.code}] ${authErr.message}` : authErr.message;
+        setErrorMessage(msg);
+        setIsSubmitting(false);
+      }
+    })();
+  };
+
+  const handleGoogleSignIn = async () => {
+    setErrorMessage("");
+    setIsSubmitting(true);
+    try {
+      const { user } = await loginWithGoogle();
+      const profile: UserProfile = {
+        name: user.displayName || user.email?.split("@")[0] || "User",
+        email: user.email || "",
+        username: (user.displayName || "user").toLowerCase().replace(/[^a-z0-9]/g, "_"),
+        role: role || "buyer",
+        avatar: user.photoURL || "",
+        hasCompletedOnboarding: true,
+      };
+      onLoginSuccess(profile);
+      setIsSubmitting(false);
       if (redirectUrl) {
         navigate(redirectUrl);
-      } else if (chosenRole === "seller") {
-        navigate("/dashboard");
       } else {
-        navigate("/explore");
+        navigate("/browse");
       }
-    }, 450);
+    } catch (err: any) {
+      console.warn("Google Sign-In failed:", err);
+      setErrorMessage(err.code ? `[${err.code}] ${err.message}` : err.message);
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -199,11 +241,13 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         
         {/* Brand Logo & Header */}
         <div className="text-center space-y-1.5">
-          <Link to="/" className="inline-flex items-center gap-2 group mb-0.5">
-            <div className="w-8 h-8 rounded-lg bg-[#202C44] border border-[#202C44] flex items-center justify-center transition-all group-hover:border-[#D3CCB0]">
-              <span className="font-heading font-extrabold text-base text-[#D3CCB0]">K</span>
-            </div>
-            <span className="font-heading font-bold text-base text-white">
+          <Link to="/" className="inline-flex items-center gap-2.5 group mb-0.5">
+            <BrandMark
+              size={36}
+              variant="navy"
+              className="rounded-xl border border-[#202C44] group-hover:border-[#D3CCB0] transition-all shadow-md group-hover:scale-105"
+            />
+            <span className="font-heading font-bold text-lg text-white group-hover:text-[#D3CCB0] transition-colors">
               Kreate <span className="text-[#D3CCB0]">Studio</span>
             </span>
           </Link>
@@ -556,6 +600,43 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             )}
           </button>
         </form>
+
+        {/* Divider */}
+        <div className="relative flex items-center justify-center my-2">
+          <div className="border-t border-[#202C44] w-full" />
+          <span className="bg-[#111317] px-2 text-[10px] text-[#7B8A90] uppercase tracking-wider font-mono">
+            Or continue with
+          </span>
+        </div>
+
+        {/* Google Auth Button */}
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={isSubmitting}
+          id="google-auth-button"
+          className="w-full bg-[#1A1D24] hover:bg-[#222732] text-white border border-[#202C44] hover:border-[#D3CCB0] text-xs font-semibold py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50"
+        >
+          <svg className="w-4 h-4" viewBox="0 0 24 24">
+            <path
+              fill="#EA4335"
+              d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
+            />
+            <path
+              fill="#4285F4"
+              d="M23.5 12.3c0-.8-.1-1.7-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12 0 14.8s.7 5.1 1.9 7.5l3.7-2.9z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2-6.4-4.8L1.9 16.9C3.7 20.6 7.5 23.5 12 23.5z"
+            />
+          </svg>
+          <span>Continue with Google</span>
+        </button>
 
         {/* Toggle between Sign Up and Log In */}
         <div className="text-center text-xs text-[#7B8A90]">

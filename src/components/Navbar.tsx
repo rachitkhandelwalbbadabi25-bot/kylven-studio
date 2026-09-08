@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { UserProfile, UserRole } from "../types";
 import { MOCK_LISTINGS, CREATORS_DIRECTORY } from "../data/mockData";
+import { BrandMark, BrandLogo } from "./BrandLogo";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
@@ -61,8 +62,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
   const isSellerMode = userProfile?.role === "seller";
-  const currentUsername = userProfile?.username || "buildwithansh";
-  const userEmail = userProfile?.email || "ansh.bhardwaj@kreatestudio.dev";
+  const currentUsername = userProfile?.username || "rachitkhandelwal20";
+  const userEmail = userProfile?.email || "kavishkhandelwal9@gmail.com";
+  const userInitial = userProfile?.name ? userProfile.name.trim().charAt(0).toUpperCase() : "R";
 
   // Close search suggestions & account dropdown on click outside
   useEffect(() => {
@@ -232,24 +234,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               <Link
                 to="/"
                 id="header-logo-link"
-                className="flex items-center gap-2 sm:gap-2.5 shrink-0 group py-1"
+                className="flex items-center gap-2.5 shrink-0 group py-1"
                 title="Kreate Studio — India’s Creative Marketplace"
               >
-                <div
-                  className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${
-                    isSellerMode
-                      ? "bg-emerald-950/80 border-emerald-800 group-hover:border-emerald-400"
-                      : "bg-[#202C44] border-[#202C44] group-hover:border-[#D3CCB0]"
-                  }`}
-                >
-                  <span
-                    className={`font-heading font-black text-lg ${
-                      isSellerMode ? "text-emerald-400" : "text-[#D3CCB0]"
-                    }`}
-                  >
-                    K
-                  </span>
-                </div>
+                <BrandMark
+                  size={36}
+                  variant={isSellerMode ? "emerald" : "navy"}
+                  className="rounded-xl border border-[#202C44] group-hover:border-[#D3CCB0] transition-all shadow-md group-hover:scale-105"
+                />
                 <div className="flex flex-col">
                   <span className="font-heading font-bold text-base text-white tracking-tight leading-none group-hover:text-[#D3CCB0] transition-colors">
                     Kreate <span className={isSellerMode ? "text-emerald-400" : "text-[#D3CCB0]"}>Studio</span>
@@ -520,11 +512,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                           : "bg-[#202C44] text-[#D3CCB0] border-[#202C44]"
                       }`}
                     >
-                      {userProfile?.name?.slice(0, 2).toUpperCase() || "US"}
+                      {userInitial}
                     </div>
                     <div className="hidden md:flex flex-col text-left">
                       <span className="text-xs text-white font-medium max-w-[100px] truncate leading-tight group-hover:text-[#D3CCB0] transition-colors">
-                        {userProfile?.name || "Ansh Bhardwaj"}
+                        {userProfile?.name || "Rachit Khandelwal20"}
                       </span>
                       <span
                         className={`text-[9px] font-mono leading-none mt-0.5 flex items-center gap-1 ${
@@ -566,7 +558,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                         {/* Large Name */}
                         <p className="text-sm font-heading font-extrabold text-white tracking-tight truncate">
-                          {userProfile?.name || "Ansh Bhardwaj"}
+                          {userProfile?.name || "Rachit Khandelwal20"}
                         </p>
 
                         {/* Muted Username */}
@@ -584,12 +576,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                       {/* Dropdown Navigation Links */}
                       <div className="space-y-1">
                         <Link
-                          to={`/profile/${currentUsername}`}
+                          to="/profile"
                           onClick={() => setAccountDropdownOpen(false)}
                           className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-white hover:bg-[#202C44]/80 hover:text-[#D3CCB0] transition-colors"
                         >
                           <User className="w-4 h-4 text-[#7B8A90]" />
-                          <span>View Public Profile</span>
+                          <span>View {isSellerMode ? "Seller Profile" : "Buyer Profile"}</span>
                         </Link>
 
                         <Link
@@ -773,15 +765,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Drawer Header */}
             <div className="p-4 sm:p-5 border-b border-[#202C44] flex items-center justify-between bg-[#111317] sticky top-0 z-10">
               <div className="flex items-center gap-2.5">
-                <div
-                  className={`w-8 h-8 rounded-lg border flex items-center justify-center ${
-                    isSellerMode
-                      ? "bg-emerald-950 border-emerald-800 text-emerald-400"
-                      : "bg-[#202C44] border-[#202C44] text-[#D3CCB0]"
-                  }`}
-                >
-                  <span className="font-heading font-black text-sm">K</span>
-                </div>
+                <BrandMark
+                  size={32}
+                  variant={isSellerMode ? "emerald" : "navy"}
+                  className="rounded-lg border border-[#202C44]"
+                />
                 <div>
                   <h2 className="font-heading font-bold text-sm text-white leading-tight">
                     Kreate <span className={isSellerMode ? "text-emerald-400" : "text-[#D3CCB0]"}>Studio</span>
@@ -810,7 +798,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* User Identity / Account Summary (if authenticated) */}
               {isAuthenticated && (
                 <Link
-                  to={`/profile/${currentUsername}`}
+                  to="/profile"
                   onClick={closeDrawer}
                   id="drawer-user-badge"
                   title="View your profile"
@@ -824,12 +812,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                           : "bg-[#202C44] text-[#D3CCB0] border-[#202C44]"
                       }`}
                     >
-                      {userProfile?.name?.slice(0, 2).toUpperCase() || "US"}
+                      {userInitial}
                     </div>
                     <div className="truncate text-left space-y-0.5">
                       {/* 1. Large Name */}
                       <p className="text-sm font-heading font-extrabold text-white group-hover:text-[#D3CCB0] transition-colors truncate">
-                        {userProfile?.name || "Ansh Bhardwaj"}
+                        {userProfile?.name || "Rachit Khandelwal20"}
                       </p>
                       {/* 2. Muted Username */}
                       <p className="text-xs text-[#7B8A90] font-mono truncate">
