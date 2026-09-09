@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { AssetListing, CoreCategory, CreatorProfile, calculatePricing, UserProfile } from "../types";
 import { CATEGORIES_LIST } from "../data/mockData";
 import { auth } from "../lib/firebase";
+import { serverTimestamp } from "firebase/database";
 import {
   Upload,
   Plus,
@@ -160,9 +161,11 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
 
     // Note: downloadUrl is strictly omitted from the public listing.
     // Untrusted client metrics (rating, salesCount, reviewStatus) are set to unverified defaults.
+    // Authoritative requirement: New listings created MUST ALWAYS have status: "pending".
     const newListing: AssetListing = {
       id: `asset_${Date.now()}`,
       sellerId: currentUid,
+      status: "pending",
       slug,
       title: title.trim(),
       category,
@@ -194,7 +197,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
       reviewStatus: "In Review",
       featured: false,
       isNew: true,
-      createdAt: new Date().toISOString().split("T")[0],
+      createdAt: serverTimestamp(),
     };
 
     setTimeout(() => {

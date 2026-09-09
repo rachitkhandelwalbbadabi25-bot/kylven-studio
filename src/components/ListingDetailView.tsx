@@ -122,13 +122,13 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
             <div className="flex flex-wrap items-center gap-4 text-xs text-[#7B8A90]">
               <div className="flex items-center gap-1 bg-[#111317] px-2.5 py-1 rounded-md border border-[#202C44]">
                 <Star className="w-4 h-4 text-[#D3CCB0] fill-[#D3CCB0]" />
-                <span className="font-bold text-white text-sm">{listing.rating.toFixed(1)}</span>
-                <span>({listing.reviewCount} verified reviews)</span>
+                <span className="font-bold text-white text-sm">{(typeof listing.rating === "number" && !isNaN(listing.rating) ? listing.rating : (Number(listing.rating) || 5.0)).toFixed(1)}</span>
+                <span>({listing.reviewCount ?? 0} verified reviews)</span>
               </div>
 
               <div className="flex items-center gap-1.5">
                 <Download className="w-4 h-4 text-[#D3CCB0]" />
-                <span className="text-white font-medium">{listing.salesCount}</span> downloads
+                <span className="text-white font-medium">{listing.salesCount ?? 0}</span> downloads
               </div>
 
               <div className="flex items-center gap-1.5">

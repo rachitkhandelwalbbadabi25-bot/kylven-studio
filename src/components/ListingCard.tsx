@@ -120,8 +120,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           </span>
           <div className="flex items-center gap-1 bg-[#111317]/90 px-2 py-0.5 rounded border border-[#202C44] text-[#D3CCB0] font-bold text-[10px]">
             <Star className="w-3 h-3 fill-current" />
-            <span>{listing.rating.toFixed(1)}</span>
-            <span className="text-[#7B8A90] font-normal font-mono">({listing.reviewCount})</span>
+            <span>{(typeof listing.rating === "number" && !isNaN(listing.rating) ? listing.rating : (Number(listing.rating) || 5.0)).toFixed(1)}</span>
+            <span className="text-[#7B8A90] font-normal font-mono">({listing.reviewCount ?? 0})</span>
           </div>
         </div>
       </div>
@@ -160,7 +160,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           </span>
           <span className="text-[10px] text-[#202C44]">•</span>
           <span className="text-[10px] text-[#7B8A90] font-mono">
-            {listing.salesCount} sold
+            {listing.salesCount ?? 0} sold
           </span>
         </div>
 
@@ -168,13 +168,13 @@ export const ListingCard: React.FC<ListingCardProps> = ({
         <div className="pt-2 border-t border-[#202C44] flex items-center justify-between gap-2">
           <div>
             <div className="flex items-baseline gap-1.5">
-              {listing.priceInINR === 0 ? (
+              {(listing.priceInINR || 0) === 0 ? (
                 <span className="text-sm font-heading font-extrabold text-emerald-400">
                   FREE
                 </span>
               ) : (
                 <span className="text-sm font-heading font-extrabold text-[#D3CCB0]">
-                  ₹{listing.priceInINR.toLocaleString("en-IN")}
+                  ₹{Number(listing.priceInINR || 0).toLocaleString("en-IN")}
                 </span>
               )}
             </div>

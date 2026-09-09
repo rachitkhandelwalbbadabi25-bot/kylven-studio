@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react";
 import { AssetListing, CoreCategory, CreatorProfile, SalesRecord, SellerStats } from "../types";
 import { CATEGORIES_LIST, FILE_FORMATS_CATALOG } from "../data/mockData";
 import { auth } from "../lib/firebase";
+import { serverTimestamp } from "firebase/database";
 import {
   PlusCircle,
   TrendingUp,
@@ -171,9 +172,11 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
     };
 
     // Public listing: deliverable downloadUrl is omitted, metrics default to unreviewed
+    // Authoritative requirement: New listings created MUST ALWAYS have status: "pending".
     const createdAsset: AssetListing = {
       id: `asset-new-${Date.now()}`,
       sellerId: currentUid,
+      status: "pending",
       slug: (title || "new-asset").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       title: title || (attachedFile ? attachedFile.name : "New Custom Seller Asset"),
       category,
@@ -204,7 +207,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
       featured: false,
       isNew: true,
       reviewList: [],
-      createdAt: new Date().toISOString().split("T")[0],
+      createdAt: serverTimestamp(),
       licenseType: "Commercial License",
       compatibleWith: ["Figma", "VS Code", "PDF Viewers", "All Standard Tools"],
     };
