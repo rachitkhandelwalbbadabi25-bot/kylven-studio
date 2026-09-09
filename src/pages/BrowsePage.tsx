@@ -197,11 +197,22 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
         return true;
       })
       .sort((a, b) => {
-        if (sortBy === "popular") return b.salesCount - a.salesCount;
-        if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        if (sortBy === "price-asc") return a.priceInINR - b.priceInINR;
-        if (sortBy === "price-desc") return b.priceInINR - a.priceInINR;
-        if (sortBy === "rating") return b.rating - a.rating;
+        if (sortBy === "popular") return (b.salesCount || 0) - (a.salesCount || 0);
+        if (sortBy === "newest") {
+          const parseTime = (val: any): number => {
+            if (typeof val === "number" && !isNaN(val)) return val;
+            if (typeof val === "string") {
+              const t = new Date(val).getTime();
+              return isNaN(t) ? 0 : t;
+            }
+            if (val && typeof val === "object") return Date.now();
+            return 0;
+          };
+          return parseTime(b.createdAt) - parseTime(a.createdAt);
+        }
+        if (sortBy === "price-asc") return (a.priceInINR || 0) - (b.priceInINR || 0);
+        if (sortBy === "price-desc") return (b.priceInINR || 0) - (a.priceInINR || 0);
+        if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
         return 0;
       });
   }, [listings, selectedCategory, searchQuery, selectedFormat, priceType, sortBy, minPrice, maxPrice, minRating]);
@@ -229,8 +240,8 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
   const currentSortLabel = sortOptions.find((s) => s.key === sortBy)?.label || "Popularity / Trending";
 
   // Reusable Sidebar Content (Used in Desktop Left Sidebar & Mobile Drawer)
-  const FilterSidebarContent = (
-    <div className="space-y-6">
+  const renderFilterSidebar = (prefix: string) => (
+    <div className="space-y-6" id={`${prefix}-filter-sidebar-container`}>
       
       {/* 1. Header: Bold "Filters" title with "Clear All" link */}
       <div className="flex items-center justify-between pb-3 border-b border-[#202C44]">
@@ -249,7 +260,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
           <button
             type="button"
             onClick={handleResetFilters}
-            id="sidebar-clear-all-btn"
+            id={`${prefix}-sidebar-clear-all-btn`}
             className="text-xs font-mono font-semibold text-[#D3CCB0] hover:text-white hover:underline transition-colors flex items-center gap-1"
           >
             <RotateCcw className="w-3 h-3" />
@@ -297,7 +308,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
 
             return (
               <button
-                key={cat.name}
+                key={`${prefix}-cat-${cat.id || cat.name}`}
                 type="button"
                 onClick={() => updateParams({ category: isSelected ? null : cat.name })}
                 className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
@@ -431,7 +442,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
 
             return (
               <button
-                key={preset.label}
+                key={`${prefix}-preset-${preset.label}`}
                 type="button"
                 onClick={() => {
                   updateParams({
@@ -464,7 +475,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
             { key: "paid", label: "Commercial / Paid", desc: "Commercial licenses" },
           ].map((item) => (
             <label
-              key={item.key}
+              key={`${prefix}-price-model-${item.key}`}
               className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs cursor-pointer transition-colors ${
                 priceType === item.key
                   ? "bg-[#202C44] text-[#D3CCB0] font-bold border border-[#D3CCB0]/40"
@@ -473,7 +484,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
             >
               <input
                 type="radio"
-                name="priceModel"
+                name={`${prefix}-priceModel`}
                 checked={priceType === item.key}
                 onChange={() => updateParams({ priceType: item.key === "all" ? null : item.key })}
                 className="accent-[#D3CCB0] cursor-pointer"
@@ -514,7 +525,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
 
             return (
               <button
-                key={r.val}
+                key={`${prefix}-rating-${r.val}`}
                 type="button"
                 onClick={() => updateParams({ minRating: isSelected ? null : r.val.toString() })}
                 className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
@@ -527,7 +538,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
                   <div className="flex items-center text-amber-400">
                     {[...Array(5)].map((_, i) => (
                       <Star
-                        key={i}
+                        key={`${prefix}-star-${r.val}-${i}`}
                         className={`w-3.5 h-3.5 ${
                           i < r.stars ? "fill-amber-400 text-amber-400" : "text-[#7B8A90]/40"
                         }`}
@@ -572,7 +583,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
 
             return (
               <label
-                key={fmt.ext}
+                key={`${prefix}-fmt-${fmt.ext}`}
                 className={`flex items-center justify-between px-3 py-1.5 rounded-xl text-xs cursor-pointer transition-colors ${
                   isChecked
                     ? "bg-[#202C44] text-[#D3CCB0] font-bold border border-[#D3CCB0]/40"
@@ -647,7 +658,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
           id="pro-shop-filter-sidebar"
           className="hidden lg:block lg:col-span-3 xl:col-span-3 bg-[#111317] border border-[#202C44] rounded-2xl p-5 shadow-xl sticky top-[80px] max-h-[calc(100vh-100px)] overflow-y-auto"
         >
-          {FilterSidebarContent}
+          {renderFilterSidebar("desktop")}
         </aside>
 
         {/* =======================================================================
@@ -718,7 +729,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
                   </div>
                   {sortOptions.map((opt) => (
                     <button
-                      key={opt.key}
+                      key={`desktop-sort-${opt.key}`}
                       type="button"
                       onClick={() => {
                         updateParams({ sort: opt.key === "popular" ? null : opt.key });
@@ -865,19 +876,22 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
                 className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"
                 id="browse-results-grid"
               >
-                {filteredListings.map((item) => (
-                  <ListingCard
-                    key={item.id}
-                    listing={item}
-                    onSelectListing={(asset) => {
-                      navigate(`/listing/${asset.slug || asset.id}`);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    onBuyNowDirect={onBuyNowDirect}
-                    isSaved={savedIds.includes(item.id)}
-                    onToggleSave={onToggleSave}
-                  />
-                ))}
+                {filteredListings.map((item, index) => {
+                  const itemKey = item.id ? `listing-${item.id}` : `listing-${item.slug || 'item'}-${index}`;
+                  return (
+                    <ListingCard
+                      key={itemKey}
+                      listing={item}
+                      onSelectListing={(asset) => {
+                        navigate(`/listing/${asset.slug || asset.id}`);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                      onBuyNowDirect={onBuyNowDirect}
+                      isSaved={item.id ? savedIds.includes(item.id) : false}
+                      onToggleSave={onToggleSave}
+                    />
+                  );
+                })}
               </div>
             ) : (
               /* Flipkart/Amazon Style Empty State with Category Recommendations */
@@ -965,7 +979,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
 
           {/* Drawer Body */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
-            {FilterSidebarContent}
+            {renderFilterSidebar("mobile")}
           </div>
 
           {/* Drawer Bottom Action Bar */}
@@ -1015,7 +1029,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
             <div className="space-y-1">
               {sortOptions.map((opt) => (
                 <button
-                  key={opt.key}
+                  key={`mobile-sort-${opt.key}`}
                   type="button"
                   onClick={() => {
                     updateParams({ sort: opt.key === "popular" ? null : opt.key });

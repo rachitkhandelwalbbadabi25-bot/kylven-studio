@@ -26,7 +26,10 @@ import {
   subscribeToAuthState, 
   fetchListingsFromFirebase, 
   saveListingToFirebase, 
-  saveUserProfileToFirebase,
+  fetchPublicProfileFromFirebase,
+  fetchUserBookmarksFromFirebase,
+  addBookmarkToFirebase,
+  removeBookmarkFromFirebase,
   fetchUserPurchasesFromFirebase,
   logoutUser 
 } from "./services/firebaseService";
@@ -116,7 +119,12 @@ export default function App() {
     let isMounted = true;
     fetchListingsFromFirebase().then((res) => {
       if (isMounted && res.data && res.data.length > 0) {
-        setListings(res.data);
+        const remoteListings = res.data;
+        const remoteIds = new Set(remoteListings.map((l) => l.id));
+        setListings((prev) => {
+          const nonConflicting = prev.filter((p) => !remoteIds.has(p.id));
+          return [...remoteListings, ...nonConflicting];
+        });
       }
     });
 
@@ -131,12 +139,32 @@ export default function App() {
           name: firebaseUser.displayName || prev.name,
         }));
 
-        // Fetch verified user purchases from Firebase /users/{uid}/purchases (read allowed by rules)
+        // 1. Fetch public profile from authoritative /publicProfiles/{uid}
+        fetchPublicProfileFromFirebase(firebaseUser.uid).then((publicProf) => {
+          if (isMounted && publicProf) {
+            setUserProfile((prev) => ({
+              ...prev,
+              name: publicProf.name || prev.name,
+              role: (publicProf.role as any) || prev.role,
+              bio: publicProf.bio || prev.bio,
+              username: publicProf.usernameId || prev.username,
+            }));
+          }
+        });
+
+        // 2. Fetch bookmarks from authoritative /bookmarks/{uid}
+        fetchUserBookmarksFromFirebase(firebaseUser.uid).then((remoteSaved) => {
+          if (isMounted && remoteSaved && remoteSaved.length > 0) {
+            setSavedIds((prev) => Array.from(new Set([...prev, ...remoteSaved])));
+          }
+        });
+
+        // 3. Fetch purchase records from authoritative top-level /purchases (filtered by buyerId)
         fetchUserPurchasesFromFirebase(firebaseUser.uid).then((res) => {
           if (isMounted && res.data && res.data.length > 0) {
             setPurchases((prev) => {
-              const existingOrderIds = new Set(prev.map((p) => p.orderId));
-              const remoteNew = res.data!.filter((p) => !existingOrderIds.has(p.orderId));
+              const existingIds = new Set(prev.map((p) => p.purchaseId || p.orderId));
+              const remoteNew = res.data!.filter((p) => !existingIds.has(p.purchaseId || p.orderId));
               return [...remoteNew, ...prev];
             });
           }
@@ -201,15 +229,31 @@ export default function App() {
   };
 
   const handleToggleSave = (id: string) => {
-    setSavedIds((prev) =>
-      prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]
-    );
+    setSavedIds((prev) => {
+      const isSaved = prev.includes(id);
+      if (isSaved) {
+        removeBookmarkFromFirebase(id).catch((err) =>
+          console.warn("Could not remove bookmark from Firebase:", err)
+        );
+        return prev.filter((itemId) => itemId !== id);
+      } else {
+        addBookmarkToFirebase(id).catch((err) =>
+          console.warn("Could not save bookmark to Firebase:", err)
+        );
+        return [...prev, id];
+      }
+    });
   };
 
   const handleAddNewListing = (newListing: AssetListing) => {
-    setListings((prev) => [newListing, ...prev]);
+    // New listing always has status: "pending"
+    const pendingListing: AssetListing = {
+      ...newListing,
+      status: "pending",
+    };
+    setListings((prev) => [pendingListing, ...prev]);
     // Also sync to Firebase Realtime Database
-    saveListingToFirebase(newListing)
+    saveListingToFirebase(pendingListing)
       .then((res) => {
         if (!res.success && res.error) {
           console.warn("Could not sync listing to Firebase:", res.error);
@@ -234,11 +278,7 @@ export default function App() {
       try {
         localStorage.setItem("kreate_user_profile", JSON.stringify(next));
       } catch (e) {}
-      if (next.username) {
-        saveUserProfileToFirebase(next.username, next).catch((err) =>
-          console.warn("Could not sync user profile to Firebase:", err)
-        );
-      }
+      // In the authoritative architecture, client-side writes to /users are strictly prohibited.
       return next;
     });
   };

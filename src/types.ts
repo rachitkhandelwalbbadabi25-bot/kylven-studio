@@ -45,6 +45,7 @@ export interface ReviewItem {
 }
 
 export type ReviewStatus = "Verified & Approved" | "In Review" | "Community Certified" | string;
+export type ListingStatus = "approved" | "pending" | "rejected" | string;
 export type LicenseType = "Standard Commercial License" | "Extended Commercial License" | "MIT Open License" | "Commercial License" | "Personal Use Only" | "Extended Enterprise" | string;
 export type DeliveryType = "Instant ZIP Download" | "Direct Cloud Access" | "GitHub Repository Access" | string;
 
@@ -53,6 +54,7 @@ export interface AssetListing {
   sellerId?: string; // Authenticated owner UID for Firebase security rules
   title: string;
   slug: string;
+  status?: ListingStatus; // Live Firebase schema: 'approved' | 'pending'
   creator: CreatorProfile;
   seller?: CreatorProfile; // backward compatibility
   category: CoreCategory;
@@ -75,7 +77,7 @@ export interface AssetListing {
   compatibleWith?: string[]; // backward compatibility
   licenseType: LicenseType;
   deliveryType: DeliveryType;
-  createdAt: string;
+  createdAt: string | number | object;
   updatedAt?: string;
   featured?: boolean;
   isNew?: boolean;
@@ -116,6 +118,9 @@ export function calculatePricing(priceInINR: number): PricingBreakdown {
 
 export interface UserPurchase {
   orderId: string;
+  purchaseId?: string; // Top-level /purchases/{purchaseId} key
+  buyerId?: string;
+  sellerId?: string;
   listingId: string;
   title: string;
   thumbnailUrl: string;
@@ -125,9 +130,21 @@ export interface UserPurchase {
   licenseKey: string;
   purchaseDate: string;
   pricePaidINR: number;
+  amountPaid?: number;
   sellerNetINR: number;
   platformFeeINR: number;
   paymentMethod: string;
+}
+
+/**
+ * Authoritative Public Profile schema stored at /publicProfiles/{uid}
+ * Intentionally public fields only.
+ */
+export interface PublicProfile {
+  name: string;
+  role: string;
+  bio: string;
+  usernameId: string;
 }
 
 export interface SalesRecord {

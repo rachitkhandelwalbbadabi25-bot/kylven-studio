@@ -66,7 +66,18 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
       })
       .sort((a, b) => {
         if (sortBy === "popular") return b.salesCount - a.salesCount;
-        if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (sortBy === "newest") {
+          const parseTime = (val: any): number => {
+            if (typeof val === "number" && !isNaN(val)) return val;
+            if (typeof val === "string") {
+              const t = new Date(val).getTime();
+              return isNaN(t) ? 0 : t;
+            }
+            if (val && typeof val === "object") return Date.now();
+            return 0;
+          };
+          return parseTime(b.createdAt) - parseTime(a.createdAt);
+        }
         if (sortBy === "price-asc") return a.priceInINR - b.priceInINR;
         if (sortBy === "price-desc") return b.priceInINR - a.priceInINR;
         return 0;
