@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { AssetListing, calculatePricing, UserPurchase } from "../types";
+import { auth } from "../lib/firebase";
 import {
   ShieldCheck,
   Lock,
@@ -85,19 +86,22 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       const licenseKey = `KREATE-COMM-2026-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
       // PRODUCTION ARCHITECTURE SPECIFICATION:
-      // In production, the client does NOT generate the downloadUrl or the purchase record.
-      // The production payment pipeline requires:
+      // In production, the client does NOT generate the deliverable URL or directly write purchases.
+      // The authoritative production payment pipeline requires:
       //   1. Browser initiates payment with Razorpay / Stripe
       //   2. Payment Gateway calls Server Webhook
       //   3. Server verifies payment signature
-      //   4. Server uses Firebase Admin SDK to write record to /users/{uid}/purchases/{orderId}
+      //   4. Server uses Firebase Admin SDK to write trusted record to /purchases/{purchaseId}
       //   5. Authenticated buyer requests download -> server verifies purchase -> generates short-lived signed URL
-      // This simulated flow operates locally in client memory and localStorage for demonstration
-      // without performing unauthorized client-side Firebase writes (which are denied by .write = false).
+      // This simulated flow operates locally in client state for UI demonstration
+      // without performing unauthorized direct client-side Firebase writes.
       const secureDeliverableUrl = `https://kreatestudio.dev/deliveries/${listing.id}.zip`;
 
       const newPurchase: UserPurchase = {
+        purchaseId: orderId,
         orderId,
+        buyerId: auth.currentUser?.uid || "buyer",
+        sellerId: listing.sellerId || listing.creator?.id || "seller",
         listingId: listing.id,
         title: listing.title,
         thumbnailUrl: listing.thumbnailUrl,
@@ -111,6 +115,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           year: "numeric",
         }),
         pricePaidINR: pricing.buyerTotalINR,
+        amountPaid: pricing.buyerTotalINR,
         sellerNetINR: pricing.sellerNetINR,
         platformFeeINR: pricing.platformFeeINR,
         paymentMethod: paymentMethod.toUpperCase(),
