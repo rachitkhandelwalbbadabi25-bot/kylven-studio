@@ -134,6 +134,11 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
   const filteredListings = useMemo(() => {
     return listings
       .filter((item) => {
+        // Exclude soft-deleted listings
+        if (item.deleted === true) {
+          return false;
+        }
+
         // Category filter
         if (selectedCategory !== "All" && item.category !== selectedCategory) {
           return false;
@@ -149,19 +154,22 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
           return false;
         }
 
+        const itemPrice = typeof item.price === "number" && !isNaN(item.price) ? item.price : 0;
+        const isFree = Boolean(item.isFree || itemPrice === 0);
+
         // Price Type filter (Free vs Paid)
-        if (priceType === "free" && item.priceInINR !== 0) {
+        if (priceType === "free" && !isFree) {
           return false;
         }
-        if (priceType === "paid" && item.priceInINR === 0) {
+        if (priceType === "paid" && isFree) {
           return false;
         }
 
         // Price Min & Max Filter
-        if (item.priceInINR < minPrice) {
+        if (itemPrice < minPrice) {
           return false;
         }
-        if (item.priceInINR > maxPrice) {
+        if (itemPrice > maxPrice) {
           return false;
         }
 
@@ -175,7 +183,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
           const q = searchQuery.toLowerCase();
           const matchesTitle = item.title.toLowerCase().includes(q);
           const matchesDesc = (item.shortDescription || item.description || "").toLowerCase().includes(q);
-          const matchesCreator = (item.creator?.name || item.seller?.name || "").toLowerCase().includes(q);
+          const matchesCreator = (item.creator?.name || item.seller?.name || item.sellerName || "").toLowerCase().includes(q);
           const matchesSub = item.subcategory?.toLowerCase().includes(q);
           const matchesCategory = item.category?.toLowerCase().includes(q);
           const matchesFileType = item.fileType?.toLowerCase().includes(q);
@@ -210,8 +218,10 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
           };
           return parseTime(b.createdAt) - parseTime(a.createdAt);
         }
-        if (sortBy === "price-asc") return (a.priceInINR || 0) - (b.priceInINR || 0);
-        if (sortBy === "price-desc") return (b.priceInINR || 0) - (a.priceInINR || 0);
+        const priceA = typeof a.price === "number" && !isNaN(a.price) ? a.price : 0;
+        const priceB = typeof b.price === "number" && !isNaN(b.price) ? b.price : 0;
+        if (sortBy === "price-asc") return priceA - priceB;
+        if (sortBy === "price-desc") return priceB - priceA;
         if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
         return 0;
       });
@@ -296,13 +306,13 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
                   : "bg-[#202C44] text-[#7B8A90]"
               }`}
             >
-              {listings.length}
+              {listings.filter((l) => l.deleted !== true).length}
             </span>
           </button>
 
           {/* Individual Categories */}
           {CATEGORIES_LIST.map((cat) => {
-            const count = listings.filter((l) => l.category === cat.name).length;
+            const count = listings.filter((l) => l.deleted !== true && l.category === cat.name).length;
             const IconComp = CATEGORY_ICON_MAP[cat.name] || Sparkles;
             const isSelected = selectedCategory === cat.name;
 
@@ -521,7 +531,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
             { val: 2.0, label: "2★ & above", stars: 2 },
           ].map((r) => {
             const isSelected = minRating === r.val;
-            const count = listings.filter((l) => (l.rating || 0) >= r.val).length;
+            const count = listings.filter((l) => l.deleted !== true && (l.rating || 0) >= r.val).length;
 
             return (
               <button
@@ -577,8 +587,9 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
             const isChecked = selectedFormat.toLowerCase() === fmt.ext.toLowerCase();
             const count = listings.filter(
               (l) =>
-                l.fileFormatTags?.some((f) => f.toLowerCase() === fmt.ext.toLowerCase()) ||
-                l.fileType?.toLowerCase() === fmt.ext.toLowerCase()
+                l.deleted !== true &&
+                (l.fileFormatTags?.some((f) => f.toLowerCase() === fmt.ext.toLowerCase()) ||
+                 l.fileType?.toLowerCase() === fmt.ext.toLowerCase())
             ).length;
 
             return (
@@ -697,7 +708,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
               {/* Result Counter (e.g. "Showing 1-12 of 24 results") */}
               <p className="text-xs text-[#7B8A90]" id="results-count-text">
                 Showing <strong className="text-white font-mono">{filteredListings.length > 0 ? 1 : 0}–{filteredListings.length}</strong> of{" "}
-                <strong className="text-white font-mono">{listings.length}</strong> results
+                <strong className="text-white font-mono">{listings.filter((l) => l.deleted !== true).length}</strong> results
                 {searchQuery && <span> for <strong className="text-white">"{searchQuery}"</strong></span>}
               </p>
             </div>

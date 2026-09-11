@@ -35,6 +35,11 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
   const filteredListings = useMemo(() => {
     return listings
       .filter((item) => {
+        // Exclude soft-deleted listings
+        if (item.deleted === true) {
+          return false;
+        }
+
         // Category filter
         if (selectedCategory !== "All" && item.category !== selectedCategory) {
           return false;
@@ -46,7 +51,8 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
         }
 
         // Price filter
-        if (item.priceInINR > maxPrice) {
+        const itemPrice = typeof item.price === "number" && !isNaN(item.price) ? item.price : 0;
+        if (itemPrice > maxPrice) {
           return false;
         }
 
@@ -54,10 +60,10 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
         if (searchQuery.trim() !== "") {
           const q = searchQuery.toLowerCase();
           const matchesTitle = item.title.toLowerCase().includes(q);
-          const matchesDesc = item.description.toLowerCase().includes(q);
-          const matchesSeller = (item.creator?.name || item.seller?.name || "").toLowerCase().includes(q);
-          const matchesSub = item.subcategory.toLowerCase().includes(q);
-          const matchesFormat = item.fileFormatTags.some((f) => f.toLowerCase().includes(q));
+          const matchesDesc = (item.description || "").toLowerCase().includes(q);
+          const matchesSeller = (item.creator?.name || item.seller?.name || item.sellerName || "").toLowerCase().includes(q);
+          const matchesSub = (item.subcategory || "").toLowerCase().includes(q);
+          const matchesFormat = item.fileFormatTags?.some((f) => f.toLowerCase().includes(q));
 
           return matchesTitle || matchesDesc || matchesSeller || matchesSub || matchesFormat;
         }
@@ -65,7 +71,7 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
         return true;
       })
       .sort((a, b) => {
-        if (sortBy === "popular") return b.salesCount - a.salesCount;
+        if (sortBy === "popular") return (b.salesCount || 0) - (a.salesCount || 0);
         if (sortBy === "newest") {
           const parseTime = (val: any): number => {
             if (typeof val === "number" && !isNaN(val)) return val;
@@ -78,8 +84,10 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
           };
           return parseTime(b.createdAt) - parseTime(a.createdAt);
         }
-        if (sortBy === "price-asc") return a.priceInINR - b.priceInINR;
-        if (sortBy === "price-desc") return b.priceInINR - a.priceInINR;
+        const priceA = typeof a.price === "number" && !isNaN(a.price) ? a.price : 0;
+        const priceB = typeof b.price === "number" && !isNaN(b.price) ? b.price : 0;
+        if (sortBy === "price-asc") return priceA - priceB;
+        if (sortBy === "price-desc") return priceB - priceA;
         return 0;
       });
   }, [listings, selectedCategory, searchQuery, selectedFormat, sortBy, maxPrice]);
@@ -139,7 +147,7 @@ export const BrowseView: React.FC<BrowseViewProps> = ({
               : "bg-[#202C44] text-[#7B8A90] hover:text-white border-[#202C44]"
           }`}
         >
-          All Sectors ({listings.length})
+          All Sectors ({listings.filter((l) => l.deleted !== true).length})
         </button>
 
         {CATEGORIES_LIST.map((cat) => {

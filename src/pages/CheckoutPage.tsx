@@ -33,7 +33,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const { listingId } = useParams<{ listingId: string }>();
   const navigate = useNavigate();
 
-  const listing = listings.find((l) => l.id === listingId || l.slug === listingId);
+  const listing = listings.find((l) => (l.id === listingId || l.slug === listingId) && l.deleted !== true);
 
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "gpay" | "phonepe" | "card">("upi");
   const [buyerEmail, setBuyerEmail] = useState(initialBuyerEmail);
@@ -69,7 +69,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   }
 
   // Calculate pricing using 12.5% platform + payment fee
-  const pricing = calculatePricing(listing.priceInINR);
+  const itemPrice = typeof listing.price === "number" && !isNaN(listing.price) ? Math.max(0, listing.price) : 0;
+  const pricing = calculatePricing(itemPrice);
   const creatorName = listing.creator?.name || listing.seller?.name || "Verified Seller";
 
   const handlePay = (e: React.FormEvent) => {
