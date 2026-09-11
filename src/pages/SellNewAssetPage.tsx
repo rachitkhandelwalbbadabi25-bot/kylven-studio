@@ -159,29 +159,30 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
 
     const primaryThumbnail = images[0] || SAMPLE_PRESET_IMAGES[0];
 
-    // Note: downloadUrl is strictly omitted from the public listing.
-    // Untrusted client metrics (rating, salesCount, reviewStatus) are set to unverified defaults.
-    // Authoritative requirement: New listings created MUST ALWAYS have status: "pending".
+    // Authoritative requirement: New listings created MUST ALWAYS have status: "pending"
+    // and strictly use authoritative price field without fabricating metrics.
     const newListing: AssetListing = {
       id: `asset_${Date.now()}`,
       sellerId: currentUid,
+      sellerName: userProfile.name || auth.currentUser?.displayName || "Creator",
       status: "pending",
       slug,
       title: title.trim(),
       category,
       subcategory,
-      priceInINR: Number(priceInINR),
-      rating: 0,
-      reviewCount: 0,
-      salesCount: 0,
+      price: Number(priceInINR) || 0,
+      isFree: (Number(priceInINR) || 0) === 0,
       seller: creatorObj,
       creator: creatorObj,
+      previewUrl: primaryThumbnail,
+      previewUrls: images.length > 0 ? images : [primaryThumbnail],
       thumbnailUrl: primaryThumbnail,
       previewImages: images.length > 0 ? images : [primaryThumbnail],
       description: description.trim(),
       shortDescription: description.trim().slice(0, 140) + "...",
       fullDescription: description.trim(),
       fileType,
+      fileExtension: fileType.replace(/^\./, "") || "zip",
       fileSizeBytes,
       fileFormatTags: [fileType, ".zip"],
       tags: [category.toLowerCase().split(" ")[0], subcategory.toLowerCase().replace(/[^a-z0-9]/g, ""), "asset"],

@@ -64,10 +64,13 @@ export const HomePage: React.FC<HomePageProps> = ({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // Filter listings for the Trending Marketplace section
+  // Filter listings for the Trending Marketplace section (excludes soft-deleted)
   const filteredTrendingListings = listings.filter((item) => {
-    if (activeTab === "free") return item.priceInINR === 0;
-    if (activeTab === "paid") return item.priceInINR > 0;
+    if (item.deleted === true) return false;
+    const itemPrice = typeof item.price === "number" && !isNaN(item.price) ? item.price : 0;
+    const isFree = Boolean(item.isFree || itemPrice === 0);
+    if (activeTab === "free") return isFree;
+    if (activeTab === "paid") return !isFree;
     if (activeTab === "design") return item.category === "UI/UX & Design";
     if (activeTab === "dev") return item.category === "Software & Development" || item.category === "AI/ML & Data Science";
     if (activeTab === "3d") return item.category === "3D & CAD";
@@ -229,7 +232,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               id="view-all-assets-btn"
               className="inline-flex items-center gap-2 bg-[#111317] hover:bg-[#202C44] text-[#D3CCB0] hover:text-white font-heading font-bold text-xs px-8 py-4 rounded-xl border border-[#202C44] hover:border-[#D3CCB0]/40 transition-all shadow active:scale-95"
             >
-              <span>View all {listings.length} assets in Catalog</span>
+              <span>View all {listings.filter((l) => l.deleted !== true).length} assets in Catalog</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

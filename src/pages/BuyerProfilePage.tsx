@@ -80,8 +80,8 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
   const purchasesCount = purchases.length;
   const totalSpentINR = purchases.reduce((sum, item) => sum + (item.pricePaidINR || 0), 0);
 
-  // Saved listings
-  const savedListings = listings.filter((item) => savedIds.includes(item.id));
+  // Saved listings (excluding soft-deleted listings)
+  const savedListings = listings.filter((item) => savedIds.includes(item.id) && item.deleted !== true);
 
   // Save profile updates
   const handleSaveProfile = (e: React.FormEvent) => {

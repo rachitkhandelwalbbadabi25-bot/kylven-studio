@@ -224,7 +224,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "Mobile and desktop responsive screen templates",
       "Vector SVG icons & glowing vector badges"
     ],
-    priceInINR: 499,
+    price: 499,
+    isFree: false,
     rating: 4.9,
     reviewCount: 56,
     salesCount: 238,
@@ -276,7 +277,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "Dark and light theme variants with WCAG AA compliance",
       "Developer-friendly CSS design tokens"
     ],
-    priceInINR: 299,
+    price: 299,
+    isFree: false,
     rating: 4.8,
     reviewCount: 42,
     salesCount: 310,
@@ -318,7 +320,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "Dataset preprocessing script for Hindi/English bilingual text",
       "Export to GGUF, Ollama, and HuggingFace Hub"
     ],
-    priceInINR: 449,
+    price: 449,
+    isFree: false,
     rating: 5.0,
     reviewCount: 38,
     salesCount: 194,
@@ -360,7 +363,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "Presets for Golden Hour, Monsoon Blues, Street Festival & Desi Teal",
       "PDF quick-start calibration guide"
     ],
-    priceInINR: 599,
+    price: 599,
+    isFree: false,
     rating: 4.8,
     reviewCount: 67,
     salesCount: 420,
@@ -402,7 +406,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "4K PBR Texture sets (Albedo, Normal, Roughness, Metallic)",
       "FBX & OBJ exports ready for Unity & Unreal Engine"
     ],
-    priceInINR: 799,
+    price: 799,
+    isFree: false,
     rating: 4.9,
     reviewCount: 22,
     salesCount: 145,
@@ -445,7 +450,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "Monthly revenue & expense summary dashboard",
       "1-Click duplicate into personal Notion"
     ],
-    priceInINR: 299,
+    price: 299,
+    isFree: false,
     rating: 4.9,
     reviewCount: 94,
     salesCount: 680,
@@ -487,7 +493,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "Razorpay, GPay, and PhonePe native intents",
       "Supabase backend schema + migrations included"
     ],
-    priceInINR: 1299,
+    price: 1299,
+    isFree: false,
     rating: 4.8,
     reviewCount: 31,
     salesCount: 112,
@@ -528,7 +535,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "HDFC, SBI, ICICI, Axis, PayTM, PhonePe, GPay symbols",
       "100% Free for personal and commercial projects"
     ],
-    priceInINR: 0,
+    price: 0,
+    isFree: true,
     rating: 4.9,
     reviewCount: 110,
     salesCount: 890,
@@ -568,7 +576,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "HuggingFace IndicBERT pipeline",
       "Free for academic and production use"
     ],
-    priceInINR: 0,
+    price: 0,
+    isFree: true,
     rating: 4.8,
     reviewCount: 45,
     salesCount: 520,
@@ -609,7 +618,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "Habit trackers, budget sheets, and project logs",
       "Includes 200+ PNG digital stickers and color covers"
     ],
-    priceInINR: 349,
+    price: 349,
+    isFree: false,
     rating: 4.9,
     reviewCount: 38,
     salesCount: 290,
@@ -651,7 +661,8 @@ export const MOCK_LISTINGS: AssetListing[] = [
       "Skin tone preservation AI mask settings",
       "Step-by-step PDF installation guide"
     ],
-    priceInINR: 399,
+    price: 399,
+    isFree: false,
     rating: 4.95,
     reviewCount: 52,
     salesCount: 380,

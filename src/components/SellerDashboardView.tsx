@@ -176,6 +176,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
     const createdAsset: AssetListing = {
       id: `asset-new-${Date.now()}`,
       sellerId: currentUid,
+      sellerName: auth.currentUser?.displayName || "Creator",
       status: "pending",
       slug: (title || "new-asset").toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       title: title || (attachedFile ? attachedFile.name : "New Custom Seller Asset"),
@@ -183,6 +184,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
       subcategory,
       tags: [category.toLowerCase().split(" ")[0], "new"],
       fileType: attachedFile ? attachedFile.ext : ".zip",
+      fileExtension: (attachedFile ? attachedFile.ext : "zip").replace(/^\./, ""),
       shortDescription: description || "Verified seller digital asset ready for instant download.",
       fullDescription: description || "Verified seller digital asset ready for instant download.",
       description: description || "Verified seller digital asset ready for instant download.",
@@ -191,13 +193,13 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
         "Includes full commercial & team license",
         "Virus scanned & quality verified by Kreate Studio"
       ],
-      priceInINR: priceInINR || 999,
-      rating: 0,
-      reviewCount: 0,
-      salesCount: 0,
+      price: priceInINR || 999,
+      isFree: (priceInINR || 999) === 0,
       fileFormatTags: fileFormats.length > 0 ? fileFormats : [attachedFile ? attachedFile.ext : ".zip"],
       fileSizeBytes: attachedFile ? attachedFile.size : "45 MB",
       thumbnailUrl,
+      previewUrl: thumbnailUrl,
+      previewUrls: [thumbnailUrl],
       previewImages: [thumbnailUrl],
       seller: creatorObj,
       creator: creatorObj,
@@ -427,14 +429,14 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                     {item.title}
                   </h3>
                   <div className="text-[11px] text-[#7B8A90] mt-0.5">
-                    Listed: <span className="text-white font-mono font-bold">₹{item.priceInINR}</span>
+                    Listed: <span className="text-white font-mono font-bold">{(item.price ?? 0) === 0 || item.isFree ? "FREE" : `₹${item.price?.toLocaleString("en-IN")}`}</span>
                   </div>
                 </div>
               </div>
 
               <div className="pt-2 border-t border-[#111317] flex items-center justify-between text-[11px] text-[#7B8A90]">
-                <span>{item.salesCount} Downloads</span>
-                <span className="text-[#D3CCB0] font-mono">100% Reviewed</span>
+                <span>{item.salesCount ? `${item.salesCount} Downloads` : "New Listing"}</span>
+                <span className="text-[#D3CCB0] font-mono">{item.status === "approved" ? "Active" : "Pending Review"}</span>
               </div>
             </div>
           ))}
