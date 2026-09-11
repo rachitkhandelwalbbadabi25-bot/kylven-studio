@@ -37,12 +37,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
   const [exploreCategory, setExploreCategory] = useState<string>("All");
 
-  // Filter listings belonging to this creator
+  // Filter listings belonging to this creator (excluding soft-deleted)
   const myListings = listings.filter(
     (l) =>
-      (l.creator?.username && l.creator.username.toLowerCase() === (userProfile.username || "buildwithansh").toLowerCase()) ||
-      (l.seller?.handle && l.seller.handle.replace("@", "").toLowerCase() === (userProfile.username || "buildwithansh").toLowerCase()) ||
-      l.isNew
+      l.deleted !== true &&
+      ((l.creator?.username && l.creator.username.toLowerCase() === (userProfile.username || "buildwithansh").toLowerCase()) ||
+       (l.seller?.handle && l.seller.handle.replace("@", "").toLowerCase() === (userProfile.username || "buildwithansh").toLowerCase()) ||
+       l.isNew)
   );
 
   const activeListingsCount = myListings.length > 0 ? myListings.length : 12;
@@ -465,6 +466,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5" id="seller-explore-grid">
           {listings
             .filter((asset) => {
+              if (asset.deleted === true) return false;
               if (exploreCategory === "All") return true;
               return (
                 asset.category?.toLowerCase().includes(exploreCategory.toLowerCase().split(" ")[0]) ||
@@ -492,7 +494,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   </div>
                   <div className="absolute top-2.5 right-2.5">
                     <span className="bg-[#111317]/90 backdrop-blur-md text-emerald-400 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border border-emerald-900 flex items-center gap-1">
-                      ₹{asset.priceInINR?.toLocaleString("en-IN") || 499}
+                      {asset.isFree || (asset.price ?? 0) === 0 ? "FREE" : `₹${(asset.price ?? 0).toLocaleString("en-IN")}`}
                     </span>
                   </div>
                 </div>

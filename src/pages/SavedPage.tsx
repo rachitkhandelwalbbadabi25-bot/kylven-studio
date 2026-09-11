@@ -19,7 +19,7 @@ export const SavedPage: React.FC<SavedPageProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const savedListings = listings.filter((item) => savedIds.includes(item.id));
+  const savedListings = listings.filter((item) => savedIds.includes(item.id) && item.deleted !== true);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">

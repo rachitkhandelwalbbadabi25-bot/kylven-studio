@@ -61,7 +61,10 @@ export default function App() {
   const [listings, setListings] = useState<AssetListing[]>(() => {
     try {
       const saved = localStorage.getItem("kreate_listings");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: AssetListing[] = JSON.parse(saved);
+        return parsed.filter((l) => l.deleted !== true);
+      }
     } catch (e) {
       console.error(e);
     }
@@ -122,7 +125,7 @@ export default function App() {
         const remoteListings = res.data;
         const remoteIds = new Set(remoteListings.map((l) => l.id));
         setListings((prev) => {
-          const nonConflicting = prev.filter((p) => !remoteIds.has(p.id));
+          const nonConflicting = prev.filter((p) => !remoteIds.has(p.id) && p.deleted !== true);
           return [...remoteListings, ...nonConflicting];
         });
       }

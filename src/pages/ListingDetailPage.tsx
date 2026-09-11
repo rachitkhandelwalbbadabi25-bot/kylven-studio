@@ -40,13 +40,14 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   const { slug, id } = useParams<{ slug?: string; id?: string }>();
   const navigate = useNavigate();
 
-  // Match listing by slug or id
+  // Match listing by slug or id (strictly excluding soft-deleted listings)
   const listing = listings.find(
     (item) =>
-      item.slug === slug ||
-      item.id === slug ||
-      item.id === id ||
-      item.slug === id
+      item.deleted !== true &&
+      (item.slug === slug ||
+        item.id === slug ||
+        item.id === id ||
+        item.slug === id)
   );
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -72,19 +73,23 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
     );
   }
 
-  const pricing = calculatePricing(listing.priceInINR);
+  const price = typeof listing.price === "number" && !isNaN(listing.price) ? Math.max(0, listing.price) : 0;
+  const isFree = Boolean(listing.isFree || price === 0);
+  const pricing = calculatePricing(price);
   const isSaved = savedIds.includes(listing.id);
   const creatorUsername = listing.creator?.username || listing.seller?.handle?.replace("@", "") || "seller";
-  const creatorName = listing.creator?.name || listing.seller?.name || "Verified Seller";
+  const creatorName = listing.sellerName || listing.creator?.name || listing.seller?.name || "Verified Creator";
   const creatorAvatar = listing.creator?.avatar || listing.seller?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80";
   
   // Ensure gallery images
-  const images = listing.previewImages && listing.previewImages.length > 0 
-    ? listing.previewImages 
-    : [listing.thumbnailUrl];
+  const images = (listing.previewUrls && listing.previewUrls.length > 0)
+    ? listing.previewUrls
+    : (listing.previewImages && listing.previewImages.length > 0 
+      ? listing.previewImages 
+      : (listing.previewUrl ? [listing.previewUrl] : [listing.thumbnailUrl]));
 
   const relatedListings = listings
-    .filter((l) => l.category === listing.category && l.id !== listing.id)
+    .filter((l) => l.deleted !== true && l.category === listing.category && l.id !== listing.id)
     .slice(0, 3);
 
   const handleShare = () => {
@@ -302,11 +307,11 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <div className="flex items-baseline justify-between">
                 <span className="text-xs text-[#7B8A90] font-medium">Single License Price</span>
                 <span className="text-3xl font-heading font-extrabold text-white">
-                  ₹{listing.priceInINR.toLocaleString("en-IN")}
+                  {isFree ? "FREE" : `₹${price.toLocaleString("en-IN")}`}
                 </span>
               </div>
               <p className="text-[11px] text-[#7B8A90] font-mono">
-                + ₹{pricing.platformFeeINR} platform fee shown at checkout
+                {isFree ? "Direct free access" : `+ ₹${pricing.platformFeeINR} platform fee shown at checkout`}
               </p>
             </div>
 
@@ -318,8 +323,17 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 onClick={handleBuyNow}
                 className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold text-sm py-4 px-6 rounded-2xl transition-all shadow-xl active:scale-98 flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <ShoppingBag className="w-4 h-4 text-[#000000]" />
-                <span>Buy Now (₹{listing.priceInINR.toLocaleString("en-IN")})</span>
+                {isFree ? (
+                  <>
+                    <Download className="w-4 h-4 text-[#000000]" />
+                    <span>Download Free Asset</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-4 h-4 text-[#000000]" />
+                    <span>Buy Now (₹{price.toLocaleString("en-IN")})</span>
+                  </>
+                )}
               </button>
 
               <div className="grid grid-cols-2 gap-2.5">

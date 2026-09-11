@@ -9,7 +9,7 @@ import {
 import { ref, get, set, update, query, orderByChild, equalTo, remove, serverTimestamp } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, database, storage, googleAuthProvider } from "../lib/firebase";
-import { AssetListing, CreatorProfile, UserProfile, UserPurchase, PublicProfile } from "../types";
+import { AssetListing, FirebaseListing, CreatorProfile, UserProfile, UserPurchase, PublicProfile } from "../types";
 
 // ==========================================
 // AUTHENTICATION SERVICES
@@ -63,81 +63,159 @@ export function subscribeToAuthState(callback: (user: User | null) => void): () 
 // ==========================================
 
 /**
- * Strips deliverable download URLs and private creator financial/account
- * data from the public listing object before it is stored in or read from /listings.
- * Strictly enforces status: "pending" on any client-created or sanitized listing.
+ * Prepares an authoritative FirebaseListing payload for writing to /listings/{listingId}.
+ * Strictly writes only fields in the live database schema:
+ * title, sellerName, sellerId, price, isFree, category, fileType, fileExtension,
+ * createdAt, description, status, previewUrl, previewUrls, and optional fileUrl/fileName/fileSizeBytes.
+ * 
+ * NEVER writes priceInINR, rating, reviewCount, salesCount, or UI presentation objects.
  */
-export function sanitizePublicListing(listing: AssetListing, fallbackId?: string): AssetListing {
-  // 1. Remove deliverable URL from public listing
-  const { downloadUrl, ...publicListing } = listing;
+export function prepareFirebaseListing(
+  listing: Partial<AssetListing>,
+  fallbackId?: string
+): { id: string; firebaseData: FirebaseListing } {
+  const validId = listing.id || fallbackId || `asset-${Date.now()}`;
+  const currentUid = auth.currentUser?.uid || listing.sellerId || "";
+  
+  // Safe price: only the authoritative 'price' field
+  const rawPrice = typeof listing.price === "number" && !isNaN(listing.price)
+    ? Math.max(0, Math.round(listing.price))
+    : 0;
 
-  const validId = publicListing.id || fallbackId || `asset-${Date.now()}`;
+  const isFree = listing.isFree !== undefined ? Boolean(listing.isFree) : rawPrice === 0;
+  const fileExt = listing.fileExtension || listing.fileType?.replace(/^\./, "") || "zip";
+  const sellerName = listing.sellerName || listing.creator?.name || listing.seller?.name || "Verified Creator";
+  const desc = listing.description || listing.fullDescription || listing.shortDescription || "";
+  
+  const primaryPreview = listing.previewUrl || listing.thumbnailUrl || (listing.previewUrls && listing.previewUrls[0]) || (listing.previewImages && listing.previewImages[0]) || "";
+  const allPreviews = listing.previewUrls && listing.previewUrls.length > 0
+    ? listing.previewUrls
+    : (listing.previewImages && listing.previewImages.length > 0
+      ? listing.previewImages
+      : (primaryPreview ? [primaryPreview] : []));
 
-  // Safe numerical metrics guarantees (prevents undefined.toFixed errors)
-  const safeRating = typeof publicListing.rating === "number" && !isNaN(publicListing.rating)
-    ? publicListing.rating
-    : (publicListing.rating != null && !isNaN(Number(publicListing.rating)) ? Number(publicListing.rating) : 5.0);
-
-  const safeReviewCount = typeof publicListing.reviewCount === "number" && !isNaN(publicListing.reviewCount)
-    ? publicListing.reviewCount
-    : (publicListing.reviewCount != null && !isNaN(Number(publicListing.reviewCount)) ? Number(publicListing.reviewCount) : 0);
-
-  const safeSalesCount = typeof publicListing.salesCount === "number" && !isNaN(publicListing.salesCount)
-    ? publicListing.salesCount
-    : (publicListing.salesCount != null && !isNaN(Number(publicListing.salesCount)) ? Number(publicListing.salesCount) : 0);
-
-  const safePriceInINR = typeof publicListing.priceInINR === "number" && !isNaN(publicListing.priceInINR)
-    ? publicListing.priceInINR
-    : (publicListing.priceInINR != null && !isNaN(Number(publicListing.priceInINR)) ? Number(publicListing.priceInINR) : 0);
-
-  // 2. Sanitize creator to only public profile fields (no private email or upi information)
-  const rawCreator = publicListing.creator || ({} as Partial<CreatorProfile>);
-  const sanitizedCreator: CreatorProfile = {
-    id: rawCreator.id || publicListing.sellerId || "creator",
-    name: rawCreator.name || "Creator",
-    username: rawCreator.username || "creator",
-    handle: rawCreator.handle || `@${rawCreator.username || "creator"}`,
-    avatar: rawCreator.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-    initials: rawCreator.initials,
-    badge: rawCreator.badge,
-    verified: Boolean(rawCreator.verified),
-    verifiedSeller: Boolean(rawCreator.verifiedSeller),
-    responseTime: rawCreator.responseTime || "< 2 hours",
-    totalSales: typeof rawCreator.totalSales === "number" ? rawCreator.totalSales : 0,
-    rating: typeof rawCreator.rating === "number" ? rawCreator.rating : 5.0,
-    joinedDate: rawCreator.joinedDate || "2026",
-    location: rawCreator.location || "India",
-    bio: rawCreator.bio || "",
-    skills: rawCreator.skills || [],
+  // Authoritative live schema payload
+  const firebaseData: FirebaseListing = {
+    title: (listing.title || "Untitled Asset").trim(),
+    sellerName: sellerName.trim(),
+    sellerId: currentUid,
+    price: rawPrice,
+    isFree,
+    category: String(listing.category || "Other"),
+    fileType: listing.fileType?.startsWith(".") ? listing.fileType : `.${fileExt}`,
+    fileExtension: fileExt,
+    createdAt: listing.createdAt || serverTimestamp(),
+    description: desc.trim(),
+    status: "pending", // Authoritative: New client listings are ALWAYS pending
+    previewUrl: primaryPreview,
+    previewUrls: allPreviews,
   };
 
-  // 3. Ensure consistent sellerId and creator.id
-  const sellerId = publicListing.sellerId || sanitizedCreator.id;
-  sanitizedCreator.id = sellerId;
-
-  // 4. Sanitize backwards-compatible seller alias
-  let sanitizedSeller: CreatorProfile | undefined = undefined;
-  if (publicListing.seller) {
-    sanitizedSeller = { ...sanitizedCreator };
+  // Optional live schema fields (if present on input)
+  if (listing.fileUrl) {
+    firebaseData.fileUrl = listing.fileUrl;
+  }
+  if (listing.fileSizeBytes) {
+    firebaseData.fileSizeBytes = listing.fileSizeBytes;
   }
 
-  // 5. Authoritative requirement: Frontend listings MUST ALWAYS use status: "pending".
-  // The frontend must NEVER create a listing with status: "approved".
-  // Approval is manual admin-only outside the seller website flow.
-  const safeCreatedAt = publicListing.createdAt !== undefined ? publicListing.createdAt : serverTimestamp();
+  return { id: validId, firebaseData };
+}
+
+/**
+ * Maps an authoritative FirebaseListing fetched from /listings into an AssetListing
+ * for safe UI consumption without fabricating metrics or exposing private file URLs.
+ */
+export function mapFirebaseListingToAssetListing(
+  id: string,
+  raw: Partial<FirebaseListing>
+): AssetListing {
+  const price = typeof raw.price === "number" && !isNaN(raw.price) ? Math.max(0, raw.price) : 0;
+  const isFree = Boolean(raw.isFree || price === 0);
+  const preview = raw.previewUrl || (Array.isArray(raw.previewUrls) && raw.previewUrls[0]) || "";
+  const previewList = Array.isArray(raw.previewUrls) && raw.previewUrls.length > 0
+    ? raw.previewUrls
+    : (preview ? [preview] : []);
+  const sellerName = raw.sellerName || "Verified Creator";
+  const desc = raw.description || "";
+  const fileType = raw.fileType || (raw.fileExtension ? `.${raw.fileExtension}` : ".zip");
+  const fileExt = raw.fileExtension || fileType.replace(/^\./, "") || "zip";
+
+  const creatorObj: CreatorProfile = {
+    id: raw.sellerId || "creator",
+    name: sellerName,
+    username: sellerName.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    handle: `@${sellerName.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+    verified: false,
+    verifiedSeller: false,
+    totalSales: 0,
+    rating: 0,
+    responseTime: "< 2 hours",
+    joinedDate: "2026",
+    location: "India",
+    bio: "",
+    skills: [],
+  };
 
   return {
-    ...publicListing,
+    id,
+    title: raw.title || "Untitled Asset",
+    sellerName,
+    sellerId: raw.sellerId || "",
+    price,
+    isFree,
+    category: (raw.category as any) || "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)",
+    subcategory: raw.category || "General",
+    fileType,
+    fileExtension: fileExt,
+    createdAt: raw.createdAt || 0,
+    description: desc,
+    shortDescription: desc.length > 140 ? `${desc.slice(0, 140)}...` : desc,
+    fullDescription: desc,
+    status: raw.status || "approved",
+    previewUrl: preview,
+    previewUrls: previewList,
+    thumbnailUrl: preview,
+    previewImages: previewList,
+    fileFormatTags: [fileType],
+    creator: creatorObj,
+    seller: creatorObj,
+    // Rating, reviewCount, and salesCount are deliberately omitted (undefined)
+    // so client components do not fabricate fake metrics.
+    softwareCompatibility: ["Cross-Platform", "Standard Viewers"],
+    licenseType: "Commercial License",
+    deliveryType: "Instant Download",
+    deleted: raw.deleted,
+    deletedAt: raw.deletedAt,
+    detailedFeatures: [
+      "Original verified files",
+      "Commercial license included",
+      "Instant secure delivery",
+    ],
+  };
+}
+
+/**
+ * Sanitizes a client listing before state update, ensuring safe price and clean structure.
+ * Does NOT add priceInINR or fabricate fake metrics.
+ */
+export function sanitizePublicListing(listing: AssetListing, fallbackId?: string): AssetListing {
+  const validId = listing.id || fallbackId || `asset-${Date.now()}`;
+  const safePrice = typeof listing.price === "number" && !isNaN(listing.price)
+    ? Math.max(0, listing.price)
+    : 0;
+
+  const isFree = listing.isFree !== undefined ? Boolean(listing.isFree) : safePrice === 0;
+  const sellerName = listing.sellerName || listing.creator?.name || listing.seller?.name || "Verified Creator";
+
+  return {
+    ...listing,
     id: validId,
-    createdAt: safeCreatedAt,
-    rating: safeRating,
-    reviewCount: safeReviewCount,
-    salesCount: safeSalesCount,
-    priceInINR: safePriceInINR,
-    sellerId,
+    price: safePrice,
+    isFree,
+    sellerName,
     status: "pending",
-    creator: sanitizedCreator,
-    ...(sanitizedSeller ? { seller: sanitizedSeller } : {}),
   };
 }
 
@@ -145,6 +223,7 @@ export function sanitizePublicListing(listing: AssetListing, fallbackId?: string
  * Public listings are readable ONLY when queried exactly using:
  * orderByChild('status').equalTo('approved')
  * Any bare "get all listings" operation is strictly replaced with this query.
+ * Excludes soft-deleted listings with: deleted !== true
  */
 export async function fetchListingsFromFirebase(): Promise<{ data: AssetListing[] | null; error?: string }> {
   try {
@@ -156,25 +235,21 @@ export async function fetchListingsFromFirebase(): Promise<{ data: AssetListing[
     const snapshot = await get(approvedListingsQuery);
     if (snapshot.exists()) {
       const val = snapshot.val();
-      let rawList: AssetListing[] = [];
+      const list: AssetListing[] = [];
       if (Array.isArray(val)) {
-        rawList = val
-          .map((item, idx) => (item ? { id: item.id || `asset-remote-${idx}`, ...item } : null))
-          .filter(Boolean) as AssetListing[];
+        val.forEach((item, idx) => {
+          if (item && item.deleted !== true) {
+            list.push(mapFirebaseListingToAssetListing(item.id || `asset-${idx}`, item));
+          }
+        });
       } else if (typeof val === "object" && val !== null) {
-        rawList = Object.entries(val).map(([dbKey, item]: [string, any]) => ({
-          id: item?.id || dbKey,
-          ...item,
-        }));
+        Object.entries(val).forEach(([dbKey, item]: [string, any]) => {
+          if (item && item.deleted !== true) {
+            list.push(mapFirebaseListingToAssetListing(item.id || dbKey, item));
+          }
+        });
       }
-      // Sanitize all incoming records so legacy database records with private fields
-      // or downloadUrl are cleaned before reaching client components.
-      // Mark as "approved" because they matched the approved query.
-      const sanitizedList = rawList.map((item, idx) => ({
-        ...sanitizePublicListing(item, item.id || `asset-${idx}`),
-        status: "approved" as const,
-      }));
-      return { data: sanitizedList };
+      return { data: list };
     }
     return { data: null };
   } catch (err: any) {
@@ -185,10 +260,10 @@ export async function fetchListingsFromFirebase(): Promise<{ data: AssetListing[
 
 /**
  * Saves a new or modified listing.
- * Authoritative rule: New listings created from the website MUST ALWAYS use status: "pending".
- * The frontend must NEVER create a listing with status: "approved".
+ * Strictly writes authoritative FirebaseListing shape with 'price', no 'priceInINR',
+ * no fake metrics (rating, reviewCount, salesCount), and status: "pending".
  */
-export async function saveListingToFirebase(listing: AssetListing): Promise<{ success: boolean; error?: string }> {
+export async function saveListingToFirebase(listing: Partial<AssetListing>): Promise<{ success: boolean; error?: string }> {
   try {
     const currentUid = auth.currentUser?.uid;
     if (!currentUid) {
@@ -197,21 +272,16 @@ export async function saveListingToFirebase(listing: AssetListing): Promise<{ su
       return { success: false, error: msg };
     }
 
-    const sanitized = sanitizePublicListing(listing);
-    // Explicitly guarantee pending status
-    sanitized.status = "pending";
-    if (!sanitized.createdAt) {
-      sanitized.createdAt = serverTimestamp();
-    }
+    const { id, firebaseData } = prepareFirebaseListing(listing);
 
-    if (sanitized.sellerId !== currentUid) {
+    if (firebaseData.sellerId !== currentUid) {
       const msg = "Permission denied: You can only publish or modify listings where sellerId matches your account UID.";
       console.warn(msg);
       return { success: false, error: msg };
     }
 
-    const listingRef = ref(database, `listings/${sanitized.id}`);
-    await set(listingRef, sanitized);
+    const listingRef = ref(database, `listings/${id}`);
+    await set(listingRef, firebaseData);
     return { success: true };
   } catch (err: any) {
     let friendlyError = err.message;

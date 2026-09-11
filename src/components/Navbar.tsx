@@ -373,7 +373,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                                       {asset.category}
                                     </span>
                                     <span className="text-[9px] font-mono font-bold text-[#D3CCB0] bg-[#000000]/60 px-1.5 py-0.5 rounded border border-[#202C44]">
-                                      {asset.priceInINR === 0 ? "FREE" : `₹${asset.priceInINR}`}
+                                      {asset.isFree || (asset.price ?? 0) === 0 ? "FREE" : `₹${asset.price?.toLocaleString("en-IN")}`}
                                     </span>
                                   </div>
                                 </div>
@@ -729,7 +729,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <span className="text-white text-xs truncate">{asset.title}</span>
                         </div>
                         <span className="text-[9px] font-mono font-bold text-[#D3CCB0] shrink-0 ml-1">
-                          {asset.priceInINR === 0 ? "FREE" : `₹${asset.priceInINR}`}
+                          {asset.isFree || (asset.price ?? 0) === 0 ? "FREE" : `₹${asset.price?.toLocaleString("en-IN")}`}
                         </span>
                       </button>
                     ))}
