@@ -36,22 +36,26 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<"overview" | "features" | "reviews">("overview");
 
-  // Fee calculation matching prompt rules:
-  // Listed Price: ₹1,000
-  // Buyer pays: Listed Price + 12.5% platform/payment fee (₹1,125)
-  // Seller receives: 90% of listed price (₹900)
-  const listedPrice = listing.priceInINR;
-  const platformFee = Math.round(listedPrice * 0.125);
-  const totalBuyerPayable = listedPrice + platformFee;
-  const sellerNetEarnings = Math.round(listedPrice * 0.9);
+  // Authoritative price from listing.price
+  const listedPrice = typeof listing.price === "number" && !isNaN(listing.price) ? Math.max(0, listing.price) : 0;
+  const isFree = Boolean(listing.isFree || listedPrice === 0);
+  const platformFee = isFree ? 0 : Math.round(listedPrice * 0.125);
+  const totalBuyerPayable = isFree ? 0 : listedPrice + platformFee;
+  const sellerNetEarnings = isFree ? 0 : Math.round(listedPrice * 0.9);
+
+  const previewList = (listing.previewUrls && listing.previewUrls.length > 0)
+    ? listing.previewUrls
+    : (listing.previewImages && listing.previewImages.length > 0
+      ? listing.previewImages
+      : (listing.previewUrl ? [listing.previewUrl] : (listing.thumbnailUrl ? [listing.thumbnailUrl] : [])));
 
   const creator = listing.creator || listing.seller || {
-    name: "Verified Creator",
+    name: listing.sellerName || "Verified Creator",
     avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-    handle: "@creator",
+    handle: `@${(listing.sellerName || "creator").toLowerCase().replace(/[^a-z0-9]/g, "")}`,
     verified: false,
     totalSales: 0,
-    rating: 5,
+    rating: 0,
     responseTime: "< 2 hours",
   };
 
@@ -120,16 +124,27 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
 
             {/* Rating & Sales */}
             <div className="flex flex-wrap items-center gap-4 text-xs text-[#7B8A90]">
-              <div className="flex items-center gap-1 bg-[#111317] px-2.5 py-1 rounded-md border border-[#202C44]">
-                <Star className="w-4 h-4 text-[#D3CCB0] fill-[#D3CCB0]" />
-                <span className="font-bold text-white text-sm">{listing.rating.toFixed(1)}</span>
-                <span>({listing.reviewCount} verified reviews)</span>
-              </div>
+              {typeof listing.rating === "number" && !isNaN(listing.rating) && listing.rating > 0 ? (
+                <div className="flex items-center gap-1 bg-[#111317] px-2.5 py-1 rounded-md border border-[#202C44]">
+                  <Star className="w-4 h-4 text-[#D3CCB0] fill-[#D3CCB0]" />
+                  <span className="font-bold text-white text-sm">{listing.rating.toFixed(1)}</span>
+                  {typeof listing.reviewCount === "number" && listing.reviewCount > 0 && (
+                    <span>({listing.reviewCount} verified reviews)</span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 bg-[#111317] px-2.5 py-1 rounded-md border border-[#202C44] text-[#D3CCB0]">
+                  <Sparkles className="w-4 h-4 text-[#D3CCB0]" />
+                  <span className="font-bold text-sm">New Release</span>
+                </div>
+              )}
 
-              <div className="flex items-center gap-1.5">
-                <Download className="w-4 h-4 text-[#D3CCB0]" />
-                <span className="text-white font-medium">{listing.salesCount}</span> downloads
-              </div>
+              {typeof listing.salesCount === "number" && listing.salesCount > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <Download className="w-4 h-4 text-[#D3CCB0]" />
+                  <span className="text-white font-medium">{listing.salesCount}</span> downloads
+                </div>
+              )}
 
               <div className="flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-[#D3CCB0]" />
@@ -142,19 +157,19 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
           <div className="space-y-3">
             <div className="aspect-[16/10] bg-[#111317] border border-[#202C44] rounded-2xl overflow-hidden relative">
               <img
-                src={listing.previewImages[selectedImageIndex] || listing.thumbnailUrl}
+                src={previewList[selectedImageIndex] || previewList[0] || listing.previewUrl || listing.thumbnailUrl}
                 alt={listing.title}
                 className="w-full h-full object-cover"
               />
               <div className="absolute bottom-3 right-3 bg-[#000000]/80 backdrop-blur-md text-[#D3CCB0] text-xs font-mono px-3 py-1 rounded-lg border border-[#202C44]">
-                Preview {selectedImageIndex + 1} of {listing.previewImages.length || 1}
+                Preview {selectedImageIndex + 1} of {previewList.length || 1}
               </div>
             </div>
 
             {/* Thumbnails list */}
-            {listing.previewImages.length > 1 && (
+            {previewList.length > 1 && (
               <div className="flex gap-3 overflow-x-auto pb-2">
-                {listing.previewImages.map((img, idx) => (
+                {previewList.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedImageIndex(idx)}
@@ -469,8 +484,17 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
               onClick={() => onBuyNow(listing)}
               className="w-full bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-heading font-extrabold text-sm py-3.5 px-4 rounded-xl transition-all shadow-lg active:scale-95 hover:scale-[1.02] flex items-center justify-center gap-2"
             >
-              <ShoppingBag className="w-4 h-4 text-[#000000]" />
-              <span>Buy Now for ₹{totalBuyerPayable.toLocaleString("en-IN")}</span>
+              {isFree ? (
+                <>
+                  <Download className="w-4 h-4 text-[#000000]" />
+                  <span>Download Free Asset</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag className="w-4 h-4 text-[#000000]" />
+                  <span>Buy Now for ₹{totalBuyerPayable.toLocaleString("en-IN")}</span>
+                </>
+              )}
             </button>
 
             {/* Supported Payment Logos */}

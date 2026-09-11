@@ -45,43 +45,84 @@ export interface ReviewItem {
 }
 
 export type ReviewStatus = "Verified & Approved" | "In Review" | "Community Certified" | string;
+export type ListingStatus = "approved" | "pending" | "rejected" | string;
 export type LicenseType = "Standard Commercial License" | "Extended Commercial License" | "MIT Open License" | "Commercial License" | "Personal Use Only" | "Extended Enterprise" | string;
 export type DeliveryType = "Instant ZIP Download" | "Direct Cloud Access" | "GitHub Repository Access" | string;
 
+/**
+ * Authoritative Live Firebase Listing Schema stored at /listings/{listingId}
+ * Strict match to live database schema.
+ */
+export interface FirebaseListing {
+  title: string;
+  sellerName: string;
+  sellerId: string;
+  price: number;
+  isFree: boolean;
+  category: string;
+  fileType: string;
+  fileExtension: string;
+  createdAt: string | number | object;
+  description: string;
+  status: ListingStatus; // 'pending' | 'approved'
+  fileUrl?: string; // Private deliverable file URL/path - never exposed to unauthenticated public
+  previewUrl: string;
+  previewUrls: string[];
+  // Optional live schema fields
+  fileName?: string;
+  fileSizeBytes?: number | string;
+  reviewedAt?: number | string;
+  reviewedBy?: string;
+  deleted?: boolean;
+  deletedAt?: number | string;
+  storageDeleteAfter?: number | string;
+}
+
 export interface AssetListing {
   id: string;
-  sellerId?: string; // Authenticated owner UID for Firebase security rules
   title: string;
-  slug: string;
-  creator: CreatorProfile;
-  seller?: CreatorProfile; // backward compatibility
+  sellerName?: string;
+  sellerId?: string; // Authenticated owner UID
+  price: number; // Real authoritative Firebase schema field ('price')
+  isFree?: boolean;
   category: CoreCategory;
-  subcategory: string;
-  tags: string[];
+  subcategory?: string;
   fileType: string; // e.g. ".fig", ".dart", ".ipynb", ".blend", ".notion"
-  fileFormatTags: string[]; // e.g. ['.fig', '.zip', '.svg']
-  fileSizeBytes: string; // e.g. "84 MB"
-  previewImages: string[];
-  thumbnailUrl: string;
-  shortDescription: string;
-  fullDescription: string;
-  description?: string; // backward compatibility
-  priceInINR: number; // Listed base price in INR
-  rating: number;
-  reviewCount: number;
-  salesCount: number;
-  reviewStatus: ReviewStatus;
-  softwareCompatibility: string[];
-  compatibleWith?: string[]; // backward compatibility
-  licenseType: LicenseType;
-  deliveryType: DeliveryType;
-  createdAt: string;
+  fileExtension?: string;
+  createdAt: string | number | object;
+  description?: string;
+  status?: ListingStatus; // 'approved' | 'pending'
+  fileUrl?: string; // Authoritative deliverable file path/url (kept private)
+  previewUrl?: string;
+  previewUrls?: string[];
+
+  // UI Presentation & display properties
+  slug?: string;
+  creator?: CreatorProfile;
+  seller?: CreatorProfile;
+  tags?: string[];
+  fileFormatTags?: string[];
+  fileSizeBytes?: string;
+  previewImages?: string[];
+  thumbnailUrl?: string;
+  shortDescription?: string;
+  fullDescription?: string;
+  // Metrics: Never written to Firebase or manufactured as real DB data
+  rating?: number;
+  reviewCount?: number;
+  salesCount?: number;
+  reviewStatus?: ReviewStatus;
+  softwareCompatibility?: string[];
+  compatibleWith?: string[];
+  licenseType?: LicenseType;
+  deliveryType?: DeliveryType;
   updatedAt?: string;
   featured?: boolean;
   isNew?: boolean;
-  detailedFeatures: string[];
+  detailedFeatures?: string[];
   reviewList?: ReviewItem[];
-  downloadUrl?: string; // Legacy/backward compatibility. Public listings must NOT expose deliverable URLs.
+  deleted?: boolean;
+  deletedAt?: number | string;
 }
 
 export interface PricingBreakdown {
@@ -98,8 +139,8 @@ export interface PricingBreakdown {
  * - Platform + payment fee: 12.5% (paid for UPI gateways, CDN bandwidth, malware scans, lifetime updates)
  * - Seller net payout: 87.5% of listed price guaranteed
  */
-export function calculatePricing(priceInINR: number): PricingBreakdown {
-  const listedPriceINR = Math.max(0, Math.round(Number(priceInINR) || 0));
+export function calculatePricing(price: number): PricingBreakdown {
+  const listedPriceINR = Math.max(0, Math.round(Number(price) || 0));
   const platformFeeINR = Math.round(listedPriceINR * 0.125);
   const buyerTotalINR = listedPriceINR + platformFeeINR;
   const sellerNetINR = Math.round(listedPriceINR * 0.875);
@@ -116,6 +157,9 @@ export function calculatePricing(priceInINR: number): PricingBreakdown {
 
 export interface UserPurchase {
   orderId: string;
+  purchaseId?: string; // Top-level /purchases/{purchaseId} key
+  buyerId?: string;
+  sellerId?: string;
   listingId: string;
   title: string;
   thumbnailUrl: string;
@@ -125,9 +169,21 @@ export interface UserPurchase {
   licenseKey: string;
   purchaseDate: string;
   pricePaidINR: number;
+  amountPaid?: number;
   sellerNetINR: number;
   platformFeeINR: number;
   paymentMethod: string;
+}
+
+/**
+ * Authoritative Public Profile schema stored at /publicProfiles/{uid}
+ * Intentionally public fields only.
+ */
+export interface PublicProfile {
+  name: string;
+  role: string;
+  bio: string;
+  usernameId: string;
 }
 
 export interface SalesRecord {

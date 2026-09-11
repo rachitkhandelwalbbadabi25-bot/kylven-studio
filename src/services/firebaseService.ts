@@ -6,10 +6,10 @@ import {
   onAuthStateChanged,
   User 
 } from "firebase/auth";
-import { ref, get, set, update, onValue, off } from "firebase/database";
+import { ref, get, set, update, query, orderByChild, equalTo, remove, serverTimestamp } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, database, storage, googleAuthProvider } from "../lib/firebase";
-import { AssetListing, CreatorProfile, UserProfile, UserPurchase } from "../types";
+import { AssetListing, FirebaseListing, CreatorProfile, UserProfile, UserPurchase, PublicProfile } from "../types";
 
 // ==========================================
 // AUTHENTICATION SERVICES
@@ -40,14 +40,8 @@ export async function registerWithEmail(
     hasCompletedOnboarding: true,
   };
 
-  // Persist user profile to Realtime Database
-  try {
-    const userDbRef = ref(database, `users/${user.uid}`);
-    await set(userDbRef, profile);
-  } catch (err) {
-    console.warn("Could not write profile to Firebase RTDB (check Security Rules):", err);
-  }
-
+  // NOTE: In the authoritative architecture, client-side writes to /users are strictly forbidden.
+  // Profile state is managed locally in the client session or updated via authorized admin/backend flows.
   return { user, profile };
 }
 
@@ -69,77 +63,207 @@ export function subscribeToAuthState(callback: (user: User | null) => void): () 
 // ==========================================
 
 /**
- * Strips deliverable download URLs and private creator financial/account
- * data from the public listing object before it is stored in or read from /listings.
+ * Prepares an authoritative FirebaseListing payload for writing to /listings/{listingId}.
+ * Strictly writes only fields in the live database schema:
+ * title, sellerName, sellerId, price, isFree, category, fileType, fileExtension,
+ * createdAt, description, status, previewUrl, previewUrls, and optional fileUrl/fileName/fileSizeBytes.
+ * 
+ * NEVER writes priceInINR, rating, reviewCount, salesCount, or UI presentation objects.
  */
-export function sanitizePublicListing(listing: AssetListing): AssetListing {
-  // 1. Remove deliverable URL from public listing
-  const { downloadUrl, ...publicListing } = listing;
+export function prepareFirebaseListing(
+  listing: Partial<AssetListing>,
+  fallbackId?: string
+): { id: string; firebaseData: FirebaseListing } {
+  const validId = listing.id || fallbackId || `asset-${Date.now()}`;
+  const currentUid = auth.currentUser?.uid || listing.sellerId || "";
+  
+  // Safe price: only the authoritative 'price' field
+  const rawPrice = typeof listing.price === "number" && !isNaN(listing.price)
+    ? Math.max(0, Math.round(listing.price))
+    : 0;
 
-  // 2. Sanitize creator to only public profile fields
-  const rawCreator = publicListing.creator || ({} as Partial<CreatorProfile>);
-  const sanitizedCreator: CreatorProfile = {
-    id: rawCreator.id || publicListing.sellerId || "creator",
-    name: rawCreator.name || "Creator",
-    username: rawCreator.username || "creator",
-    handle: rawCreator.handle || `@${rawCreator.username || "creator"}`,
-    avatar: rawCreator.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-    initials: rawCreator.initials,
-    badge: rawCreator.badge,
-    verified: Boolean(rawCreator.verified),
-    verifiedSeller: Boolean(rawCreator.verifiedSeller),
-    responseTime: rawCreator.responseTime || "< 2 hours",
-    totalSales: typeof rawCreator.totalSales === "number" ? rawCreator.totalSales : 0,
-    rating: typeof rawCreator.rating === "number" ? rawCreator.rating : 0,
-    joinedDate: rawCreator.joinedDate || "2026",
-    location: rawCreator.location || "India",
-    bio: rawCreator.bio || "",
-    skills: rawCreator.skills || [],
+  const isFree = listing.isFree !== undefined ? Boolean(listing.isFree) : rawPrice === 0;
+  const fileExt = listing.fileExtension || listing.fileType?.replace(/^\./, "") || "zip";
+  const sellerName = listing.sellerName || listing.creator?.name || listing.seller?.name || "Verified Creator";
+  const desc = listing.description || listing.fullDescription || listing.shortDescription || "";
+  
+  const primaryPreview = listing.previewUrl || listing.thumbnailUrl || (listing.previewUrls && listing.previewUrls[0]) || (listing.previewImages && listing.previewImages[0]) || "";
+  const allPreviews = listing.previewUrls && listing.previewUrls.length > 0
+    ? listing.previewUrls
+    : (listing.previewImages && listing.previewImages.length > 0
+      ? listing.previewImages
+      : (primaryPreview ? [primaryPreview] : []));
+
+  // Authoritative live schema payload
+  const firebaseData: FirebaseListing = {
+    title: (listing.title || "Untitled Asset").trim(),
+    sellerName: sellerName.trim(),
+    sellerId: currentUid,
+    price: rawPrice,
+    isFree,
+    category: String(listing.category || "Other"),
+    fileType: listing.fileType?.startsWith(".") ? listing.fileType : `.${fileExt}`,
+    fileExtension: fileExt,
+    createdAt: listing.createdAt || serverTimestamp(),
+    description: desc.trim(),
+    status: "pending", // Authoritative: New client listings are ALWAYS pending
+    previewUrl: primaryPreview,
+    previewUrls: allPreviews,
   };
 
-  // 3. Ensure consistent sellerId and creator.id
-  const sellerId = publicListing.sellerId || sanitizedCreator.id;
-  sanitizedCreator.id = sellerId;
-
-  // 4. Sanitize backwards-compatible seller alias
-  let sanitizedSeller: CreatorProfile | undefined = undefined;
-  if (publicListing.seller) {
-    sanitizedSeller = { ...sanitizedCreator };
+  // Optional live schema fields (if present on input)
+  if (listing.fileUrl) {
+    firebaseData.fileUrl = listing.fileUrl;
+  }
+  if (listing.fileSizeBytes) {
+    firebaseData.fileSizeBytes = listing.fileSizeBytes;
   }
 
+  return { id: validId, firebaseData };
+}
+
+/**
+ * Maps an authoritative FirebaseListing fetched from /listings into an AssetListing
+ * for safe UI consumption without fabricating metrics or exposing private file URLs.
+ */
+export function mapFirebaseListingToAssetListing(
+  id: string,
+  raw: Partial<FirebaseListing>
+): AssetListing {
+  const price = typeof raw.price === "number" && !isNaN(raw.price) ? Math.max(0, raw.price) : 0;
+  const isFree = Boolean(raw.isFree || price === 0);
+  const preview = raw.previewUrl || (Array.isArray(raw.previewUrls) && raw.previewUrls[0]) || "";
+  const previewList = Array.isArray(raw.previewUrls) && raw.previewUrls.length > 0
+    ? raw.previewUrls
+    : (preview ? [preview] : []);
+  const sellerName = raw.sellerName || "Verified Creator";
+  const desc = raw.description || "";
+  const fileType = raw.fileType || (raw.fileExtension ? `.${raw.fileExtension}` : ".zip");
+  const fileExt = raw.fileExtension || fileType.replace(/^\./, "") || "zip";
+
+  const creatorObj: CreatorProfile = {
+    id: raw.sellerId || "creator",
+    name: sellerName,
+    username: sellerName.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    handle: `@${sellerName.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+    verified: false,
+    verifiedSeller: false,
+    totalSales: 0,
+    rating: 0,
+    responseTime: "< 2 hours",
+    joinedDate: "2026",
+    location: "India",
+    bio: "",
+    skills: [],
+  };
+
   return {
-    ...publicListing,
-    sellerId,
-    creator: sanitizedCreator,
-    ...(sanitizedSeller ? { seller: sanitizedSeller } : {}),
+    id,
+    title: raw.title || "Untitled Asset",
+    sellerName,
+    sellerId: raw.sellerId || "",
+    price,
+    isFree,
+    category: (raw.category as any) || "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)",
+    subcategory: raw.category || "General",
+    fileType,
+    fileExtension: fileExt,
+    createdAt: raw.createdAt || 0,
+    description: desc,
+    shortDescription: desc.length > 140 ? `${desc.slice(0, 140)}...` : desc,
+    fullDescription: desc,
+    status: raw.status || "approved",
+    previewUrl: preview,
+    previewUrls: previewList,
+    thumbnailUrl: preview,
+    previewImages: previewList,
+    fileFormatTags: [fileType],
+    creator: creatorObj,
+    seller: creatorObj,
+    // Rating, reviewCount, and salesCount are deliberately omitted (undefined)
+    // so client components do not fabricate fake metrics.
+    softwareCompatibility: ["Cross-Platform", "Standard Viewers"],
+    licenseType: "Commercial License",
+    deliveryType: "Instant Download",
+    deleted: raw.deleted,
+    deletedAt: raw.deletedAt,
+    detailedFeatures: [
+      "Original verified files",
+      "Commercial license included",
+      "Instant secure delivery",
+    ],
   };
 }
 
+/**
+ * Sanitizes a client listing before state update, ensuring safe price and clean structure.
+ * Does NOT add priceInINR or fabricate fake metrics.
+ */
+export function sanitizePublicListing(listing: AssetListing, fallbackId?: string): AssetListing {
+  const validId = listing.id || fallbackId || `asset-${Date.now()}`;
+  const safePrice = typeof listing.price === "number" && !isNaN(listing.price)
+    ? Math.max(0, listing.price)
+    : 0;
+
+  const isFree = listing.isFree !== undefined ? Boolean(listing.isFree) : safePrice === 0;
+  const sellerName = listing.sellerName || listing.creator?.name || listing.seller?.name || "Verified Creator";
+
+  return {
+    ...listing,
+    id: validId,
+    price: safePrice,
+    isFree,
+    sellerName,
+    status: "pending",
+  };
+}
+
+/**
+ * Public listings are readable ONLY when queried exactly using:
+ * orderByChild('status').equalTo('approved')
+ * Any bare "get all listings" operation is strictly replaced with this query.
+ * Excludes soft-deleted listings with: deleted !== true
+ */
 export async function fetchListingsFromFirebase(): Promise<{ data: AssetListing[] | null; error?: string }> {
   try {
-    const listingsRef = ref(database, "listings");
-    const snapshot = await get(listingsRef);
+    const approvedListingsQuery = query(
+      ref(database, "listings"),
+      orderByChild("status"),
+      equalTo("approved")
+    );
+    const snapshot = await get(approvedListingsQuery);
     if (snapshot.exists()) {
       const val = snapshot.val();
-      let rawList: AssetListing[] = [];
+      const list: AssetListing[] = [];
       if (Array.isArray(val)) {
-        rawList = val.filter(Boolean);
+        val.forEach((item, idx) => {
+          if (item && item.deleted !== true) {
+            list.push(mapFirebaseListingToAssetListing(item.id || `asset-${idx}`, item));
+          }
+        });
       } else if (typeof val === "object" && val !== null) {
-        rawList = Object.values(val);
+        Object.entries(val).forEach(([dbKey, item]: [string, any]) => {
+          if (item && item.deleted !== true) {
+            list.push(mapFirebaseListingToAssetListing(item.id || dbKey, item));
+          }
+        });
       }
-      // Sanitize all incoming records so legacy database records with private fields
-      // or downloadUrl are cleaned before reaching client components
-      const sanitizedList = rawList.map(sanitizePublicListing);
-      return { data: sanitizedList };
+      return { data: list };
     }
     return { data: null };
   } catch (err: any) {
-    console.warn("Failed to fetch listings from Firebase Realtime Database:", err.message);
+    console.warn("Failed to fetch listings with query orderByChild('status').equalTo('approved'):", err.message);
     return { data: null, error: err.message };
   }
 }
 
-export async function saveListingToFirebase(listing: AssetListing): Promise<{ success: boolean; error?: string }> {
+/**
+ * Saves a new or modified listing.
+ * Strictly writes authoritative FirebaseListing shape with 'price', no 'priceInINR',
+ * no fake metrics (rating, reviewCount, salesCount), and status: "pending".
+ */
+export async function saveListingToFirebase(listing: Partial<AssetListing>): Promise<{ success: boolean; error?: string }> {
   try {
     const currentUid = auth.currentUser?.uid;
     if (!currentUid) {
@@ -148,15 +272,16 @@ export async function saveListingToFirebase(listing: AssetListing): Promise<{ su
       return { success: false, error: msg };
     }
 
-    const sanitized = sanitizePublicListing(listing);
-    if (sanitized.sellerId !== currentUid) {
+    const { id, firebaseData } = prepareFirebaseListing(listing);
+
+    if (firebaseData.sellerId !== currentUid) {
       const msg = "Permission denied: You can only publish or modify listings where sellerId matches your account UID.";
       console.warn(msg);
       return { success: false, error: msg };
     }
 
-    const listingRef = ref(database, `listings/${sanitized.id}`);
-    await set(listingRef, sanitized);
+    const listingRef = ref(database, `listings/${id}`);
+    await set(listingRef, firebaseData);
     return { success: true };
   } catch (err: any) {
     let friendlyError = err.message;
@@ -169,53 +294,125 @@ export async function saveListingToFirebase(listing: AssetListing): Promise<{ su
 }
 
 // ==========================================
-// REALTIME DATABASE: USER PROFILE & PURCHASES
+// REALTIME DATABASE: PUBLIC PROFILES
 // ==========================================
 
-export async function fetchUserProfileFromFirebase(uid: string): Promise<UserProfile | null> {
+/**
+ * Reads public profile from the authoritative source: /publicProfiles/{uid}
+ * This node is intentionally public and contains:
+ * - name
+ * - role
+ * - bio
+ * - usernameId
+ *
+ * Does NOT read from /users/{uid} or assume /users exists.
+ */
+export async function fetchPublicProfileFromFirebase(uid: string): Promise<PublicProfile | null> {
   try {
-    if (!auth.currentUser || auth.currentUser.uid !== uid) {
-      console.warn("User profile read denied: Authenticated UID must match the requested profile.");
-      return null;
-    }
-    const userRef = ref(database, `users/${uid}`);
-    const snapshot = await get(userRef);
+    const profileRef = ref(database, `publicProfiles/${uid}`);
+    const snapshot = await get(profileRef);
     if (snapshot.exists()) {
-      return snapshot.val() as UserProfile;
+      return snapshot.val() as PublicProfile;
     }
     return null;
   } catch (err: any) {
-    console.warn("Failed to fetch user profile from Firebase:", err.message);
+    console.warn("Failed to fetch public profile from /publicProfiles:", err.message);
     return null;
   }
 }
 
-export async function saveUserProfileToFirebase(uid: string, profile: Partial<UserProfile>): Promise<boolean> {
+// ==========================================
+// REALTIME DATABASE: BOOKMARKS
+// ==========================================
+
+/**
+ * Reads an authenticated user's bookmarks from authoritative top-level node:
+ * /bookmarks/{uid}
+ * The value at each listing ID is always: true
+ */
+export async function fetchUserBookmarksFromFirebase(uid: string): Promise<string[]> {
   try {
-    if (!auth.currentUser || auth.currentUser.uid !== uid) {
-      console.warn("User profile update denied: Authenticated UID must match the target profile.");
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid || currentUid !== uid) {
+      return [];
+    }
+    const bookmarksRef = ref(database, `bookmarks/${currentUid}`);
+    const snapshot = await get(bookmarksRef);
+    if (snapshot.exists()) {
+      const val = snapshot.val();
+      if (typeof val === "object" && val !== null) {
+        return Object.keys(val).filter((key) => val[key] === true);
+      }
+    }
+    return [];
+  } catch (err: any) {
+    console.warn("Failed to fetch bookmarks from /bookmarks:", err.message);
+    return [];
+  }
+}
+
+/**
+ * Saves a bookmark at /bookmarks/{uid}/{listingId} with boolean value true.
+ * Requires authenticated user's UID.
+ */
+export async function addBookmarkToFirebase(listingId: string): Promise<boolean> {
+  try {
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid) {
+      console.warn("Authentication required to save bookmark.");
       return false;
     }
-    const userRef = ref(database, `users/${uid}`);
-    await update(userRef, profile);
+    const bookmarkRef = ref(database, `bookmarks/${currentUid}/${listingId}`);
+    await set(bookmarkRef, true);
     return true;
   } catch (err: any) {
-    console.warn("Failed to update user profile in Firebase:", err.message);
+    console.warn("Failed to save bookmark to /bookmarks:", err.message);
     return false;
   }
 }
 
 /**
- * Reads an authenticated user's private purchase records from /users/{uid}/purchases.
- * Allowed by security rules because auth.uid === $uid.
+ * Removes a bookmark by deleting /bookmarks/{uid}/{listingId}.
+ * Requires authenticated user's UID.
+ */
+export async function removeBookmarkFromFirebase(listingId: string): Promise<boolean> {
+  try {
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid) {
+      console.warn("Authentication required to remove bookmark.");
+      return false;
+    }
+    const bookmarkRef = ref(database, `bookmarks/${currentUid}/${listingId}`);
+    await remove(bookmarkRef);
+    return true;
+  } catch (err: any) {
+    console.warn("Failed to remove bookmark from /bookmarks:", err.message);
+    return false;
+  }
+}
+
+// ==========================================
+// REALTIME DATABASE: PURCHASES
+// ==========================================
+
+/**
+ * Reads purchase records from the authoritative top-level node: /purchases
+ * Filtered by buyerId matching the authenticated UID.
+ * Does NOT assume or reference /users/{uid}/purchases.
  */
 export async function fetchUserPurchasesFromFirebase(uid: string): Promise<{ data: UserPurchase[] | null; error?: string }> {
   try {
-    if (!auth.currentUser || auth.currentUser.uid !== uid) {
-      return { data: null, error: "Unauthorized: You can only view your own purchase records." };
+    const currentUid = auth.currentUser?.uid;
+    if (!currentUid || currentUid !== uid) {
+      return { data: null, error: "Unauthorized: You can only query purchase records for your authenticated account." };
     }
-    const purchasesRef = ref(database, `users/${uid}/purchases`);
-    const snapshot = await get(purchasesRef);
+    // Query top-level /purchases by buyerId
+    const purchasesQuery = query(
+      ref(database, "purchases"),
+      orderByChild("buyerId"),
+      equalTo(currentUid)
+    );
+    const snapshot = await get(purchasesQuery);
     if (snapshot.exists()) {
       const val = snapshot.val();
       const list = typeof val === "object" && val !== null ? (Object.values(val) as UserPurchase[]) : [];
@@ -225,21 +422,20 @@ export async function fetchUserPurchasesFromFirebase(uid: string): Promise<{ dat
   } catch (err: any) {
     let friendlyError = err.message;
     if (err.message?.includes("PERMISSION_DENIED")) {
-      friendlyError = "Permission denied: Unable to access purchase history for this user.";
+      friendlyError = "Purchase history requires authenticated server access or indexing on /purchases.";
     }
-    console.warn("Failed to fetch purchases from Firebase:", friendlyError);
+    console.warn("Failed to fetch purchases from /purchases:", friendlyError);
     return { data: null, error: friendlyError };
   }
 }
 
 // PRODUCTION NOTE ON PURCHASES:
-// Client-side writes to /users/{uid}/purchases are intentionally NOT provided.
-// Security rules enforce `.write = false` on /users/{uid}/purchases because purchase creation,
-// financial accounting, and delivery issuance must execute via trusted backend webhooks
-// (e.g. Razorpay/Stripe webhook -> Firebase Admin SDK).
+// Client-side direct writes to top-level /purchases are intentionally NOT provided.
+// Writing verified orders, financial balances, and buyer deliverable entitlements
+// must execute via a trusted backend service (e.g., payment webhook with Firebase Admin SDK).
 
 // ==========================================
-// STORAGE: VALIDATED UPLOADS & PATH HELPERS
+// STORAGE: AUTHORITATIVE PATHS & UPLOADS
 // ==========================================
 
 /**
@@ -250,42 +446,21 @@ function sanitizeFileName(fileName: string): string {
 }
 
 /**
- * Builds preview image path: /previews/{userId}/{listingId}/{fileName}
- * Requires authenticated user.
+ * Authoritative preview image path: previews/{listingId}/{imageName}
  */
 export function buildPreviewStoragePath(listingId: string, fileName: string): string {
-  const uid = auth.currentUser?.uid;
-  if (!uid) throw new Error("Authentication required to construct preview storage path.");
-  return `previews/${uid}/${listingId}/${sanitizeFileName(fileName)}`;
+  return `previews/${listingId}/${sanitizeFileName(fileName)}`;
 }
 
 /**
- * Builds user avatar path: /avatars/{userId}/{fileName}
- * Requires authenticated user.
+ * Authoritative deliverable file path: files/{listingId}
  */
-export function buildAvatarStoragePath(fileName: string): string {
-  const uid = auth.currentUser?.uid;
-  if (!uid) throw new Error("Authentication required to construct avatar storage path.");
-  return `avatars/${uid}/${sanitizeFileName(fileName)}`;
+export function buildDeliverableStoragePath(listingId: string): string {
+  return `files/${listingId}`;
 }
 
 /**
- * Builds deliverable asset archive path: /assets/{userId}/{listingId}/{fileName}
- * Requires authenticated user.
- * 
- * IMPORTANT ARCHITECTURAL LIMITATION:
- * While this enforces that userId matches the authenticated UID, Firebase Storage rules
- * cannot query Realtime Database to verify that auth.uid actually owns the given listingId.
- * Full listing-to-deliverable verification requires server-side validation.
- */
-export function buildAssetDeliverableStoragePath(listingId: string, fileName: string): string {
-  const uid = auth.currentUser?.uid;
-  if (!uid) throw new Error("Authentication required to construct deliverable storage path.");
-  return `assets/${uid}/${listingId}/${sanitizeFileName(fileName)}`;
-}
-
-/**
- * Uploads a preview image (publicly readable, max 10MB).
+ * Uploads a preview image (publicly readable, max 10MB) to previews/{listingId}/{imageName}.
  */
 export async function uploadPreviewImage(
   listingId: string,
@@ -311,7 +486,7 @@ export async function uploadPreviewImage(
   } catch (err: any) {
     let msg = err.message;
     if (err.message?.includes("unauthorized") || err.message?.includes("permission")) {
-      msg = "Upload permission denied: Ensure you are signed in and file matches size/type rules.";
+      msg = "Upload permission denied: Ensure you are authenticated and file matches size/type rules.";
     }
     console.warn("Preview upload failed:", msg);
     return { error: msg };
@@ -319,41 +494,7 @@ export async function uploadPreviewImage(
 }
 
 /**
- * Uploads a creator avatar (publicly readable, max 5MB).
- */
-export async function uploadAvatarImage(
-  file: File
-): Promise<{ downloadUrl?: string; error?: string }> {
-  try {
-    const uid = auth.currentUser?.uid;
-    if (!uid) return { error: "Authentication required: Please sign in to upload an avatar." };
-
-    if (!file.type.startsWith("image/")) {
-      return { error: "Invalid file type: Avatars must be image files." };
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      return { error: "File too large: Avatar images cannot exceed 5MB." };
-    }
-
-    const path = buildAvatarStoragePath(file.name);
-    const sRef = storageRef(storage, path);
-    await uploadBytes(sRef, file, { contentType: file.type });
-    const downloadUrl = await getDownloadURL(sRef);
-    return { downloadUrl };
-  } catch (err: any) {
-    let msg = err.message;
-    if (err.message?.includes("unauthorized") || err.message?.includes("permission")) {
-      msg = "Upload permission denied: Ensure you are signed in and avatar is under 5MB.";
-    }
-    console.warn("Avatar upload failed:", msg);
-    return { error: msg };
-  }
-}
-
-/**
- * Uploads a seller deliverable archive (private, max 250MB).
- * Note: Does NOT attempt getDownloadURL because /assets/{userId}/... has read: false for clients.
+ * Uploads a seller deliverable file to files/{listingId}.
  */
 export async function uploadDeliverableAsset(
   listingId: string,
@@ -361,22 +502,20 @@ export async function uploadDeliverableAsset(
 ): Promise<{ success: boolean; storagePath?: string; error?: string }> {
   try {
     const uid = auth.currentUser?.uid;
-    if (!uid) return { success: false, error: "Authentication required: Please sign in to upload asset packages." };
+    if (!uid) return { success: false, error: "Authentication required: Please sign in to upload deliverable files." };
 
     if (file.size > 250 * 1024 * 1024) {
-      return { success: false, error: "File too large: Asset deliverable cannot exceed 250MB." };
+      return { success: false, error: "File too large: Deliverable file cannot exceed 250MB." };
     }
 
-    const path = buildAssetDeliverableStoragePath(listingId, file.name);
+    const path = buildDeliverableStoragePath(listingId);
     const sRef = storageRef(storage, path);
     await uploadBytes(sRef, file, { contentType: file.type || "application/zip" });
-    // In secure production rules, client reads to /assets/ are denied.
-    // Download access is provided solely through server-side signed URLs upon purchase verification.
     return { success: true, storagePath: path };
   } catch (err: any) {
     let msg = err.message;
     if (err.message?.includes("unauthorized") || err.message?.includes("permission")) {
-      msg = "Upload permission denied: Ensure you are signed in and deliverable is under 250MB.";
+      msg = "Upload permission denied: Ensure you are authenticated and deliverable is under 250MB.";
     }
     console.warn("Deliverable upload failed:", msg);
     return { success: false, error: msg };

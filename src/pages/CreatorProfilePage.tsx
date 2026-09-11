@@ -92,8 +92,9 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
 
   const initials = isOwner && userProfile?.name ? getInitials(userProfile.name) : (mockMatch?.initials || getInitials(name));
 
-  // Find listings by this creator
+  // Find listings by this creator (excluding soft-deleted listings)
   const creatorListings = listings.filter((l) => {
+    if (l.deleted === true) return false;
     const cUser = l.creator?.username?.toLowerCase() || "";
     const sHandle = l.seller?.handle?.replace("@", "").toLowerCase() || "";
     const sName = l.seller?.name?.toLowerCase() || "";

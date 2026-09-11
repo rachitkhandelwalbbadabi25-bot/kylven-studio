@@ -21,11 +21,12 @@ export const ListingCard: React.FC<ListingCardProps> = ({
   showDemoBadge = false,
 }) => {
   const navigate = useNavigate();
-  const pricing = calculatePricing(listing.priceInINR);
+  const pricing = calculatePricing(listing.price ?? 0);
   const detailUrl = `/listing/${listing.slug || listing.id}`;
   const creatorUsername = listing.creator?.username || listing.seller?.handle?.replace("@", "") || "creator";
-  const creatorName = listing.creator?.name || listing.seller?.name || "Verified Creator";
+  const creatorName = listing.sellerName || listing.creator?.name || listing.seller?.name || "Verified Creator";
   const creatorAvatar = listing.creator?.avatar || listing.seller?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80";
+  const previewThumbnail = listing.previewUrl || listing.thumbnailUrl || (listing.previewUrls && listing.previewUrls[0]) || (listing.previewImages && listing.previewImages[0]) || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80";
 
   const handleCardClick = () => {
     if (onSelectListing) {
@@ -66,7 +67,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
       {/* Thumbnail Container */}
       <div className="relative aspect-[16/10] bg-[#202C44]/40 overflow-hidden">
         <img
-          src={listing.thumbnailUrl || (listing.previewImages && listing.previewImages[0])}
+          src={previewThumbnail}
           alt={listing.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
@@ -79,7 +80,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({
             {listing.fileType || (listing.fileFormatTags && listing.fileFormatTags[0]) || ".zip"}
           </span>
 
-          {listing.priceInINR === 0 && (
+          {((listing.price ?? 0) === 0 || listing.isFree) && (
             <span className="bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-emerald-500/40">
               FREE
             </span>
@@ -118,11 +119,20 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           <span className="text-[#7B8A90] font-mono text-[10px] bg-[#111317]/80 px-1.5 py-0.5 rounded border border-[#202C44]/50">
             {listing.fileSizeBytes || "Instant"}
           </span>
-          <div className="flex items-center gap-1 bg-[#111317]/90 px-2 py-0.5 rounded border border-[#202C44] text-[#D3CCB0] font-bold text-[10px]">
-            <Star className="w-3 h-3 fill-current" />
-            <span>{listing.rating.toFixed(1)}</span>
-            <span className="text-[#7B8A90] font-normal font-mono">({listing.reviewCount})</span>
-          </div>
+          {typeof listing.rating === "number" && !isNaN(listing.rating) && listing.rating > 0 ? (
+            <div className="flex items-center gap-1 bg-[#111317]/90 px-2 py-0.5 rounded border border-[#202C44] text-[#D3CCB0] font-bold text-[10px]">
+              <Star className="w-3 h-3 fill-current" />
+              <span>{listing.rating.toFixed(1)}</span>
+              {typeof listing.reviewCount === "number" && listing.reviewCount > 0 && (
+                <span className="text-[#7B8A90] font-normal font-mono">({listing.reviewCount})</span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 bg-[#111317]/90 px-2 py-0.5 rounded border border-[#202C44] text-[#D3CCB0] font-bold text-[10px]">
+              <Sparkles className="w-3 h-3 text-[#D3CCB0]" />
+              <span>New</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -158,28 +168,32 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           <span className="text-[11px] text-[#7B8A90] truncate max-w-[130px] hover:text-white transition-colors">
             {creatorName}
           </span>
-          <span className="text-[10px] text-[#202C44]">•</span>
-          <span className="text-[10px] text-[#7B8A90] font-mono">
-            {listing.salesCount} sold
-          </span>
+          {typeof listing.salesCount === "number" && listing.salesCount > 0 && (
+            <>
+              <span className="text-[10px] text-[#202C44]">•</span>
+              <span className="text-[10px] text-[#7B8A90] font-mono">
+                {listing.salesCount} sold
+              </span>
+            </>
+          )}
         </div>
 
         {/* Price & View Action Footer */}
         <div className="pt-2 border-t border-[#202C44] flex items-center justify-between gap-2">
           <div>
             <div className="flex items-baseline gap-1.5">
-              {listing.priceInINR === 0 ? (
+              {(listing.price ?? 0) === 0 || listing.isFree ? (
                 <span className="text-sm font-heading font-extrabold text-emerald-400">
                   FREE
                 </span>
               ) : (
                 <span className="text-sm font-heading font-extrabold text-[#D3CCB0]">
-                  ₹{listing.priceInINR.toLocaleString("en-IN")}
+                  ₹{Number(listing.price || 0).toLocaleString("en-IN")}
                 </span>
               )}
             </div>
             <div className="text-[9px] text-[#7B8A90] font-mono">
-              {listing.priceInINR === 0 ? "Instant zero-cost download" : "Buyer fees shown at checkout"}
+              {(listing.price ?? 0) === 0 || listing.isFree ? "Instant zero-cost download" : "Buyer fees shown at checkout"}
             </div>
           </div>
 

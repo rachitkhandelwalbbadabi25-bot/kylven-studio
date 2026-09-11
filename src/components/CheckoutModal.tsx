@@ -19,10 +19,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [isSuccess, setIsSuccess] = useState(false);
   const [copiedKey, setCopiedKey] = useState(false);
 
-  const listedPrice = listing.priceInINR;
-  const platformFee = Math.round(listedPrice * 0.125);
-  const totalBuyerPayable = listedPrice + platformFee;
-  const sellerNetEarnings = Math.round(listedPrice * 0.9);
+  const listedPrice = typeof listing.price === "number" && !isNaN(listing.price) ? Math.max(0, listing.price) : 0;
+  const isFree = Boolean(listing.isFree || listedPrice === 0);
+  const platformFee = isFree ? 0 : Math.round(listedPrice * 0.125);
+  const totalBuyerPayable = isFree ? 0 : listedPrice + platformFee;
+  const sellerNetEarnings = isFree ? 0 : Math.round(listedPrice * 0.9);
 
   const mockOrderId = `KS-ORD-${Math.floor(1000 + Math.random() * 9000)}`;
   const mockLicenseKey = `KS-LIC-2026-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
