@@ -321,6 +321,60 @@ export async function fetchPublicProfileFromFirebase(uid: string): Promise<Publi
   }
 }
 
+/**
+ * Reads all public profiles from the authoritative /publicProfiles node.
+ * Used for creator directory search and discovery.
+ */
+export async function fetchAllPublicProfilesFromFirebase(): Promise<Record<string, PublicProfile>> {
+  try {
+    const profilesRef = ref(database, "publicProfiles");
+    const snapshot = await get(profilesRef);
+    if (snapshot.exists()) {
+      return snapshot.val() as Record<string, PublicProfile>;
+    }
+    return {};
+  } catch (err: any) {
+    console.warn("Failed to fetch all public profiles:", err.message);
+    return {};
+  }
+}
+
+/**
+ * Resolves a public profile by usernameId or UID from /publicProfiles
+ */
+export async function fetchPublicProfileByUsernameId(identifier: string): Promise<{ uid: string; profile: PublicProfile } | null> {
+  try {
+    const clean = identifier.replace("@", "").trim().toLowerCase();
+    if (!clean) return null;
+
+    // Direct UID check first
+    const directRef = ref(database, `publicProfiles/${clean}`);
+    const directSnap = await get(directRef);
+    if (directSnap.exists()) {
+      return { uid: clean, profile: directSnap.val() as PublicProfile };
+    }
+
+    // Search /publicProfiles for matching usernameId or sanitized name
+    const profilesRef = ref(database, "publicProfiles");
+    const snapshot = await get(profilesRef);
+    if (snapshot.exists()) {
+      const val = snapshot.val() as Record<string, PublicProfile>;
+      for (const [uid, prof] of Object.entries(val)) {
+        if (!prof) continue;
+        const uId = (prof.usernameId || "").toLowerCase();
+        const pName = (prof.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (uId === clean || uid.toLowerCase() === clean || pName === clean) {
+          return { uid, profile: prof };
+        }
+      }
+    }
+    return null;
+  } catch (err: any) {
+    console.warn("Failed to resolve public profile:", err.message);
+    return null;
+  }
+}
+
 // ==========================================
 // REALTIME DATABASE: BOOKMARKS
 // ==========================================
