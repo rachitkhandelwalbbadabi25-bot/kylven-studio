@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
 import { AssetListing, UserProfile, UserPurchase, UserRole } from "./types";
-import { MOCK_LISTINGS } from "./data/mockData";
 import { Navbar } from "./components/Navbar";
 import { Footer } from "./components/Footer";
 import { HomePage } from "./pages/HomePage";
@@ -43,103 +42,78 @@ function ScrollToTop() {
   return null;
 }
 
-const DEFAULT_PROFILE: UserProfile = {
-  name: "Rachit Khandelwal20",
-  email: "kavishkhandelwal9@gmail.com",
-  username: "rachitkhandelwal20",
+const EMPTY_PROFILE: UserProfile = {
+  name: "",
+  email: "",
+  username: "",
   role: "buyer",
   avatar: "",
   bio: "",
   location: "India",
-  hasCompletedOnboarding: true,
+  hasCompletedOnboarding: false,
 };
 
-const INITIAL_PURCHASES: UserPurchase[] = [];
-
 export default function App() {
-  // Global Listings State (persisted with initial seed)
-  const [listings, setListings] = useState<AssetListing[]>(() => {
-    try {
-      const saved = localStorage.getItem("kreate_listings");
-      if (saved) {
-        const parsed: AssetListing[] = JSON.parse(saved);
-        return parsed.filter((l) => l.deleted !== true);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return MOCK_LISTINGS;
-  });
+  // Global Listings State - Authoritative Firebase RTDB only
+  const [listings, setListings] = useState<AssetListing[]>([]);
+  const [isListingsLoading, setIsListingsLoading] = useState<boolean>(true);
 
-  // Auth State (defaults to true for immediate testability)
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem("kreate_is_authenticated");
-      return saved !== null ? saved === "true" : true;
-    } catch (e) {
-      return true;
-    }
-  });
+  // Auth State
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // User Profile
-  const [userProfile, setUserProfile] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem("kreate_user_profile");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    return DEFAULT_PROFILE;
-  });
+  const [userProfile, setUserProfile] = useState<UserProfile>(EMPTY_PROFILE);
 
-  // User Purchases
-  const [purchases, setPurchases] = useState<UserPurchase[]>(() => {
-    try {
-      const saved = localStorage.getItem("kreate_purchases");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    return INITIAL_PURCHASES;
-  });
+  // User Purchases - Authoritative Firebase RTDB only
+  const [purchases, setPurchases] = useState<UserPurchase[]>([]);
 
-  // Saved Wishlist IDs
-  const [savedIds, setSavedIds] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem("kreate_saved_ids");
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    return [];
-  });
+  // Saved Wishlist IDs - Authoritative Firebase RTDB only
+  const [savedIds, setSavedIds] = useState<string[]>([]);
 
   // Global Search in Navbar
   const [globalSearch, setGlobalSearch] = useState("");
 
-  // Firebase Realtime Database: Initial fetch of listings
+  // Firebase Realtime Database: Initial authoritative fetch of listings
   useEffect(() => {
     let isMounted = true;
-    fetchListingsFromFirebase().then((res) => {
-      if (isMounted && res.data && res.data.length > 0) {
-        const remoteListings = res.data;
-        const remoteIds = new Set(remoteListings.map((l) => l.id));
-        setListings((prev) => {
-          const nonConflicting = prev.filter((p) => !remoteIds.has(p.id) && p.deleted !== true);
-          return [...remoteListings, ...nonConflicting];
-        });
-      }
-    });
+    setIsListingsLoading(true);
+
+    fetchListingsFromFirebase()
+      .then((res) => {
+        if (isMounted) {
+          if (res.data) {
+            // Strictly Firebase listings only, excluding deleted
+            setListings(res.data.filter((l) => l.deleted !== true));
+          } else {
+            setListings([]);
+          }
+          setIsListingsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to fetch listings from Firebase:", err);
+        if (isMounted) {
+          setListings([]);
+          setIsListingsLoading(false);
+        }
+      });
 
     // Subscribe to Firebase Auth state
     const unsubscribeAuth = subscribeToAuthState((firebaseUser) => {
       if (firebaseUser) {
         setIsAuthenticated(true);
-        // Sync email and name if available
+        const baseName = firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User";
+        const baseUsername = (firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "user")
+          .toLowerCase()
+          .replace(/[^a-z0-9_]/g, "");
+
         setUserProfile((prev) => ({
           ...prev,
-          email: firebaseUser.email || prev.email,
-          name: firebaseUser.displayName || prev.name,
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || "",
+          name: prev.name || baseName,
+          username: prev.username || baseUsername,
+          hasCompletedOnboarding: true,
         }));
 
         // 1. Fetch public profile from authoritative /publicProfiles/{uid}
@@ -147,31 +121,32 @@ export default function App() {
           if (isMounted && publicProf) {
             setUserProfile((prev) => ({
               ...prev,
-              name: publicProf.name || prev.name,
-              role: (publicProf.role as any) || prev.role,
-              bio: publicProf.bio || prev.bio,
-              username: publicProf.usernameId || prev.username,
+              name: publicProf.name || prev.name || baseName,
+              role: (publicProf.role as any) || prev.role || "buyer",
+              bio: publicProf.bio || prev.bio || "",
+              username: publicProf.usernameId || prev.username || baseUsername,
             }));
           }
         });
 
         // 2. Fetch bookmarks from authoritative /bookmarks/{uid}
         fetchUserBookmarksFromFirebase(firebaseUser.uid).then((remoteSaved) => {
-          if (isMounted && remoteSaved && remoteSaved.length > 0) {
-            setSavedIds((prev) => Array.from(new Set([...prev, ...remoteSaved])));
+          if (isMounted) {
+            setSavedIds(remoteSaved || []);
           }
         });
 
         // 3. Fetch purchase records from authoritative top-level /purchases (filtered by buyerId)
         fetchUserPurchasesFromFirebase(firebaseUser.uid).then((res) => {
-          if (isMounted && res.data && res.data.length > 0) {
-            setPurchases((prev) => {
-              const existingIds = new Set(prev.map((p) => p.purchaseId || p.orderId));
-              const remoteNew = res.data!.filter((p) => !existingIds.has(p.purchaseId || p.orderId));
-              return [...remoteNew, ...prev];
-            });
+          if (isMounted) {
+            setPurchases(res.data || []);
           }
         });
+      } else {
+        setIsAuthenticated(false);
+        setUserProfile(EMPTY_PROFILE);
+        setSavedIds([]);
+        setPurchases([]);
       }
     });
 
@@ -181,54 +156,21 @@ export default function App() {
     };
   }, []);
 
-  // Persist State Changes
-  useEffect(() => {
-    try {
-      localStorage.setItem("kreate_listings", JSON.stringify(listings));
-    } catch (e) {}
-  }, [listings]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("kreate_saved_ids", JSON.stringify(savedIds));
-    } catch (e) {}
-  }, [savedIds]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("kreate_purchases", JSON.stringify(purchases));
-    } catch (e) {}
-  }, [purchases]);
-
   const handleSignInSuccess = (profile: UserProfile) => {
     setIsAuthenticated(true);
-    setUserProfile(profile);
-    try {
-      localStorage.setItem("kreate_is_authenticated", "true");
-      localStorage.setItem("kreate_user_profile", JSON.stringify(profile));
-    } catch (e) {
-      console.error(e);
-    }
+    setUserProfile((prev) => ({ ...prev, ...profile, hasCompletedOnboarding: true }));
   };
 
   const handleSignOut = () => {
-    setIsAuthenticated(false);
     logoutUser().catch((err) => console.warn("Firebase logout error:", err));
-    try {
-      localStorage.setItem("kreate_is_authenticated", "false");
-    } catch (e) {
-      console.error(e);
-    }
+    setIsAuthenticated(false);
+    setUserProfile(EMPTY_PROFILE);
+    setSavedIds([]);
+    setPurchases([]);
   };
 
   const handleSelectRoleOnboarding = (role: UserRole) => {
-    setUserProfile((prev) => {
-      const next = { ...prev, role, hasCompletedOnboarding: true };
-      try {
-        localStorage.setItem("kreate_user_profile", JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
+    setUserProfile((prev) => ({ ...prev, role, hasCompletedOnboarding: true }));
   };
 
   const handleToggleSave = (id: string) => {
@@ -276,28 +218,15 @@ export default function App() {
   };
 
   const handleUpdateUserProfile = (updated: Partial<UserProfile>) => {
-    setUserProfile((prev) => {
-      const next = { ...prev, ...updated };
-      try {
-        localStorage.setItem("kreate_user_profile", JSON.stringify(next));
-      } catch (e) {}
-      // In the authoritative architecture, client-side writes to /users are strictly prohibited.
-      return next;
-    });
+    setUserProfile((prev) => ({ ...prev, ...updated }));
   };
 
   const handleUpgradeToSeller = (upiId: string, redirectTo: string = "/sell/new") => {
-    setUserProfile((prev) => {
-      const next: UserProfile = {
-        ...prev,
-        role: "seller",
-        upiId: upiId.trim(),
-      };
-      try {
-        localStorage.setItem("kreate_user_profile", JSON.stringify(next));
-      } catch (e) {}
-      return next;
-    });
+    setUserProfile((prev) => ({
+      ...prev,
+      role: "seller",
+      upiId: upiId.trim(),
+    }));
   };
 
   return (
@@ -391,7 +320,7 @@ export default function App() {
               path="/categories"
               element={
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
-                  <CategoriesPage />
+                  <CategoriesPage listings={listings} />
                 </ProtectedRoute>
               }
             />

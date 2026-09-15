@@ -146,21 +146,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     setIsSubmitting(true);
 
-    // If signing in, check if there is an existing profile in localStorage or match role
     let chosenRole: "buyer" | "seller" = role || "buyer";
-    if (!isSignUp) {
-      try {
-        const saved = localStorage.getItem("kreate_user_profile");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed.role === "seller" || parsed.role === "buyer") {
-            chosenRole = parsed.role;
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    }
 
     const displayName = isSignUp && name.trim() ? name.trim() : email.split("@")[0];
     const cleanUsername = displayName.toLowerCase().replace(/[^a-z0-9]/g, "_");
@@ -170,12 +156,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       email: email.trim(),
       username: cleanUsername,
       role: chosenRole,
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      bio:
-        chosenRole === "seller"
-          ? "Verified Seller on Kreate Studio. 87.5% direct UPI revenue split."
-          : "Verified Digital Asset Buyer on Kreate Studio.",
-      upiId: chosenRole === "seller" ? (upiId.trim() || "creator@okhdfcbank") : undefined,
+      upiId: chosenRole === "seller" ? (upiId.trim() || undefined) : undefined,
       hasCompletedOnboarding: true,
     };
 

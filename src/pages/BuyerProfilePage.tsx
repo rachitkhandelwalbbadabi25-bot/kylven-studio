@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 
 interface BuyerProfilePageProps {
-  userProfile?: UserProfile;
+  userProfile?: UserProfile | null;
   onUpdateUserProfile?: (updated: Partial<UserProfile>) => void;
   purchases?: UserPurchase[];
   savedIds?: string[];
@@ -33,14 +33,7 @@ interface BuyerProfilePageProps {
 }
 
 export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
-  userProfile = {
-    name: "Rachit Khandelwal20",
-    email: "kavishkhandelwal9@gmail.com",
-    role: "buyer",
-    username: "rachitkhandelwal",
-    bio: "",
-    location: "India",
-  },
+  userProfile,
   onUpdateUserProfile,
   purchases = [],
   savedIds = [],
@@ -58,20 +51,20 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
   const [isBioEditingInline, setIsBioEditingInline] = useState(false);
 
   // Profile Form States
-  const [formName, setFormName] = useState(userProfile.name || "Rachit Khandelwal20");
-  const [formEmail, setFormEmail] = useState(userProfile.email || "kavishkhandelwal9@gmail.com");
-  const [formBio, setFormBio] = useState(userProfile.bio || "");
+  const [formName, setFormName] = useState(userProfile?.name || "User");
+  const [formEmail, setFormEmail] = useState(userProfile?.email || "");
+  const [formBio, setFormBio] = useState(userProfile?.bio || "");
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const [newBlockedInput, setNewBlockedInput] = useState("");
 
-  // Derived initials (e.g., "R")
+  // Derived initials
   const getInitial = (nameStr: string) => {
     const trimmed = nameStr.trim();
-    if (!trimmed) return "R";
+    if (!trimmed) return "U";
     return trimmed.charAt(0).toUpperCase();
   };
 
-  const initialLetter = getInitial(userProfile.name || "Rachit");
+  const initialLetter = getInitial(userProfile?.name || userProfile?.email || "User");
 
   // Calculate stats
   const listingsCount = 0; // Buyers don't have public selling listings

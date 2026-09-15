@@ -127,31 +127,31 @@ export interface AssetListing {
 
 export interface PricingBreakdown {
   listedPriceINR: number;
-  platformFeeINR: number; // 12.5% platform + payment fee
+  platformFeeINR: number; // 10% platform commission
   buyerTotalINR: number; // listedPriceINR + platformFeeINR
-  sellerNetINR: number; // 87.5% payout to seller
-  sellerSplitPercent: number; // 87.5%
-  platformFeePercent: number; // 12.5%
+  sellerNetINR: number; // 90% payout to seller
+  sellerSplitPercent: number; // 90%
+  platformFeePercent: number; // 10%
 }
 
 /**
  * Single source of truth for pricing across the entire Kreate Studio marketplace.
- * - Platform + payment fee: 12.5% (paid for UPI gateways, CDN bandwidth, malware scans, lifetime updates)
- * - Seller net payout: 87.5% of listed price guaranteed
+ * - Platform commission: 10%
+ * - Seller net payout: 90% of listed price guaranteed
  */
 export function calculatePricing(price: number): PricingBreakdown {
   const listedPriceINR = Math.max(0, Math.round(Number(price) || 0));
-  const platformFeeINR = Math.round(listedPriceINR * 0.125);
+  const platformFeeINR = Math.round(listedPriceINR * 0.10);
   const buyerTotalINR = listedPriceINR + platformFeeINR;
-  const sellerNetINR = Math.round(listedPriceINR * 0.875);
+  const sellerNetINR = Math.round(listedPriceINR * 0.90);
 
   return {
     listedPriceINR,
     platformFeeINR,
     buyerTotalINR,
     sellerNetINR,
-    sellerSplitPercent: 87.5,
-    platformFeePercent: 12.5,
+    sellerSplitPercent: 90,
+    platformFeePercent: 10,
   };
 }
 
@@ -214,6 +214,7 @@ export interface SellerStats {
 export type UserRole = "buyer" | "seller" | "both" | "creator";
 
 export interface UserProfile {
+  uid?: string;
   name: string;
   username?: string;
   email: string;
