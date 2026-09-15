@@ -25,13 +25,12 @@ import {
   Mail,
   Settings
 } from "lucide-react";
-import { UserProfile, UserRole } from "../types";
-import { MOCK_LISTINGS, CREATORS_DIRECTORY } from "../data/mockData";
+import { UserProfile, UserRole, AssetListing, CreatorProfile } from "../types";
 import { BrandMark, BrandLogo } from "./BrandLogo";
 
 interface NavbarProps {
   isAuthenticated?: boolean;
-  userProfile?: UserProfile;
+  userProfile?: UserProfile | null;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   onSearchSubmit?: (q?: string) => void;
@@ -39,6 +38,7 @@ interface NavbarProps {
   onLogout?: () => void;
   savedCount?: number;
   purchasesCount?: number;
+  listings?: AssetListing[];
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -49,6 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   savedCount = 0,
   purchasesCount = 0,
+  listings = [],
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -62,9 +63,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const accountDropdownRef = useRef<HTMLDivElement>(null);
   const isSellerMode = userProfile?.role === "seller";
-  const currentUsername = userProfile?.username || "rachitkhandelwal20";
-  const userEmail = userProfile?.email || "kavishkhandelwal9@gmail.com";
-  const userInitial = userProfile?.name ? userProfile.name.trim().charAt(0).toUpperCase() : "R";
+  const currentUsername = userProfile?.username || userProfile?.email?.split("@")[0] || "user";
+  const userEmail = userProfile?.email || "";
+  const userInitial = userProfile?.name?.trim()
+    ? userProfile.name.trim().charAt(0).toUpperCase()
+    : userProfile?.email
+      ? userProfile.email.charAt(0).toUpperCase()
+      : "U";
 
   // Close search suggestions & account dropdown on click outside
   useEffect(() => {
@@ -123,8 +128,31 @@ export const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  // Matching creators & users
-  const allCreators = useMemo(() => Object.values(CREATORS_DIRECTORY), []);
+  // Matching creators & users derived from real listings
+  const allCreators = useMemo<CreatorProfile[]>(() => {
+    const creatorMap = new Map<string, CreatorProfile>();
+    listings.forEach((l) => {
+      const c = l.creator || l.seller;
+      const key = c?.username || l.sellerName || l.sellerId;
+      if (key && !creatorMap.has(key)) {
+        creatorMap.set(key, {
+          id: l.sellerId || key,
+          name: l.sellerName || c?.name || "Creator",
+          username: c?.username || l.sellerName?.toLowerCase().replace(/[^a-z0-9]/g, "") || "creator",
+          handle: c?.handle || `@${(c?.username || l.sellerName || "creator").toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+          avatar: c?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
+          verified: Boolean(c?.verified),
+          totalSales: 0,
+          rating: 0,
+          location: c?.location || "India",
+          bio: c?.bio || "Digital asset creator on Kreate Studio.",
+          responseTime: c?.responseTime || "< 1 hour",
+          joinedDate: c?.joinedDate || "2024",
+        });
+      }
+    });
+    return Array.from(creatorMap.values());
+  }, [listings]);
 
   const matchingUsers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -144,13 +172,14 @@ export const Navbar: React.FC<NavbarProps> = ({
       .slice(0, 4);
   }, [allCreators, searchQuery]);
 
-  // Matching digital assets
+  // Matching digital assets from real Firebase listings (excluding soft-deleted)
   const matchingAssets = useMemo(() => {
+    const activeListings = listings.filter((l) => l.deleted !== true);
     const q = searchQuery.trim().toLowerCase();
     if (!q) {
-      return MOCK_LISTINGS.slice(0, 4);
+      return activeListings.slice(0, 4);
     }
-    return MOCK_LISTINGS
+    return activeListings
       .filter(
         (a) =>
           a.title.toLowerCase().includes(q) ||
@@ -159,10 +188,11 @@ export const Navbar: React.FC<NavbarProps> = ({
           (a.tags && a.tags.some((t) => t.toLowerCase().includes(q))) ||
           (a.shortDescription && a.shortDescription.toLowerCase().includes(q)) ||
           (a.creator?.name && a.creator.name.toLowerCase().includes(q)) ||
+          (a.sellerName && a.sellerName.toLowerCase().includes(q)) ||
           (a.seller?.name && a.seller.name.toLowerCase().includes(q))
       )
       .slice(0, 5);
-  }, [searchQuery]);
+  }, [listings, searchQuery]);
 
   const handleSelectUser = (username: string) => {
     setIsSearchFocused(false);

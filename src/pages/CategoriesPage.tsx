@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CATEGORIES_LIST, FILE_FORMATS_CATALOG } from "../data/mockData";
-import { CoreCategory } from "../types";
+import { CoreCategory, AssetListing } from "../types";
 import {
   Code2,
   BrainCircuit,
@@ -17,7 +17,11 @@ import {
   Download
 } from "lucide-react";
 
-export const CategoriesPage: React.FC = () => {
+interface CategoriesPageProps {
+  listings?: AssetListing[];
+}
+
+export const CategoriesPage: React.FC<CategoriesPageProps> = ({ listings = [] }) => {
   const navigate = useNavigate();
 
   const getCategoryIcon = (iconName: string) => {
@@ -70,25 +74,33 @@ export const CategoriesPage: React.FC = () => {
 
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {CATEGORIES_LIST.map((cat) => (
-          <div
-            key={cat.name}
-            className="bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/50 rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between shadow-lg group"
-          >
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-[#202C44] border border-[#202C44] flex items-center justify-center group-hover:scale-105 transition-transform">
-                    {getCategoryIcon(cat.iconName)}
+        {CATEGORIES_LIST.map((cat) => {
+          const liveCount = listings.filter(
+            (l) =>
+              l.deleted !== true &&
+              (l.category?.toLowerCase() === cat.name.toLowerCase() ||
+                l.category?.toLowerCase().includes(cat.name.toLowerCase().split(" ")[0]))
+          ).length;
+
+          return (
+            <div
+              key={cat.name}
+              className="bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/50 rounded-2xl p-6 transition-all duration-200 flex flex-col justify-between shadow-lg group"
+            >
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-[#202C44] border border-[#202C44] flex items-center justify-center group-hover:scale-105 transition-transform">
+                      {getCategoryIcon(cat.iconName)}
+                    </div>
+                    <span className="text-xs font-mono font-bold text-[#D3CCB0] bg-[#202C44] px-2.5 py-0.5 rounded-lg border border-[#202C44]">
+                      Group #{cat.id}
+                    </span>
                   </div>
-                  <span className="text-xs font-mono font-bold text-[#D3CCB0] bg-[#202C44] px-2.5 py-0.5 rounded-lg border border-[#202C44]">
-                    Group #{cat.id}
+                  <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-2.5 py-1 rounded-full border border-[#202C44]">
+                    {liveCount} {liveCount === 1 ? "listing" : "listings"}
                   </span>
                 </div>
-                <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-2.5 py-1 rounded-full border border-[#202C44]">
-                  {cat.count} listings
-                </span>
-              </div>
 
               <h2 className="text-lg font-heading font-bold text-white mb-2 group-hover:text-[#D3CCB0] transition-colors">
                 {cat.id}. {cat.name}
@@ -145,7 +157,7 @@ export const CategoriesPage: React.FC = () => {
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
-        ))}
+        );})}
       </div>
 
       {/* File Formats Supported Section */}

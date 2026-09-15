@@ -375,6 +375,29 @@ export async function fetchPublicProfileByUsernameId(identifier: string): Promis
   }
 }
 
+/**
+ * Updates an authenticated user's public profile at /publicProfiles/{uid}
+ * Restricts payload to valid public schema: name, role, bio, usernameId.
+ */
+export async function savePublicProfileToFirebase(
+  uid: string,
+  profile: PublicProfile
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const profileRef = ref(database, `publicProfiles/${uid}`);
+    await set(profileRef, {
+      name: profile.name,
+      role: profile.role,
+      bio: profile.bio,
+      usernameId: profile.usernameId,
+    });
+    return { success: true };
+  } catch (err: any) {
+    console.warn("Failed to save public profile:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
 // ==========================================
 // REALTIME DATABASE: BOOKMARKS
 // ==========================================

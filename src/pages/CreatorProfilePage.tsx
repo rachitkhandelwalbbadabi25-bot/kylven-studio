@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { AssetListing, CreatorProfile, UserProfile, UserPurchase } from "../types";
-import { CREATOR_PROFILES_MOCK, CREATORS_DIRECTORY } from "../data/mockData";
+import { AssetListing, UserProfile, UserPurchase, PublicProfile } from "../types";
 import { ListingCard } from "../components/ListingCard";
+import {
+  fetchPublicProfileByUsernameId,
+  savePublicProfileToFirebase,
+} from "../services/firebaseService";
 import {
   ShieldCheck,
   CheckCircle2,
@@ -13,15 +16,15 @@ import {
   Edit3,
   Layers,
   LayoutDashboard,
-  Heart,
   Sparkles,
   X,
   Plus,
   ArrowRight,
-  TrendingUp,
   Award,
   Download,
-  Mail
+  Mail,
+  UserX,
+  Loader2,
 } from "lucide-react";
 
 interface CreatorProfilePageProps {
@@ -29,7 +32,7 @@ interface CreatorProfilePageProps {
   savedIds: string[];
   onToggleSave: (id: string) => void;
   onBuyNowDirect: (listing: AssetListing) => void;
-  userProfile?: UserProfile;
+  userProfile?: UserProfile | null;
   onUpdateUserProfile?: (updated: Partial<UserProfile>) => void;
   purchases?: UserPurchase[];
 }
@@ -49,186 +52,248 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   const [activeTab, setActiveTab] = useState<"listings" | "purchases" | "dashboard">("listings");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Derive target username (default to buildwithansh or current user)
-  const cleanUsername = (username || userProfile?.username || "buildwithansh").replace("@", "").toLowerCase();
-  
+  // Derive target username/handle
+  const cleanUsername = (username || userProfile?.username || "").replace("@", "").trim().toLowerCase();
+
   // Check if viewing own profile
-  const isOwner =
+  const isOwner = Boolean(
     !username ||
     username === "me" ||
-    cleanUsername === (userProfile?.username || "buildwithansh").toLowerCase() ||
-    cleanUsername === "buildwithansh";
-
-  // Match creator data from mock or state
-  const mockMatch =
-    CREATOR_PROFILES_MOCK[cleanUsername] ||
-    CREATORS_DIRECTORY[cleanUsername] ||
-    (cleanUsername === "buildwithansh" ? CREATOR_PROFILES_MOCK.buildwithansh : null);
-
-  const [name, setName] = useState(
-    isOwner ? (userProfile?.name || mockMatch?.name || "Ansh Bhardwaj") : (mockMatch?.name || "Ansh Bhardwaj")
+    (userProfile?.username && cleanUsername === userProfile.username.toLowerCase()) ||
+    (userProfile?.uid && cleanUsername === userProfile.uid.toLowerCase())
   );
-  const [bio, setBio] = useState(
-    isOwner
-      ? (userProfile?.bio || mockMatch?.bio || "Full-stack developer and UI designer building production-grade digital assets, cyberpunk kits, and developer starters.")
-      : (mockMatch?.bio || "Digital asset creator on Kreate Studio.")
-  );
-  const [handle, setHandle] = useState(isOwner ? (userProfile?.username || cleanUsername) : cleanUsername);
-  const [location, setLocation] = useState(mockMatch?.location || "Bengaluru, India");
 
-  // Derive profile email address
-  const profileEmail = isOwner
-    ? (userProfile?.email || "ansh.bhardwaj@kreatestudio.dev")
-    : (mockMatch?.email || `${cleanUsername}@kreatestudio.dev`);
+  // Authoritative public profile state (from Firebase /publicProfiles)
+  const [profileData, setProfileData] = useState<PublicProfile | null>(null);
+  const [resolvedUid, setResolvedUid] = useState<string | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState<boolean>(!isOwner);
+  const [notFound, setNotFound] = useState<boolean>(false);
 
-  // Get Initials for Avatar
-  const getInitials = (fullName: string) => {
-    const parts = fullName.trim().split(" ");
+  // Edit profile form state
+  const [editName, setEditName] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editUsernameId, setEditUsernameId] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Load public profile from Firebase /publicProfiles/{uid}
+  useEffect(() => {
+    let isMounted = true;
+
+    if (isOwner && userProfile) {
+      setProfileData({
+        name: userProfile.name,
+        role: userProfile.role,
+        bio: userProfile.bio || "",
+        usernameId: userProfile.username || userProfile.uid || "",
+      });
+      setResolvedUid(userProfile.uid);
+      setEditName(userProfile.name);
+      setEditBio(userProfile.bio || "");
+      setEditUsernameId(userProfile.username || "");
+      setIsLoadingProfile(false);
+      setNotFound(false);
+      return;
+    }
+
+    if (!cleanUsername) {
+      setIsLoadingProfile(false);
+      setNotFound(true);
+      return;
+    }
+
+    setIsLoadingProfile(true);
+    setNotFound(false);
+
+    fetchPublicProfileByUsernameId(cleanUsername)
+      .then((res) => {
+        if (!isMounted) return;
+        if (res && res.profile) {
+          setProfileData(res.profile);
+          setResolvedUid(res.uid);
+          setEditName(res.profile.name || "");
+          setEditBio(res.profile.bio || "");
+          setEditUsernameId(res.profile.usernameId || "");
+          setNotFound(false);
+        } else {
+          setProfileData(null);
+          setResolvedUid(null);
+          setNotFound(true);
+        }
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.warn("Error fetching creator profile:", err);
+        setProfileData(null);
+        setNotFound(true);
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingProfile(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cleanUsername, isOwner, userProfile]);
+
+  // Derive profile display attributes strictly from allowed fields: name, role, bio, usernameId
+  const displayName = profileData?.name || (isOwner && userProfile?.name) || "Creator";
+  const displayRole = profileData?.role || (isOwner && userProfile?.role) || "creator";
+  const displayBio = profileData?.bio || (isOwner && userProfile?.bio) || "Digital asset creator on Kreate Studio.";
+  const displayUsernameId = profileData?.usernameId || cleanUsername || "creator";
+
+  // Initials for avatar
+  const getInitials = (text: string) => {
+    const parts = text.trim().split(" ");
     if (parts.length >= 2) {
       return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
     }
-    return fullName.slice(0, 2).toUpperCase() || "AB";
+    return text.slice(0, 2).toUpperCase() || "CR";
   };
+  const initials = getInitials(displayName);
 
-  const initials = isOwner && userProfile?.name ? getInitials(userProfile.name) : (mockMatch?.initials || getInitials(name));
-
-  // Find listings by this creator (excluding soft-deleted listings)
+  // Filter listings strictly belonging to this creator from the authoritative Firebase listings
   const creatorListings = listings.filter((l) => {
     if (l.deleted === true) return false;
-    const cUser = l.creator?.username?.toLowerCase() || "";
-    const sHandle = l.seller?.handle?.replace("@", "").toLowerCase() || "";
-    const sName = l.seller?.name?.toLowerCase() || "";
-    const cName = l.creator?.name?.toLowerCase() || "";
-
-    if (cleanUsername === "buildwithansh" || cleanUsername === "ansh") {
+    if (resolvedUid && l.sellerId === resolvedUid) return true;
+    if (profileData?.name && l.sellerName?.toLowerCase() === profileData.name.toLowerCase()) return true;
+    if (profileData?.usernameId && l.creator?.username?.toLowerCase() === profileData.usernameId.toLowerCase()) return true;
+    if (isOwner && userProfile) {
       return (
-        cUser === "buildwithansh" ||
-        sHandle === "buildwithansh" ||
-        sName.includes("ansh") ||
-        l.isNew ||
-        l.id === "asset-1" ||
-        l.id === "asset-2"
+        (userProfile.uid && l.sellerId === userProfile.uid) ||
+        (userProfile.username && l.creator?.username?.toLowerCase() === userProfile.username.toLowerCase()) ||
+        (userProfile.name && l.sellerName?.toLowerCase() === userProfile.name.toLowerCase())
       );
     }
-
-    return (
-      cUser === cleanUsername ||
-      sHandle === cleanUsername ||
-      sName.includes(cleanUsername) ||
-      cName.includes(cleanUsername)
-    );
+    return false;
   });
 
-  // Calculate dynamic stats
-  const listingsCount = creatorListings.length > 0 ? creatorListings.length : 12;
-  const followersCount = "1.2k";
-  const salesCount = creatorListings.reduce((sum, item) => sum + (item.salesCount || 0), 34);
-
-  // Word limit helper for bio
   const MAX_BIO_WORDS = 150;
   const countWords = (text: string) => {
     const trimmed = text.trim();
     return trimmed ? trimmed.split(/\s+/).length : 0;
   };
 
-  const handleBioChange = (newVal: string) => {
-    const words = newVal.trim() ? newVal.trim().split(/\s+/) : [];
-    if (words.length > MAX_BIO_WORDS) {
-      // Limit to exactly 150 words
-      const limited = words.slice(0, MAX_BIO_WORDS).join(" ");
-      setBio(limited);
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userProfile?.uid) return;
+
+    setIsSaving(true);
+    setSaveError(null);
+
+    const words = editBio.trim() ? editBio.trim().split(/\s+/) : [];
+    const trimmedBio = words.slice(0, MAX_BIO_WORDS).join(" ");
+
+    const updatedPublicProfile: PublicProfile = {
+      name: editName.trim(),
+      role: displayRole,
+      bio: trimmedBio,
+      usernameId: editUsernameId.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""),
+    };
+
+    const res = await savePublicProfileToFirebase(userProfile.uid, updatedPublicProfile);
+
+    setIsSaving(false);
+    if (res.success) {
+      setProfileData(updatedPublicProfile);
+      if (onUpdateUserProfile) {
+        onUpdateUserProfile({
+          name: updatedPublicProfile.name,
+          bio: updatedPublicProfile.bio,
+          username: updatedPublicProfile.usernameId,
+        });
+      }
+      setIsEditModalOpen(false);
     } else {
-      setBio(newVal);
+      setSaveError(res.error || "Failed to save profile. Please try again.");
     }
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    const words = bio.trim() ? bio.trim().split(/\s+/) : [];
-    const trimmedBio = words.slice(0, MAX_BIO_WORDS).join(" ");
-    if (onUpdateUserProfile) {
-      onUpdateUserProfile({
-        name,
-        bio: trimmedBio,
-        username: handle.replace("@", ""),
-      });
-    }
-    setBio(trimmedBio);
-    setIsEditModalOpen(false);
-  };
+  // Loading state
+  if (isLoadingProfile) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center space-y-4">
+        <Loader2 className="w-8 h-8 text-[#D3CCB0] animate-spin mx-auto" />
+        <p className="text-xs text-[#7B8A90] font-mono">Loading creator profile from Firebase...</p>
+      </div>
+    );
+  }
+
+  // Not Found State (strictly do not substitute fake profiles!)
+  if (notFound && !isOwner) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-24 text-center space-y-6">
+        <div className="w-16 h-16 rounded-2xl bg-[#202C44] text-[#D3CCB0] flex items-center justify-center mx-auto border border-[#202C44]">
+          <UserX className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-heading font-extrabold text-white">Creator Profile Not Found</h1>
+          <p className="text-xs sm:text-sm text-[#7B8A90] leading-relaxed">
+            No public profile exists for <span className="font-mono text-[#D3CCB0]">@{cleanUsername}</span> in Firebase Realtime Database (/publicProfiles).
+          </p>
+        </div>
+        <div className="pt-2">
+          <Link
+            to="/browse"
+            className="inline-flex items-center gap-2 bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow"
+          >
+            <span>Explore Creator Assets</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8" id="seller-profile-page">
-      
-      {/* 1. Header Section: Profile Banner */}
+      {/* 1. Profile Header Banner */}
       <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden" id="seller-profile-header">
-        
-        {/* Background glow accent */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-[#202C44]/20 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
 
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 relative z-10">
-          
           {/* Avatar & Identity details */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
-            
-            {/* Large Initials Avatar (e.g. "AB") */}
             <div className="relative shrink-0">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-[#202C44] border-2 border-[#202C44] flex items-center justify-center shadow-lg group hover:border-[#D3CCB0] transition-colors">
                 <span className="font-heading font-extrabold text-2xl sm:text-3xl text-[#D3CCB0] tracking-wider font-mono">
                   {initials}
                 </span>
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-4 h-4 rounded-full border-2 border-[#111317]" title="Active Creator" />
+              <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-4 h-4 rounded-full border-2 border-[#111317]" title="Active Member" />
             </div>
 
-            {/* Seller Name, Handle & Badge */}
             <div className="space-y-2">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-2xl sm:text-3xl font-heading font-extrabold text-white tracking-tight" id="seller-name-heading">
-                  {name}
+                  {displayName}
                 </h1>
-                
+
                 <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-2.5 py-0.5 rounded-lg border border-[#202C44] font-medium" id="seller-handle-badge">
-                  @{handle.replace("@", "")}
+                  @{displayUsernameId}
                 </span>
 
                 <span className="text-xs font-bold text-[#000000] bg-[#D3CCB0] px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-sm font-sans" id="seller-role-badge">
                   <Award className="w-3.5 h-3.5 text-[#000000]" />
-                  <span>Seller</span>
+                  <span className="capitalize">{displayRole}</span>
                 </span>
               </div>
 
-              {/* Enhanced Profile Information: Registered Email Address */}
-              <div className="flex items-center gap-1.5 text-xs text-[#7B8A90] font-mono" id="seller-profile-email">
-                <Mail className="w-3.5 h-3.5 text-[#7B8A90] shrink-0" />
-                <span className="text-[#7B8A90] select-all">{profileEmail}</span>
-                <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-1.5 py-0.2 rounded font-sans font-medium">
-                  Verified
-                </span>
-              </div>
-
+              {/* Bio strictly from Firebase /publicProfiles/uid */}
               <p className="text-xs sm:text-sm text-[#7B8A90] max-w-2xl leading-relaxed">
-                {bio}
+                {displayBio}
               </p>
 
               <div className="flex flex-wrap items-center gap-4 text-xs text-[#7B8A90] pt-1 font-sans">
                 <span className="flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                  <span>{location}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                  <span>Avg Response: &lt; 1 hour</span>
-                </span>
-                <span className="flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>100% Verified Commercial Assets</span>
+                  <span>Verified Creator Account</span>
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Action: Edit Profile (visible to owner) or Follow/Share */}
+          {/* Action buttons */}
           <div className="flex items-center gap-2.5 self-start md:self-auto shrink-0">
             {isOwner && (
               <button
@@ -245,57 +310,51 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               onClick={() => {
                 if (navigator.clipboard) {
                   navigator.clipboard.writeText(window.location.href);
-                  alert("Seller profile link copied to clipboard!");
                 }
               }}
               className="bg-[#111317] hover:bg-[#202C44] text-[#7B8A90] hover:text-white p-2.5 rounded-xl border border-[#202C44] transition-colors"
-              title="Share profile"
+              title="Share profile link"
               aria-label="Share profile"
             >
               <Share2 className="w-4 h-4" />
             </button>
           </div>
-
         </div>
 
-        {/* 2. Stats Row: Listings, Followers, Sales */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 pt-4 border-t border-[#202C44]" id="seller-stats-row">
-          
+        {/* 2. Stats Row: Authoritative counts */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-4 border-t border-[#202C44]" id="seller-stats-row">
           <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
             <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
-              Listings
+              Live Listings
             </span>
             <span className="text-xl sm:text-2xl font-heading font-extrabold text-white font-mono mt-0.5 block" id="stat-listings-count">
-              {listingsCount}
+              {creatorListings.length}
             </span>
           </div>
 
           <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
             <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
-              Followers
+              Profile Status
             </span>
-            <span className="text-xl sm:text-2xl font-heading font-extrabold text-[#D3CCB0] font-mono mt-0.5 block" id="stat-followers-count">
-              {followersCount}
+            <span className="text-xl sm:text-2xl font-heading font-extrabold text-emerald-400 font-mono mt-0.5 block" id="stat-status">
+              Active
             </span>
           </div>
 
-          <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
+          <div className="col-span-2 sm:col-span-1 bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
             <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
-              Sales
+              Role
             </span>
-            <span className="text-xl sm:text-2xl font-heading font-extrabold text-emerald-400 font-mono mt-0.5 block" id="stat-sales-count">
-              {salesCount}
+            <span className="text-xl sm:text-2xl font-heading font-extrabold text-[#D3CCB0] font-mono mt-0.5 block capitalize" id="stat-role">
+              {displayRole}
             </span>
           </div>
-
         </div>
-
       </div>
 
-      {/* 3. Interactive Tabs: "My Listings", "Purchases", and "Dashboard" */}
+      {/* 3. Interactive Tabs */}
       <div className="flex items-center justify-between border-b border-[#202C44] pb-4">
         <div className="flex items-center gap-2 sm:gap-3" id="seller-tabs-container">
-          
           <button
             id="tab-my-listings"
             onClick={() => setActiveTab("listings")}
@@ -306,36 +365,38 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>My Listings ({creatorListings.length})</span>
+            <span>Listings ({creatorListings.length})</span>
           </button>
 
-          <button
-            id="tab-purchases"
-            onClick={() => setActiveTab("purchases")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeTab === "purchases"
-                ? "bg-[#D3CCB0] text-[#000000] shadow"
-                : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
-            }`}
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Purchases ({purchases.length})</span>
-          </button>
+          {isOwner && (
+            <>
+              <button
+                id="tab-purchases"
+                onClick={() => setActiveTab("purchases")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === "purchases"
+                    ? "bg-[#D3CCB0] text-[#000000] shadow"
+                    : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
+                }`}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>My Purchases ({purchases.length})</span>
+              </button>
 
-          <button
-            id="tab-dashboard"
-            onClick={() => {
-              setActiveTab("dashboard");
-            }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeTab === "dashboard"
-                ? "bg-[#D3CCB0] text-[#000000] shadow"
-                : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
-            }`}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Dashboard</span>
-          </button>
+              <button
+                id="tab-dashboard"
+                onClick={() => setActiveTab("dashboard")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === "dashboard"
+                    ? "bg-[#D3CCB0] text-[#000000] shadow"
+                    : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Seller Dashboard</span>
+              </button>
+            </>
+          )}
         </div>
 
         {activeTab === "listings" && isOwner && (
@@ -349,7 +410,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         )}
       </div>
 
-      {/* Tab Content 1: My Listings Grid */}
+      {/* Tab Content 1: Creator Listings */}
       {activeTab === "listings" && (
         <div className="space-y-6" id="tab-content-listings">
           {creatorListings.length > 0 ? (
@@ -372,25 +433,27 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
             <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-12 text-center space-y-4">
               <Layers className="w-10 h-10 text-[#7B8A90] mx-auto opacity-50" />
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-white">No Active Listings Found</h3>
+                <h3 className="text-base font-bold text-white">No Approved Listings</h3>
                 <p className="text-xs text-[#7B8A90]">
-                  Get started by publishing your first digital asset or UI kit.
+                  This creator does not currently have approved listings in the Firebase catalogue.
                 </p>
               </div>
-              <Link
-                to="/sell/new"
-                className="inline-flex items-center gap-2 bg-[#D3CCB0] text-[#000000] text-xs font-bold px-4 py-2.5 rounded-xl shadow"
-              >
-                <span>Upload Asset</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              {isOwner && (
+                <Link
+                  to="/sell/new"
+                  className="inline-flex items-center gap-2 bg-[#D3CCB0] text-[#000000] text-xs font-bold px-4 py-2.5 rounded-xl shadow"
+                >
+                  <span>Upload Asset</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {/* Tab Content 2: Purchases Tab */}
-      {activeTab === "purchases" && (
+      {/* Tab Content 2: Purchases */}
+      {activeTab === "purchases" && isOwner && (
         <div className="space-y-6" id="tab-content-purchases">
           {purchases.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -432,7 +495,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
           ) : (
             <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-12 text-center space-y-3">
               <ShoppingBag className="w-10 h-10 text-[#7B8A90] mx-auto opacity-50" />
-              <p className="text-xs text-[#7B8A90]">No purchases yet under this account.</p>
+              <p className="text-xs text-[#7B8A90]">No purchases found in your account.</p>
               <Link to="/browse" className="inline-block bg-[#D3CCB0] text-[#000000] text-xs font-bold px-4 py-2 rounded-xl">
                 Explore Marketplace
               </Link>
@@ -441,54 +504,49 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         </div>
       )}
 
-      {/* Tab Content 3: Dashboard Preview / Quick Stats */}
-      {activeTab === "dashboard" && (
+      {/* Tab Content 3: Dashboard Link */}
+      {activeTab === "dashboard" && isOwner && (
         <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-8 space-y-6" id="tab-content-dashboard">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#202C44] pb-5">
             <div>
               <h3 className="text-lg font-heading font-extrabold text-white">
-                Seller Dashboard Overview
+                Seller Dashboard
               </h3>
               <p className="text-xs text-[#7B8A90] mt-0.5">
-                Quick snapshot of earnings, active listings, and payouts.
+                Track your active listings and payouts.
               </p>
             </div>
             <Link
               to="/dashboard"
               className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow flex items-center gap-1.5 self-start sm:self-auto"
             >
-              <span>Open Full Dashboard</span>
+              <span>Open Seller Dashboard</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl">
-              <span className="text-[11px] text-[#7B8A90] font-mono block">Estimated Earnings</span>
-              <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">₹12,450</span>
-              <span className="text-[10px] text-[#7B8A90]">87.5% net seller share</span>
+              <span className="text-[11px] text-[#7B8A90] font-mono block">Active Catalogue Listings</span>
+              <span className="text-2xl font-bold font-mono text-[#D3CCB0] mt-1 block">{creatorListings.length}</span>
+              <span className="text-[10px] text-[#7B8A90]">Approved listings live on marketplace</span>
             </div>
             <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl">
-              <span className="text-[11px] text-[#7B8A90] font-mono block">Pending Payout</span>
-              <span className="text-2xl font-bold font-mono text-white mt-1 block">₹1,800</span>
-              <span className="text-[10px] text-emerald-400">Settles next Monday via UPI</span>
-            </div>
-            <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl">
-              <span className="text-[11px] text-[#7B8A90] font-mono block">Active Assets</span>
-              <span className="text-2xl font-bold font-mono text-[#D3CCB0] mt-1 block">{creatorListings.length || 12}</span>
-              <span className="text-[10px] text-[#7B8A90]">Live in marketplace</span>
+              <span className="text-[11px] text-[#7B8A90] font-mono block">Seller Net Split</span>
+              <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">87.5%</span>
+              <span className="text-[10px] text-[#7B8A90]">Industry-leading direct payout rate</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Profile Modal */}
-      {isEditModalOpen && (
+      {/* Edit Profile Modal (saves directly to /publicProfiles/{uid}) */}
+      {isEditModalOpen && isOwner && (
         <div className="fixed inset-0 z-50 bg-[#000000]/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#111317] border border-[#202C44] rounded-3xl max-w-lg w-full p-6 sm:p-8 space-y-6 shadow-2xl relative">
             <div className="flex items-center justify-between border-b border-[#202C44] pb-4">
               <h3 className="text-lg font-heading font-extrabold text-white">
-                Edit Seller Profile
+                Edit Public Profile
               </h3>
               <button
                 onClick={() => setIsEditModalOpen(false)}
@@ -498,27 +556,33 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               </button>
             </div>
 
+            {saveError && (
+              <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-300">
+                {saveError}
+              </div>
+            )}
+
             <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
               <div>
-                <label className="block text-[#7B8A90] mb-1 font-medium">Full Name</label>
+                <label className="block text-[#7B8A90] mb-1 font-medium">Display Name</label>
                 <input
                   type="text"
                   required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
                   className="w-full bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
                 />
               </div>
 
               <div>
-                <label className="block text-[#7B8A90] mb-1 font-medium">Username Handle</label>
+                <label className="block text-[#7B8A90] mb-1 font-medium">Username Handle (usernameId)</label>
                 <div className="relative">
                   <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7B8A90] font-mono">@</span>
                   <input
                     type="text"
                     required
-                    value={handle.replace("@", "")}
-                    onChange={(e) => setHandle(e.target.value)}
+                    value={editUsernameId.replace("@", "")}
+                    onChange={(e) => setEditUsernameId(e.target.value)}
                     className="w-full bg-[#000000] text-white pl-8 pr-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] font-mono"
                   />
                 </div>
@@ -529,53 +593,19 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                   <label className="block text-[#7B8A90] font-medium">Bio (Max 150 words)</label>
                   <span
                     className={`text-[11px] font-mono ${
-                      countWords(bio) >= MAX_BIO_WORDS ? "text-amber-400 font-bold" : "text-[#7B8A90]"
+                      countWords(editBio) >= MAX_BIO_WORDS ? "text-amber-400 font-bold" : "text-[#7B8A90]"
                     }`}
                   >
-                    {countWords(bio)} / {MAX_BIO_WORDS} words
+                    {countWords(editBio)} / {MAX_BIO_WORDS} words
                   </span>
                 </div>
                 <textarea
                   rows={4}
-                  value={bio}
-                  onChange={(e) => handleBioChange(e.target.value)}
-                  placeholder="Describe your expertise, skills, and the digital assets you build (up to 150 words)..."
+                  value={editBio}
+                  onChange={(e) => setEditBio(e.target.value)}
+                  placeholder="Describe your creative work and assets..."
                   className="w-full bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0] text-xs leading-relaxed"
                 />
-                {countWords(bio) >= MAX_BIO_WORDS && (
-                  <p className="text-[10px] text-amber-400 mt-1 font-mono">
-                    Limit of 150 words reached.
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-[#7B8A90] mb-1 font-medium">Location</label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Bengaluru, India"
-                  className="w-full bg-[#000000] text-white px-3.5 py-2.5 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[#7B8A90] mb-1 font-medium">Registered Account Email</label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#7B8A90]">
-                    <Mail className="w-3.5 h-3.5" />
-                  </span>
-                  <input
-                    type="email"
-                    disabled
-                    value={profileEmail}
-                    className="w-full bg-[#000000]/60 text-[#7B8A90] pl-9 pr-3.5 py-2.5 rounded-xl border border-[#202C44] font-mono cursor-not-allowed text-xs"
-                  />
-                </div>
-                <p className="text-[10px] text-[#7B8A90] mt-1 font-mono">
-                  Registered account email used for order deliveries and seller payout settlements.
-                </p>
               </div>
 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#202C44]">
@@ -588,16 +618,16 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold px-5 py-2.5 rounded-xl shadow transition-all"
+                  disabled={isSaving}
+                  className="bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-bold px-5 py-2.5 rounded-xl shadow transition-all disabled:opacity-50"
                 >
-                  Save Profile
+                  {isSaving ? "Saving to Firebase..." : "Save Public Profile"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 };

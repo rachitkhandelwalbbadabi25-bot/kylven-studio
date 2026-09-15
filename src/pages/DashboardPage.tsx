@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AssetListing, UserProfile, calculatePricing, SalesRecord } from "../types";
-import { MOCK_SALES_HISTORY } from "../data/mockData";
 import {
   TrendingUp,
   IndianRupee,
@@ -32,32 +31,40 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   userProfile,
 }) => {
   const navigate = useNavigate();
-  const upiVpa = userProfile.upiId || "ansh@okhdfcbank";
+  const upiVpa = userProfile.upiId || "";
   const [chartTimeRange, setChartTimeRange] = useState<"7d" | "30d" | "12m">("12m");
   const [hoveredBarIndex, setHoveredBarIndex] = useState<number | null>(null);
   const [exploreCategory, setExploreCategory] = useState<string>("All");
 
-  // Filter listings belonging to this creator (excluding soft-deleted)
-  const myListings = listings.filter(
-    (l) =>
-      l.deleted !== true &&
-      ((l.creator?.username && l.creator.username.toLowerCase() === (userProfile.username || "buildwithansh").toLowerCase()) ||
-       (l.seller?.handle && l.seller.handle.replace("@", "").toLowerCase() === (userProfile.username || "buildwithansh").toLowerCase()) ||
-       l.isNew)
-  );
+  // Filter listings belonging to this creator from authoritative Firebase listings (excluding soft-deleted)
+  const myListings = listings.filter((l) => {
+    if (l.deleted === true) return false;
+    if (userProfile.uid && l.sellerId === userProfile.uid) return true;
+    if (userProfile.username && l.creator?.username?.toLowerCase() === userProfile.username.toLowerCase()) return true;
+    if (userProfile.name && l.sellerName?.toLowerCase() === userProfile.name.toLowerCase()) return true;
+    return false;
+  });
 
-  const activeListingsCount = myListings.length > 0 ? myListings.length : 12;
+  const activeListingsCount = myListings.length;
 
-  // Monthly Sales Chart Data (12 Months)
+  // Real Sales records (empty initially until authentic transactions occur)
+  const [salesList] = useState<SalesRecord[]>([]);
+
+  // Summary Metrics calculations strictly based on actual data
+  const totalSales = salesList.length;
+  const totalEarnedINR = salesList.reduce((sum, s) => sum + (s.sellerNetINR || 0), 0);
+  const pendingPayoutINR = 0;
+
+  // Monthly Chart Data (real or baseline)
   const MONTHLY_CHART_DATA = [
-    { label: "Jan", sales: 2, amount: 998 },
-    { label: "Feb", sales: 3, amount: 1497 },
-    { label: "Mar", sales: 4, amount: 1996 },
-    { label: "Apr", sales: 3, amount: 1497 },
-    { label: "May", sales: 5, amount: 2495 },
-    { label: "Jun", sales: 6, amount: 2994 },
-    { label: "Jul", sales: 8, amount: 3992 },
-    { label: "Aug", sales: 12, amount: 5988, isCurrent: true },
+    { label: "Jan", sales: 0, amount: 0 },
+    { label: "Feb", sales: 0, amount: 0 },
+    { label: "Mar", sales: 0, amount: 0 },
+    { label: "Apr", sales: 0, amount: 0 },
+    { label: "May", sales: 0, amount: 0 },
+    { label: "Jun", sales: 0, amount: 0 },
+    { label: "Jul", sales: 0, amount: 0 },
+    { label: "Aug", sales: totalSales, amount: totalEarnedINR, isCurrent: true },
     { label: "Sep", sales: 0, amount: 0 },
     { label: "Oct", sales: 0, amount: 0 },
     { label: "Nov", sales: 0, amount: 0 },
@@ -65,25 +72,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   ];
 
   const WEEKLY_CHART_DATA = [
-    { label: "Mon", sales: 1, amount: 499 },
-    { label: "Tue", sales: 2, amount: 998 },
-    { label: "Wed", sales: 3, amount: 1497 },
-    { label: "Thu", sales: 2, amount: 998 },
-    { label: "Fri", sales: 4, amount: 1996 },
-    { label: "Sat", sales: 5, amount: 2495 },
-    { label: "Sun", sales: 6, amount: 2994, isCurrent: true },
+    { label: "Mon", sales: 0, amount: 0 },
+    { label: "Tue", sales: 0, amount: 0 },
+    { label: "Wed", sales: 0, amount: 0 },
+    { label: "Thu", sales: 0, amount: 0 },
+    { label: "Fri", sales: 0, amount: 0 },
+    { label: "Sat", sales: 0, amount: 0 },
+    { label: "Sun", sales: totalSales, amount: totalEarnedINR, isCurrent: true },
   ];
 
   const chartData = chartTimeRange === "7d" ? WEEKLY_CHART_DATA : MONTHLY_CHART_DATA;
-  const maxBarAmount = Math.max(...chartData.map((d) => d.amount), 6000);
-
-  // Sales Records
-  const [salesList] = useState<SalesRecord[]>(MOCK_SALES_HISTORY);
-
-  // Summary Metrics calculations
-  const totalSales = 34;
-  const totalEarnedINR = 12450;
-  const pendingPayoutINR = 1800;
+  const maxBarAmount = Math.max(...chartData.map((d) => d.amount), 1000);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8" id="seller-dashboard-page">
@@ -342,72 +341,73 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
 
         {/* Sales Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse" id="sales-history-table">
-            <thead>
-              <tr className="border-b border-[#202C44] text-[#7B8A90] font-mono uppercase text-[10px] tracking-wider">
-                <th className="py-3 px-4">Listing</th>
-                <th className="py-3 px-4">Buyer</th>
-                <th className="py-3 px-4">Amount</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#202C44]">
-              {salesList.map((sale) => {
-                const isPaid = sale.status === "Paid" || sale.status === "Completed";
-                return (
-                  <tr key={sale.id} className="hover:bg-[#202C44]/30 transition-colors">
-                    
-                    {/* Listing Name */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-[#202C44] flex items-center justify-center font-mono font-bold text-[#D3CCB0] text-[10px] shrink-0 border border-[#202C44]">
-                          ₹
+        {salesList.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse" id="sales-history-table">
+              <thead>
+                <tr className="border-b border-[#202C44] text-[#7B8A90] font-mono uppercase text-[10px] tracking-wider">
+                  <th className="py-3 px-4">Listing</th>
+                  <th className="py-3 px-4">Buyer</th>
+                  <th className="py-3 px-4">Amount</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#202C44]">
+                {salesList.map((sale) => {
+                  const isPaid = sale.status === "Paid" || sale.status === "Completed";
+                  return (
+                    <tr key={sale.id} className="hover:bg-[#202C44]/30 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-[#202C44] flex items-center justify-center font-mono font-bold text-[#D3CCB0] text-[10px] shrink-0 border border-[#202C44]">
+                            ₹
+                          </div>
+                          <div>
+                            <div className="font-bold text-white max-w-xs truncate">{sale.assetTitle}</div>
+                            <div className="text-[10px] text-[#7B8A90] font-mono">{sale.orderId}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-bold text-white max-w-xs truncate">{sale.assetTitle}</div>
-                          <div className="text-[10px] text-[#7B8A90] font-mono">{sale.orderId}</div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Buyer Email */}
-                    <td className="py-3.5 px-4 font-mono text-[#D3CCB0] truncate max-w-[200px]">
-                      {sale.buyerEmail || "buyer@kreate.studio"}
-                    </td>
-
-                    {/* Amount */}
-                    <td className="py-3.5 px-4 font-mono font-bold text-white">
-                      ₹{sale.listedPriceINR.toLocaleString("en-IN")}
-                    </td>
-
-                    {/* Status with green text for Paid/Completed, and amber for Pending */}
-                    <td className="py-3.5 px-4">
-                      {isPaid ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-800">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>Paid</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-amber-400 bg-amber-950/60 px-2.5 py-0.5 rounded-lg border border-amber-800">
-                          <Clock className="w-3 h-3" />
-                          <span>Pending</span>
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Date */}
-                    <td className="py-3.5 px-4 text-right text-[#7B8A90] font-mono text-[11px]">
-                      {sale.date.split(" ")[0]}
-                    </td>
-
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-[#D3CCB0] truncate max-w-[200px]">
+                        {sale.buyerEmail || "buyer@kreate.studio"}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-bold text-white">
+                        ₹{sale.listedPriceINR.toLocaleString("en-IN")}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {isPaid ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-0.5 rounded-lg border border-emerald-800">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Paid</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold text-amber-400 bg-amber-950/60 px-2.5 py-0.5 rounded-lg border border-amber-800">
+                            <Clock className="w-3 h-3" />
+                            <span>Pending</span>
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right text-[#7B8A90] font-mono text-[11px]">
+                        {sale.date.split(" ")[0]}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-8 text-center space-y-3 bg-[#181C24] rounded-2xl border border-[#202C44]">
+            <ShoppingBag className="w-8 h-8 text-[#7B8A90] mx-auto opacity-50" />
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-white">No Sales Recorded Yet</h3>
+              <p className="text-xs text-[#7B8A90] max-w-md mx-auto leading-relaxed">
+                When buyers purchase your digital assets, live transaction receipts, buyer emails, and direct UPI settlements will appear here.
+              </p>
+            </div>
+          </div>
+        )}
 
       </div>
 

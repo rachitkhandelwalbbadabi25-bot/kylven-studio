@@ -35,7 +35,7 @@ export const PricingPage: React.FC = () => {
           Simple, Fair & Transparent Marketplace Fees
         </h1>
         <p className="text-sm sm:text-base text-[#7B8A90] leading-relaxed">
-          Zero upfront listing fees. Sellers keep 87.5% net revenue from every sale. Platform processing & verification fee is fixed at 12.5%.
+          Zero upfront listing fees. Sellers keep 90% of their listed price from every sale. Platform commission is fixed at 10%.
         </p>
       </div>
 
@@ -49,7 +49,7 @@ export const PricingPage: React.FC = () => {
               FOR SELLERS & DEVELOPERS
             </span>
             <h2 className="text-2xl font-heading font-extrabold text-white">
-              87.5% Guaranteed Net Payout
+              90% Guaranteed Net Payout
             </h2>
             <p className="text-xs text-[#7B8A90] leading-relaxed">
               Monetize your code, 3D models, UI kits, and presets with transparent seller earnings.
@@ -57,7 +57,7 @@ export const PricingPage: React.FC = () => {
           </div>
 
           <div className="text-3xl font-heading font-extrabold text-[#D3CCB0] font-mono">
-            87.5% <span className="text-xs font-sans text-[#7B8A90] font-normal">of listed asset price</span>
+            90% <span className="text-xs font-sans text-[#7B8A90] font-normal">of listed asset price</span>
           </div>
 
           <ul className="space-y-3 text-xs text-[#7B8A90] border-t border-[#202C44] pt-4">
@@ -90,15 +90,15 @@ export const PricingPage: React.FC = () => {
               FOR ASSET BUYERS
             </span>
             <h2 className="text-2xl font-heading font-extrabold text-white">
-              12.5% Quality & Platform Fee
+              10% Quality & Platform Fee
             </h2>
             <p className="text-xs text-[#7B8A90] leading-relaxed">
-              Transparent per-transaction processing fee covering security reviews, ClamAV antivirus scanning, and 24/7 file availability.
+              Transparent per-transaction processing fee covering security reviews, file integrity validation, and 24/7 file availability.
             </p>
           </div>
 
           <div className="text-3xl font-heading font-extrabold text-white font-mono">
-            + 12.5% <span className="text-xs font-sans text-[#7B8A90] font-normal">added at UPI checkout</span>
+            + 10% <span className="text-xs font-sans text-[#7B8A90] font-normal">added at UPI checkout</span>
           </div>
 
           <ul className="space-y-3 text-xs text-[#7B8A90] border-t border-[#202C44] pt-4">
@@ -139,7 +139,7 @@ export const PricingPage: React.FC = () => {
             </p>
           </div>
           <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-3 py-1 rounded-full border border-[#202C44] self-start sm:self-auto font-semibold">
-            12.5% Platform Fee • 87.5% Seller Net Split
+            10% Platform Fee • 90% Seller Net Split
           </span>
         </div>
 
@@ -228,14 +228,14 @@ export const PricingPage: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between text-emerald-400 font-medium">
-              <span>Seller Net Take-Home (87.5%):</span>
+              <span>Seller Net Take-Home (90%):</span>
               <span className="font-mono font-bold text-sm">
                 ₹{pricing.sellerNetINR.toLocaleString("en-IN")}
               </span>
             </div>
 
             <div className="flex items-center justify-between text-[#7B8A90]">
-              <span>Platform Processing Fee (12.5%):</span>
+              <span>Platform Processing Fee (10%):</span>
               <span className="font-mono text-[#D3CCB0] font-semibold">
                 + ₹{pricing.platformFeeINR.toLocaleString("en-IN")}
               </span>
@@ -249,7 +249,7 @@ export const PricingPage: React.FC = () => {
             </div>
 
             <div className="text-[10px] text-[#7B8A90] font-mono pt-1 text-right bg-[#000000]/40 p-2 rounded-lg border border-[#202C44]/60">
-              Formula: ₹{pricing.listedPriceINR.toLocaleString("en-IN")} (Base) + ₹{pricing.platformFeeINR.toLocaleString("en-IN")} (12.5% Fee) = ₹{pricing.buyerTotalINR.toLocaleString("en-IN")}
+              Formula: ₹{pricing.listedPriceINR.toLocaleString("en-IN")} (Base) + ₹{pricing.platformFeeINR.toLocaleString("en-IN")} (10% Fee) = ₹{pricing.buyerTotalINR.toLocaleString("en-IN")}
             </div>
 
             {/* Metric Glossary & Terms Explanation */}
@@ -257,8 +257,8 @@ export const PricingPage: React.FC = () => {
               <p className="font-bold text-white text-xs">Metric Breakdown Glossary:</p>
               <ul className="space-y-1.5 text-[11px]">
                 <li><strong className="text-white">Seller List Price:</strong> The catalog base price set by the seller.</li>
-                <li><strong className="text-emerald-400">Seller Net (87.5%):</strong> The guaranteed net payout settled directly to the seller's UPI account.</li>
-                <li><strong className="text-[#D3CCB0]">Platform Fee (12.5%):</strong> Covers high-speed CDN hosting, ClamAV file scans, and UPI transaction processing.</li>
+                <li><strong className="text-emerald-400">Seller Net (90%):</strong> The guaranteed net payout settled directly to the seller's UPI account.</li>
+                <li><strong className="text-[#D3CCB0]">Platform Fee (10%):</strong> Covers high-speed CDN hosting, file validation, and UPI transaction processing.</li>
                 <li><strong className="text-white">Buyer Total:</strong> The complete, final sum paid by the customer at UPI checkout.</li>
               </ul>
             </div>
@@ -297,7 +297,7 @@ export const PricingPage: React.FC = () => {
           <div className="bg-[#111317] border border-[#202C44] p-5 rounded-2xl space-y-2">
             <h4 className="font-bold text-white text-sm">Are there any hidden or monthly fees?</h4>
             <p className="text-[#7B8A90] leading-relaxed">
-              None. Listing on Kreate Studio is 100% free with no monthly subscription. The platform fee of 12.5% only applies when a sale is successfully transacted.
+              None. Listing on Kreate Studio is 100% free with no monthly subscription. The platform fee of 10% only applies when a sale is successfully transacted.
             </p>
           </div>
         </div>
@@ -313,7 +313,7 @@ export const PricingPage: React.FC = () => {
             Ready to publish your creative assets?
           </h3>
           <p className="text-xs sm:text-sm text-[#7B8A90] max-w-lg mx-auto leading-relaxed">
-            Upgrade your account in seconds, enter your UPI ID, and receive 87.5% direct payouts with zero upfront fees.
+            Upgrade your account in seconds, enter your UPI ID, and receive 90% direct payouts with zero upfront fees.
           </p>
         </div>
 

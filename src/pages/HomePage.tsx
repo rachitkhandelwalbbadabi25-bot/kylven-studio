@@ -20,6 +20,7 @@ import {
   FileCode,
   Download,
   IndianRupee,
+  Layers,
 } from "lucide-react";
 
 interface HomePageProps {
@@ -208,22 +209,32 @@ export const HomePage: React.FC<HomePageProps> = ({
             </div>
           </div>
 
-          {/* Grid of Listing Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredTrendingListings.slice(0, 8).map((item) => (
-              <ListingCard
-                key={item.id}
-                listing={item}
-                onSelectListing={(asset) => {
-                  navigate(`/listing/${asset.slug || asset.id}`);
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                onBuyNowDirect={onBuyNowDirect}
-                isSaved={savedIds.includes(item.id)}
-                onToggleSave={onToggleSave}
-              />
-            ))}
-          </div>
+          {/* Grid of Listing Cards or Clean Empty State */}
+          {filteredTrendingListings.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredTrendingListings.slice(0, 8).map((item) => (
+                <ListingCard
+                  key={item.id}
+                  listing={item}
+                  onSelectListing={(asset) => {
+                    navigate(`/listing/${asset.slug || asset.id}`);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  onBuyNowDirect={onBuyNowDirect}
+                  isSaved={savedIds.includes(item.id)}
+                  onToggleSave={onToggleSave}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-14 px-4 bg-[#111317] rounded-2xl border border-[#202C44]">
+              <Layers className="w-8 h-8 text-[#7B8A90] mx-auto mb-2.5 opacity-50" />
+              <h3 className="text-sm font-bold text-white mb-1">No Listings Found</h3>
+              <p className="text-xs text-[#7B8A90] max-w-sm mx-auto">
+                No approved listings are currently available under this filter. Check back soon or explore all assets.
+              </p>
+            </div>
+          )}
 
           {/* Direct Link to Browse All Assets */}
           <div className="text-center pt-8 border-t border-[#202C44]/50">
