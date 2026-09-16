@@ -106,7 +106,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="flex justify-between">
                 <span className="flex items-center gap-1">
                   <span>Platform & Processing Fee</span>
-                  <span className="text-[10px] bg-[#202C44] px-1 rounded text-[#D3CCB0]">12.5%</span>
+                  <span className="text-[10px] bg-[#202C44] px-1 rounded text-[#D3CCB0]">10%</span>
                 </span>
                 <span className="font-mono text-[#7B8A90]">+ ₹{platformFee.toLocaleString("en-IN")}</span>
               </div>

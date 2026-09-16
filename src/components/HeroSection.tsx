@@ -286,7 +286,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Malware Scanned</span>
                   </span>
-                  <span className="text-[#D3CCB0] font-medium">87.5% Net Seller Split</span>
+                  <span className="text-[#D3CCB0] font-medium">90% Net Seller Split</span>
                 </div>
               </div>
             </motion.div>

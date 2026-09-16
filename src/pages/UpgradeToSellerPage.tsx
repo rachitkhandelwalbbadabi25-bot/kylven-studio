@@ -224,7 +224,7 @@ export const UpgradeToSellerPage: React.FC<UpgradeToSellerPageProps> = ({
                     Get paid directly to your UPI
                   </h3>
                   <p className="text-xs text-[#7B8A90] mt-0.5 leading-snug">
-                    Enjoy an 87.5% seller revenue split paid directly to your GPay, PhonePe, or Paytm VPA.
+                    Enjoy a 90% seller revenue split paid directly to your GPay, PhonePe, or Paytm VPA.
                   </p>
                 </div>
               </div>
@@ -276,7 +276,7 @@ export const UpgradeToSellerPage: React.FC<UpgradeToSellerPageProps> = ({
                   >
                     Your UPI ID <span className="text-red-400">*</span>
                   </label>
-                  <span className="text-[11px] font-mono text-emerald-400">87.5% Payout</span>
+                  <span className="text-[11px] font-mono text-emerald-400">90% Payout</span>
                 </div>
 
                 <div className="relative">
@@ -434,8 +434,8 @@ export const UpgradeToSellerPage: React.FC<UpgradeToSellerPageProps> = ({
 
               <div className="space-y-4 text-xs text-[#7B8A90] leading-relaxed">
                 <div className="p-3 rounded-xl bg-[#202C44]/30 border border-[#202C44] space-y-1">
-                  <p className="font-bold text-white">1. 87.5% Seller Revenue Guarantee</p>
-                  <p>Sellers retain 87.5% of listed price for every sale. The 12.5% platform fee covers UPI gateway processing, malware validation, and global CDN delivery bandwidth.</p>
+                  <p className="font-bold text-white">1. 90% Seller Revenue Guarantee</p>
+                  <p>Sellers retain 90% of listed price for every sale. The 10% platform fee covers platform maintenance and secure cloud delivery bandwidth.</p>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[#202C44]/30 border border-[#202C44] space-y-1">

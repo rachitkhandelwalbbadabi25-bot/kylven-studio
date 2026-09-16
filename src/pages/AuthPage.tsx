@@ -477,7 +477,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                     </div>
                   </div>
                   <p className={`text-[10px] leading-tight line-clamp-1 ${role === "seller" ? "text-[#000000]/80" : "text-[#7B8A90]"}`}>
-                    Sell & keep 87.5% revenue
+                    Sell & keep 90% revenue
                   </p>
                 </button>
 
@@ -502,7 +502,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 >
                   <span className="text-xs shrink-0">⚡</span>
                   <p className="text-[10.5px] leading-tight text-emerald-200">
-                    As a Seller, your workspace will be locked to the Seller Portal dashboard with 87.5% direct UPI revenue settlements.
+                    As a Seller, your workspace will be locked to the Seller Portal dashboard with 90% direct UPI revenue settlements.
                   </p>
                 </div>
               )}

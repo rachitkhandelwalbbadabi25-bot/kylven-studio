@@ -23,10 +23,10 @@ export const FeatureHighlights: React.FC = () => {
     {
       icon: <Percent className="w-6 h-6 text-[#D3CCB0]" />,
       flag: "💰",
-      title: "87.5% Seller Split",
+      title: "90% Seller Split",
       badge: "Fair Economics",
       description:
-        "We believe sellers should keep the lion's share. Transparent 12.5% platform fee for buyers. Zero hidden charges or foreign exchange markups.",
+        "We believe sellers should keep the lion's share. Transparent 10% platform fee for buyers. Zero hidden charges or foreign exchange markups.",
     },
     {
       icon: <Zap className="w-6 h-6 text-amber-400" />,

@@ -29,6 +29,7 @@ export interface CreatorProfile {
   email?: string;
   upiVpa?: string;
   skills?: string[];
+  isAdmin?: boolean;
 }
 
 // Alias for backwards compatibility
@@ -184,6 +185,7 @@ export interface PublicProfile {
   role: string;
   bio: string;
   usernameId: string;
+  isAdmin?: boolean;
 }
 
 export interface SalesRecord {
@@ -225,6 +227,18 @@ export interface UserProfile {
   location?: string;
   joinedDate?: string;
   hasCompletedOnboarding?: boolean;
+  isAdmin?: boolean;
+}
+
+/**
+ * Checks if a profile belongs to an admin account.
+ * Specifically checks for admin@kelvyn.in, ansh@kelvyn.in, or explicit isAdmin flag.
+ */
+export function isUserAdmin(profile?: { email?: string; isAdmin?: boolean } | null): boolean {
+  if (!profile) return false;
+  if (profile.isAdmin) return true;
+  const email = (profile.email || "").toLowerCase().trim();
+  return email === "admin@kelvyn.in" || email === "ansh@kelvyn.in";
 }
 
 export interface FilterOptions {

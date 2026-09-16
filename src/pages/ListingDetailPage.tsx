@@ -235,34 +235,6 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
             )}
           </div>
 
-          {/* Security & Verification Box */}
-          <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-xs font-mono font-bold text-white uppercase tracking-wider">
-                  Kreate Security Verification
-                </h3>
-              </div>
-              <span className="text-[10px] text-[#7B8A90] font-mono">Virus-Free Certified</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="bg-[#202C44]/50 border border-[#202C44] p-3 rounded-2xl space-y-1">
-                <span className="font-bold text-white block">ClamAV Malware Scan</span>
-                <span className="text-[11px] text-[#7B8A90]">0 security threats detected.</span>
-              </div>
-              <div className="bg-[#202C44]/50 border border-[#202C44] p-3 rounded-2xl space-y-1">
-                <span className="font-bold text-white block">Automated Syntax Check</span>
-                <span className="text-[11px] text-[#7B8A90]">Build tests passed without errors.</span>
-              </div>
-              <div className="bg-[#202C44]/50 border border-[#202C44] p-3 rounded-2xl space-y-1">
-                <span className="font-bold text-white block">Instant Access</span>
-                <span className="text-[11px] text-[#7B8A90]">Lifetime download in your account.</span>
-              </div>
-            </div>
-          </div>
-
         </div>
 
         {/* Right Column: Asset Info & Buy Box (5 cols, sticky) */}
@@ -291,7 +263,12 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-bold text-white">{creatorName}</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#D3CCB0]" />
+                  {(listing.creator?.isAdmin || listing.seller?.isAdmin || listing.sellerId === "admin-user" || creatorUsername.toLowerCase() === "admin") && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-medium" title="Verified Admin">
+                      <CheckCircle2 className="w-3 h-3 text-blue-400 fill-blue-500/20" />
+                      <span>Verified</span>
+                    </span>
+                  )}
                 </div>
                 <Link
                   to={`/profile/${creatorUsername}`}
@@ -409,9 +386,6 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <span className="text-[10px] font-mono uppercase tracking-wider text-[#7B8A90]">
                 Seller Profile
               </span>
-              <span className="text-xs font-mono text-[#D3CCB0] font-bold">
-                ★ {listing.creator?.rating || 4.9} Rating
-              </span>
             </div>
 
             <div className="flex items-center gap-3">
@@ -421,9 +395,17 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 className="w-12 h-12 rounded-2xl object-cover border border-[#202C44]"
               />
               <div>
-                <h4 className="text-sm font-bold text-white">{creatorName}</h4>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="text-sm font-bold text-white">{creatorName}</h4>
+                  {(listing.creator?.isAdmin || listing.seller?.isAdmin || listing.sellerId === "admin-user" || creatorUsername.toLowerCase() === "admin") && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-medium" title="Verified Admin">
+                      <CheckCircle2 className="w-3 h-3 text-blue-400 fill-blue-500/20" />
+                      <span>Verified</span>
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-[#7B8A90] font-mono">
-                  {listing.creator?.location || "Bengaluru, India"} • {listing.creator?.totalSales || 150}+ sales
+                  @{creatorUsername}
                 </p>
               </div>
             </div>

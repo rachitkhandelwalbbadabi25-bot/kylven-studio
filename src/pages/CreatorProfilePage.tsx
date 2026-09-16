@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { AssetListing, UserProfile, UserPurchase, PublicProfile } from "../types";
+import { AssetListing, UserProfile, UserPurchase, PublicProfile, isUserAdmin } from "../types";
 import { ListingCard } from "../components/ListingCard";
 import {
   fetchPublicProfileByUsernameId,
@@ -25,6 +25,7 @@ import {
   Mail,
   UserX,
   Loader2,
+  Heart,
 } from "lucide-react";
 
 interface CreatorProfilePageProps {
@@ -49,7 +50,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"listings" | "purchases" | "dashboard">("listings");
+  const [activeTab, setActiveTab] = useState<"listings" | "purchases" | "dashboard" | "saved">("listings");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Derive target username/handle
@@ -142,15 +143,27 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   const displayBio = profileData?.bio || (isOwner && userProfile?.bio) || "Digital asset creator on Kreate Studio.";
   const displayUsernameId = profileData?.usernameId || cleanUsername || "creator";
 
-  // Initials for avatar
-  const getInitials = (text: string) => {
-    const parts = text.trim().split(" ");
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  // Initials for avatar: single letter (e.g. 'R' for 'Rachit Khandelwal')
+  const initials = (displayName.trim().charAt(0) || "C").toUpperCase();
+
+  const isBuyer = Boolean(isOwner && (userProfile?.role === "buyer" || displayRole === "buyer"));
+
+  const isAdminAccount = Boolean(
+    (isOwner && userProfile && isUserAdmin(userProfile)) ||
+    profileData?.isAdmin ||
+    resolvedUid === "admin-user" ||
+    cleanUsername === "admin"
+  );
+
+  // Sync default tab if viewing as buyer
+  useEffect(() => {
+    if (isBuyer) {
+      setActiveTab("saved");
     }
-    return text.slice(0, 2).toUpperCase() || "CR";
-  };
-  const initials = getInitials(displayName);
+  }, [isBuyer]);
+
+  // Saved listings for buyer profile
+  const savedListings = listings.filter((item) => !item.deleted && savedIds.includes(item.id));
 
   // Filter listings strictly belonging to this creator from the authoritative Firebase listings
   const creatorListings = listings.filter((l) => {
@@ -269,6 +282,13 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                   {displayName}
                 </h1>
 
+                {isAdminAccount && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-medium" title="Verified Admin">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 fill-blue-500/20" />
+                    <span>Verified</span>
+                  </span>
+                )}
+
                 <span className="text-xs font-mono text-[#D3CCB0] bg-[#202C44] px-2.5 py-0.5 rounded-lg border border-[#202C44] font-medium" id="seller-handle-badge">
                   @{displayUsernameId}
                 </span>
@@ -283,13 +303,6 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               <p className="text-xs sm:text-sm text-[#7B8A90] max-w-2xl leading-relaxed">
                 {displayBio}
               </p>
-
-              <div className="flex flex-wrap items-center gap-4 text-xs text-[#7B8A90] pt-1 font-sans">
-                <span className="flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Verified Creator Account</span>
-                </span>
-              </div>
             </div>
           </div>
 
@@ -325,19 +338,19 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-4 border-t border-[#202C44]" id="seller-stats-row">
           <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
             <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
-              Live Listings
+              {isBuyer ? "Saved Assets" : "Live Listings"}
             </span>
             <span className="text-xl sm:text-2xl font-heading font-extrabold text-white font-mono mt-0.5 block" id="stat-listings-count">
-              {creatorListings.length}
+              {isBuyer ? savedListings.length : creatorListings.length}
             </span>
           </div>
 
           <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
             <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
-              Profile Status
+              {isBuyer ? "Purchases" : "Profile Status"}
             </span>
-            <span className="text-xl sm:text-2xl font-heading font-extrabold text-emerald-400 font-mono mt-0.5 block" id="stat-status">
-              Active
+            <span className={`text-xl sm:text-2xl font-heading font-extrabold font-mono mt-0.5 block ${isBuyer ? "text-[#D3CCB0]" : "text-emerald-400"}`} id="stat-status">
+              {isBuyer ? purchases.length : "Active"}
             </span>
           </div>
 
@@ -355,21 +368,21 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
       {/* 3. Interactive Tabs */}
       <div className="flex items-center justify-between border-b border-[#202C44] pb-4">
         <div className="flex items-center gap-2 sm:gap-3" id="seller-tabs-container">
-          <button
-            id="tab-my-listings"
-            onClick={() => setActiveTab("listings")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeTab === "listings"
-                ? "bg-[#D3CCB0] text-[#000000] shadow"
-                : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Listings ({creatorListings.length})</span>
-          </button>
-
-          {isOwner && (
+          {isBuyer ? (
             <>
+              <button
+                id="tab-saved"
+                onClick={() => setActiveTab("saved")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  activeTab === "saved"
+                    ? "bg-[#D3CCB0] text-[#000000] shadow"
+                    : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
+                }`}
+              >
+                <Heart className="w-3.5 h-3.5" />
+                <span>Saved ({savedListings.length})</span>
+              </button>
+
               <button
                 id="tab-purchases"
                 onClick={() => setActiveTab("purchases")}
@@ -380,26 +393,58 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                 }`}
               >
                 <ShoppingBag className="w-3.5 h-3.5" />
-                <span>My Purchases ({purchases.length})</span>
+                <span>Purchases ({purchases.length})</span>
               </button>
-
+            </>
+          ) : (
+            <>
               <button
-                id="tab-dashboard"
-                onClick={() => setActiveTab("dashboard")}
+                id="tab-my-listings"
+                onClick={() => setActiveTab("listings")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                  activeTab === "dashboard"
+                  activeTab === "listings"
                     ? "bg-[#D3CCB0] text-[#000000] shadow"
                     : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
                 }`}
               >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>Seller Dashboard</span>
+                <Layers className="w-3.5 h-3.5" />
+                <span>{isOwner ? "My Listings" : "Listings"} ({creatorListings.length})</span>
               </button>
+
+              {isOwner && (
+                <>
+                  <button
+                    id="tab-purchases"
+                    onClick={() => setActiveTab("purchases")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      activeTab === "purchases"
+                        ? "bg-[#D3CCB0] text-[#000000] shadow"
+                        : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
+                    }`}
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>Purchases ({purchases.length})</span>
+                  </button>
+
+                  <button
+                    id="tab-dashboard"
+                    onClick={() => setActiveTab("dashboard")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      activeTab === "dashboard"
+                        ? "bg-[#D3CCB0] text-[#000000] shadow"
+                        : "bg-[#111317] text-[#7B8A90] hover:text-white border border-[#202C44]"
+                    }`}
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    <span>Dashboard</span>
+                  </button>
+                </>
+              )}
             </>
           )}
         </div>
 
-        {activeTab === "listings" && isOwner && (
+        {activeTab === "listings" && isOwner && !isBuyer && (
           <Link
             to="/sell/new"
             className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#D3CCB0] hover:underline"
@@ -410,8 +455,47 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         )}
       </div>
 
+      {/* Tab Content: Saved Listings for Buyer */}
+      {activeTab === "saved" && isBuyer && (
+        <div className="space-y-6" id="tab-content-saved">
+          {savedListings.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {savedListings.map((item) => (
+                <ListingCard
+                  key={item.id}
+                  listing={item}
+                  onSelectListing={(asset) => {
+                    navigate(`/listing/${asset.slug || asset.id}`);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  onBuyNowDirect={onBuyNowDirect}
+                  isSaved={true}
+                  onToggleSave={onToggleSave}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-12 text-center space-y-4">
+              <Heart className="w-10 h-10 text-[#7B8A90] mx-auto opacity-50" />
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-white">No Saved Assets</h3>
+                <p className="text-xs text-[#7B8A90]">
+                  You haven't bookmarked any assets yet. Explore the marketplace to save favorites.
+                </p>
+              </div>
+              <Link
+                to="/browse"
+                className="inline-block bg-[#D3CCB0] text-[#000000] text-xs font-bold px-4 py-2 rounded-xl"
+              >
+                Browse Marketplace
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Tab Content 1: Creator Listings */}
-      {activeTab === "listings" && (
+      {activeTab === "listings" && !isBuyer && (
         <div className="space-y-6" id="tab-content-listings">
           {creatorListings.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -504,8 +588,8 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         </div>
       )}
 
-      {/* Tab Content 3: Dashboard Link */}
-      {activeTab === "dashboard" && isOwner && (
+      {/* Tab Content 3: Dashboard Link (Sellers only) */}
+      {activeTab === "dashboard" && isOwner && !isBuyer && (
         <div className="bg-[#111317] border border-[#202C44] rounded-3xl p-6 sm:p-8 space-y-6" id="tab-content-dashboard">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#202C44] pb-5">
             <div>
@@ -533,8 +617,8 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
             </div>
             <div className="bg-[#202C44]/40 border border-[#202C44] p-4 rounded-2xl">
               <span className="text-[11px] text-[#7B8A90] font-mono block">Seller Net Split</span>
-              <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">87.5%</span>
-              <span className="text-[10px] text-[#7B8A90]">Industry-leading direct payout rate</span>
+              <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">90%</span>
+              <span className="text-[10px] text-[#7B8A90]">Sellers keep 90% of listed price</span>
             </div>
           </div>
         </div>

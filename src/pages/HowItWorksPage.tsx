@@ -31,8 +31,8 @@ export const HowItWorksPage: React.FC = () => {
       a: "When you click 'Buy Now' or proceed to checkout, you can pay directly via Google Pay, PhonePe, Paytm, BHIM, or by entering your UPI ID. There are zero international transaction fees, no credit card requirement, and zero currency conversion markups.",
     },
     {
-      q: "When and how do sellers receive their 87.5% payout?",
-      a: "Sellers receive 87.5% of the listed price on every asset sold. Payouts are batched and transferred automatically every Monday directly to your registered Indian Bank Account or UPI VPA. Platform processing & verification fee is fixed at 12.5%.",
+      q: "When and how do sellers receive their 90% payout?",
+      a: "Sellers receive 90% of the listed price on every asset sold. Payouts are batched and transferred automatically every Monday directly to your registered Indian Bank Account or UPI VPA. Platform commission is fixed at 10%.",
     },
     {
       q: "What is the manual review process for new listings?",
@@ -208,15 +208,15 @@ export const HowItWorksPage: React.FC = () => {
                       <UploadCloud className="w-5 h-5 text-emerald-400" />
                     </div>
                     <h3 className="text-xl font-heading font-bold text-white">
-                      Upload ZIP, Pass Review & Get Paid 87.5%
+                      Upload Files, Pass Review & Get Paid 90%
                     </h3>
                     <p className="text-xs text-[#7B8A90] leading-relaxed">
-                      1. Drag and drop your project ZIP, set your INR price, and pick tags.<br />
-                      2. Automated syntax & malware scan completes in &lt;24 hours.<br />
-                      3. Receive 87.5% payout automatically every Monday directly to your Indian bank / UPI.
+                      1. Drag and drop your project files, set your INR price, and pick tags.<br />
+                      2. Quality review completes in &lt;24 hours.<br />
+                      3. Receive 90% payout automatically every Monday directly to your Indian bank / UPI.
                     </p>
                     <div className="flex flex-wrap gap-1.5 pt-2">
-                      <span className="text-[10px] font-mono bg-[#000000] text-emerald-400 px-2 py-0.5 rounded border border-[#202C44]">87.5% Seller Split</span>
+                      <span className="text-[10px] font-mono bg-[#000000] text-emerald-400 px-2 py-0.5 rounded border border-[#202C44]">90% Seller Split</span>
                       <span className="text-[10px] font-mono bg-[#000000] text-[#D3CCB0] px-2 py-0.5 rounded border border-[#202C44]">₹0 Listing Fee</span>
                     </div>
                   </div>

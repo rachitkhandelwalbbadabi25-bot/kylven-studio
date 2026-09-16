@@ -359,7 +359,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                                     </span>
                                   </div>
                                   <span className="text-[10px] text-[#7B8A90] font-mono block truncate">
-                                    @{user.username} {user.location ? `• ${user.location}` : ""}
+                                    @{user.username}
                                   </span>
                                 </div>
                               </div>
@@ -1158,7 +1158,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div>
                     <h3 className="font-heading font-bold text-white text-xs">Join Kreate Studio</h3>
                     <p className="text-[10.5px] text-[#7B8A90] mt-0.5">
-                      Buy assets or sell and keep 87.5% revenue.
+                      Buy assets or sell and keep 90% revenue.
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-2">

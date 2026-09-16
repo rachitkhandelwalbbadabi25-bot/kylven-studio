@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AssetListing, UserProfile, calculatePricing, SalesRecord } from "../types";
 import {
@@ -84,6 +84,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const chartData = chartTimeRange === "7d" ? WEEKLY_CHART_DATA : MONTHLY_CHART_DATA;
   const maxBarAmount = Math.max(...chartData.map((d) => d.amount), 1000);
 
+  // Role guard: Dashboard is strictly for sellers only
+  useEffect(() => {
+    if (userProfile.role === "buyer") {
+      navigate("/profile", { replace: true });
+    }
+  }, [userProfile.role, navigate]);
+
+  if (userProfile.role === "buyer") {
+    return null;
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8" id="seller-dashboard-page">
       {/* 1. Header: Title & Subtitle + Action */}
@@ -152,7 +163,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </p>
           <p className="text-[10px] text-[#7B8A90] font-mono flex items-center gap-1">
             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-            <span>87.5% net seller take-home</span>
+            <span>90% net seller take-home</span>
           </p>
         </div>
 

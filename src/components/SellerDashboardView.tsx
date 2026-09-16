@@ -141,10 +141,10 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
     );
   };
 
-  // Auto fee calculations
-  const platformFee = Math.round((priceInINR || 0) * 0.125);
+  // Auto fee calculations (10% platform fee, 90% seller payout)
+  const platformFee = Math.round((priceInINR || 0) * 0.10);
   const totalBuyerPayable = (priceInINR || 0) + platformFee;
-  const sellerNetEarnings = Math.round((priceInINR || 0) * 0.875);
+  const sellerNetEarnings = Math.round((priceInINR || 0) * 0.90);
 
   const handleCreateListing = (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,7 +263,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
         {/* Total Earned */}
         <div className="bg-[#202C44] border border-[#202C44] rounded-2xl p-5 space-y-2">
           <div className="flex items-center justify-between text-xs text-[#7B8A90]">
-            <span>Total Earned (87.5% Net)</span>
+            <span>Total Earned (90% Net)</span>
             <TrendingUp className="w-4 h-4 text-[#D3CCB0]" />
           </div>
           <div className="text-2xl sm:text-3xl font-heading font-extrabold text-[#D3CCB0]">
@@ -299,7 +299,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
             {stats.totalSalesCount}
           </div>
           <div className="text-[10px] text-[#7B8A90] flex items-center gap-1 pt-1 border-t border-[#111317]">
-            <span>Average Rating: {stats.averageRating}★</span>
+            <span>Verified marketplace transactions</span>
           </div>
         </div>
 
@@ -327,17 +327,17 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
               Seller Promise
             </span>
             <h3 className="text-sm font-heading font-bold text-white">
-              Sellers Keep 87.5% Guaranteed Net Split
+              Sellers Keep 90% Guaranteed Net Split
             </h3>
           </div>
           <p className="text-xs text-[#7B8A90] leading-relaxed max-w-2xl">
-            When you list an item at ₹1,000, the buyer pays ₹1,125 (includes 12.5% platform & payment fee). You receive ₹875 directly into your Indian bank account with zero extra deductions.
+            When you list an item at ₹1,000, the buyer pays ₹1,100 (includes 10% platform fee). You receive ₹900 directly into your Indian bank account with zero extra deductions.
           </p>
         </div>
 
         <div className="bg-[#202C44] border border-[#202C44] p-3 rounded-xl text-center shrink-0">
           <span className="text-[10px] text-[#7B8A90] uppercase font-mono block">Your Take-Home</span>
-          <span className="text-lg font-heading font-extrabold text-[#D3CCB0]">87.5% Net</span>
+          <span className="text-lg font-heading font-extrabold text-[#D3CCB0]">90% Net</span>
         </div>
       </div>
 
@@ -359,8 +359,8 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                   <th className="p-4">Digital Asset</th>
                   <th className="p-4">Buyer Location</th>
                   <th className="p-4">Listed Price</th>
-                  <th className="p-4">Fee (12.5%)</th>
-                  <th className="p-4">Seller Net (87.5%)</th>
+                  <th className="p-4">Fee (10%)</th>
+                  <th className="p-4">Seller Net (90%)</th>
                   <th className="p-4">Payment</th>
                   <th className="p-4">Status</th>
                 </tr>
@@ -612,14 +612,14 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                     {/* Breakdown Box */}
                     <div className="bg-[#111317] border border-[#202C44] p-4 rounded-xl space-y-2 text-xs">
                       <div className="flex justify-between text-[#7B8A90]">
-                        <span>Buyer Pays (+12.5% platform fee)</span>
+                        <span>Buyer Pays (+10% platform fee)</span>
                         <span className="font-mono text-white font-bold">
                           ₹{totalBuyerPayable.toLocaleString("en-IN")}
                         </span>
                       </div>
 
                       <div className="flex justify-between text-[#7B8A90]">
-                        <span>Your Net Take-Home Earnings (87.5%)</span>
+                        <span>Your Net Take-Home Earnings (90%)</span>
                         <span className="font-mono text-[#D3CCB0] font-bold">
                           ₹{sellerNetEarnings.toLocaleString("en-IN")}
                         </span>
@@ -821,7 +821,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({
                   <div className="text-white font-bold">{title || "New Custom Digital Asset"}</div>
                   <div className="text-[#7B8A90]">Category: {category}</div>
                   <div className="text-[#D3CCB0] font-mono font-bold">
-                    Price: ₹{priceInINR} (Your net 87.5%: ₹{sellerNetEarnings})
+                    Price: ₹{priceInINR} (Your net 90%: ₹{sellerNetEarnings})
                   </div>
                 </div>
 

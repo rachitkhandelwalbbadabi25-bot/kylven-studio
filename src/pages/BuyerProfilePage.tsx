@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { UserProfile, UserPurchase, AssetListing } from "../types";
+import { UserProfile, UserPurchase, AssetListing, isUserAdmin } from "../types";
 import { ListingCard } from "../components/ListingCard";
 import {
   ShoppingBag,
@@ -12,6 +12,7 @@ import {
   Key,
   ExternalLink,
   ShieldCheck,
+  CheckCircle2,
   X,
   Check,
   Sparkles,
@@ -65,6 +66,8 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
   };
 
   const initialLetter = getInitial(userProfile?.name || userProfile?.email || "User");
+
+  const isAdminAccount = Boolean(userProfile && isUserAdmin(userProfile));
 
   // Calculate stats
   const listingsCount = 0; // Buyers don't have public selling listings
@@ -142,20 +145,28 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
             
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                {/* Full Name: "Rachit Khandelwal20" (Bold, high-contrast) */}
-                <h1
-                  id="buyer-profile-name"
-                  className="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-tight leading-tight"
-                >
-                  {userProfile.name || "Rachit Khandelwal20"}
-                </h1>
+                {/* Full Name: (Bold, high-contrast) */}
+                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+                  <h1
+                    id="buyer-profile-name"
+                    className="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-tight leading-tight"
+                  >
+                    {userProfile?.name || "Rachit Khandelwal20"}
+                  </h1>
+                  {isAdminAccount && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-medium" title="Verified Admin">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-400 fill-blue-500/20" />
+                      <span>Verified</span>
+                    </span>
+                  )}
+                </div>
                 
-                {/* Email: "kavishkhandelwal9@gmail.com" (Muted gray, directly below name) */}
+                {/* Email: (Muted gray, directly below name) */}
                 <p
                   id="buyer-profile-email"
                   className="text-xs sm:text-sm text-[#7B8A90] font-sans font-medium mt-0.5"
                 >
-                  {userProfile.email || "kavishkhandelwal9@gmail.com"}
+                  {userProfile?.email || "kavishkhandelwal9@gmail.com"}
                 </p>
               </div>
 
@@ -165,9 +176,9 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
                   type="button"
                   id="edit-profile-btn"
                   onClick={() => {
-                    setFormName(userProfile.name || "Rachit Khandelwal20");
-                    setFormEmail(userProfile.email || "kavishkhandelwal9@gmail.com");
-                    setFormBio(userProfile.bio || "");
+                    setFormName(userProfile?.name || "Rachit Khandelwal20");
+                    setFormEmail(userProfile?.email || "kavishkhandelwal9@gmail.com");
+                    setFormBio(userProfile?.bio || "");
                     setIsEditModalOpen(true);
                   }}
                   className="px-4 py-2 rounded-xl bg-[#D3CCB0] hover:bg-[#c4bb9a] text-[#000000] font-heading font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
@@ -187,11 +198,6 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
               >
                 <ShoppingBag className="w-3.5 h-3.5 text-[#D3CCB0]" />
                 <span>Buyer</span>
-              </span>
-
-              <span className="inline-flex items-center gap-1 text-[11px] text-[#7B8A90] font-mono px-2 py-0.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Verified Account</span>
               </span>
             </div>
 

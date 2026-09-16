@@ -6,6 +6,7 @@ import { auth } from "../lib/firebase";
 import { serverTimestamp } from "firebase/database";
 import {
   Upload,
+  UploadCloud,
   Plus,
   IndianRupee,
   CheckCircle2,
@@ -45,7 +46,6 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
   // Form State
   const [title, setTitle] = useState("Neo Bharat Cyberpunk UI Kit");
   const [category, setCategory] = useState<CoreCategory>("UI/UX & Design");
-  const [subcategory, setSubcategory] = useState("Figma UI Kits");
   const [priceInINR, setPriceInINR] = useState<number>(499);
   const [description, setDescription] = useState(
     "Futuristic neon-infused mobile and web UI component kit inspired by modern Indian cyberpunk aesthetics. Includes over 120+ customizable components, glow tokens, and dark layouts."
@@ -56,6 +56,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
   ]);
   const [fileType, setFileType] = useState(".fig");
   const [fileSizeBytes, setFileSizeBytes] = useState("92 MB");
+  const [fileName, setFileName] = useState("neo-bharat-cyberpunk-ui-kit.fig");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [showAddImageInput, setShowAddImageInput] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,6 +65,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
   // Word limits & word count validation
   const MAX_TITLE_WORDS = 100;
   const MAX_DESCRIPTION_WORDS = 2000;
+  const MAX_PRICE = 50000;
 
   const countWords = (text: string) => {
     const trimmed = text.trim();
@@ -77,28 +79,40 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
   const isDescExceeded = descWordCount > MAX_DESCRIPTION_WORDS;
   const isTitleEmpty = title.trim().length === 0;
   const isDescEmpty = description.trim().length === 0;
+  const isPriceValid = priceInINR >= 0 && priceInINR <= MAX_PRICE;
+  const isImagesValid = images.length >= 1 && images.length <= 5;
 
   const isFormValid =
     !isTitleExceeded &&
     !isDescExceeded &&
     !isTitleEmpty &&
     !isDescEmpty &&
-    priceInINR >= 0;
+    isPriceValid &&
+    isImagesValid;
 
-  // 87.5% Net Payout Calculation
+  // 90% Net Payout Calculation
   const pricing = calculatePricing(priceInINR || 0);
-
-  const selectedCategoryObj = CATEGORIES_LIST.find((c) => c.name === category);
 
   const handleCategoryChange = (newCat: CoreCategory) => {
     setCategory(newCat);
-    const catObj = CATEGORIES_LIST.find((c) => c.name === newCat);
-    if (catObj && catObj.subcategories.length > 0) {
-      setSubcategory(catObj.subcategories[0]);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const ext = file.name.includes(".") ? `.${file.name.split(".").pop()?.toLowerCase()}` : ".zip";
+      setFileType(ext);
+      setFileName(file.name);
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      setFileSizeBytes(`${sizeMB} MB`);
     }
   };
 
   const handleAddImage = (url: string) => {
+    if (images.length >= 5) {
+      alert("Maximum 5 preview images allowed.");
+      return;
+    }
     if (url.trim()) {
       setImages((prev) => [...prev, url.trim()]);
       setNewImageUrl("");
@@ -117,6 +131,12 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
         alert("Title exceeds the maximum limit of 100 words.");
       } else if (isDescExceeded) {
         alert("Description exceeds the maximum limit of 2,000 words.");
+      } else if (priceInINR > MAX_PRICE) {
+        alert(`Maximum listing price is ₹${MAX_PRICE.toLocaleString("en-IN")}.`);
+      } else if (images.length < 1) {
+        alert("At least 1 preview image is required.");
+      } else if (images.length > 5) {
+        alert("Maximum 5 preview images are allowed.");
       } else {
         alert("Please fill in all required fields before publishing.");
       }
@@ -144,7 +164,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
       username: userProfile.username || (auth.currentUser?.email ? auth.currentUser.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "_") : "creator"),
       handle: `@${userProfile.username || (auth.currentUser?.email ? auth.currentUser.email.split("@")[0].toLowerCase().replace(/[^a-z0-9]/g, "_") : "creator")}`,
       avatar: userProfile.avatar || auth.currentUser?.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80",
-      initials: (userProfile.name || "CR").split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2) || "CR",
+      initials: (userProfile.name || "Creator").charAt(0).toUpperCase(),
       badge: "Seller",
       bio: userProfile.bio || "Digital creator building production-ready assets.",
       location: userProfile.location || "India",
@@ -169,7 +189,6 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
       slug,
       title: title.trim(),
       category,
-      subcategory,
       price: Number(priceInINR) || 0,
       isFree: (Number(priceInINR) || 0) === 0,
       seller: creatorObj,
@@ -185,7 +204,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
       fileExtension: fileType.replace(/^\./, "") || "zip",
       fileSizeBytes,
       fileFormatTags: [fileType, ".zip"],
-      tags: [category.toLowerCase().split(" ")[0], subcategory.toLowerCase().replace(/[^a-z0-9]/g, ""), "asset"],
+      tags: [category.toLowerCase().split(" ")[0], fileType.replace(/^\./, "").toLowerCase(), "asset"],
       detailedFeatures: [
         "Complete production-ready source files",
         "Clean architecture pattern & full commercial rights",
@@ -307,75 +326,74 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               )}
             </div>
 
-            {/* Category Selection & Subcategory */}
+            {/* Category Selection & File Upload (Auto-detected) */}
             <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-white mb-1.5" htmlFor="field-category">
-                    Category *
-                  </label>
-                  <select
-                    id="field-category"
-                    value={category}
-                    onChange={(e) => handleCategoryChange(e.target.value as CoreCategory)}
-                    className="w-full bg-[#000000] text-white text-xs px-3.5 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
-                  >
-                    {CATEGORIES_LIST.map((c) => (
-                      <option key={c.name} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-[#7B8A90] mb-1.5" htmlFor="field-subcategory">
-                    Subcategory
-                  </label>
-                  <select
-                    id="field-subcategory"
-                    value={subcategory}
-                    onChange={(e) => setSubcategory(e.target.value)}
-                    className="w-full bg-[#000000] text-white text-xs px-3.5 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
-                  >
-                    {selectedCategoryObj?.subcategories.map((sub) => (
-                      <option key={sub} value={sub}>
-                        {sub}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-white mb-1.5" htmlFor="field-category">
+                  Category *
+                </label>
+                <select
+                  id="field-category"
+                  value={category}
+                  onChange={(e) => handleCategoryChange(e.target.value as CoreCategory)}
+                  className="w-full bg-[#000000] text-white text-xs px-3.5 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                >
+                  {CATEGORIES_LIST.map((c) => (
+                    <option key={c.name} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#202C44]">
-                <div>
-                  <label className="block text-[11px] text-[#7B8A90] mb-1 font-mono">Primary File Type</label>
+              {/* File Upload with Auto-Detection */}
+              <div className="pt-2 border-t border-[#202C44] space-y-2">
+                <label className="block text-xs font-medium text-white">
+                  Asset Package File * (Auto-detects format)
+                </label>
+                <div className="relative border border-dashed border-[#202C44] hover:border-[#D3CCB0]/60 rounded-xl p-4 bg-[#000000] text-center transition-colors">
                   <input
-                    type="text"
-                    value={fileType}
-                    onChange={(e) => setFileType(e.target.value)}
-                    placeholder=".fig"
-                    className="w-full bg-[#000000] text-white text-xs px-3 py-2 rounded-xl border border-[#202C44] font-mono"
+                    type="file"
+                    id="asset-file-upload-input"
+                    onChange={handleFileChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
+                  <div className="flex flex-col items-center justify-center gap-1.5 pointer-events-none">
+                    <UploadCloud className="w-5 h-5 text-[#D3CCB0]" />
+                    <p className="text-xs text-white font-medium">
+                      Click to choose or drop file (.zip, .fig, .tsx, .blend, etc.)
+                    </p>
+                    <p className="text-[11px] text-[#7B8A90] font-mono">
+                      Selected: <span className="text-white font-bold">{fileName}</span>
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[11px] text-[#7B8A90] mb-1 font-mono">Package Size</label>
-                  <input
-                    type="text"
-                    value={fileSizeBytes}
-                    onChange={(e) => setFileSizeBytes(e.target.value)}
-                    placeholder="92 MB"
-                    className="w-full bg-[#000000] text-white text-xs px-3 py-2 rounded-xl border border-[#202C44] font-mono"
-                  />
+
+                {/* Auto-detected metadata badges */}
+                <div className="flex items-center gap-3 pt-1 text-xs font-mono">
+                  <div className="bg-[#202C44] text-[#D3CCB0] px-2.5 py-1 rounded-lg border border-[#202C44] flex items-center gap-1.5">
+                    <span className="text-[10px] text-[#7B8A90] uppercase">Format:</span>
+                    <span className="font-bold">{fileType}</span>
+                  </div>
+                  <div className="bg-[#202C44] text-white px-2.5 py-1 rounded-lg border border-[#202C44] flex items-center gap-1.5">
+                    <span className="text-[10px] text-[#7B8A90] uppercase">Size:</span>
+                    <span className="font-bold">{fileSizeBytes}</span>
+                  </div>
+                  <span className="text-[10px] text-emerald-400">✓ Auto-detected</span>
                 </div>
               </div>
             </div>
 
-            {/* Price in INR (₹) */}
+            {/* Price in INR (₹) - Max ₹50,000 */}
             <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-2">
-              <label className="block text-xs font-medium text-white" htmlFor="field-price">
-                Price in INR (₹) *
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-medium text-white" htmlFor="field-price">
+                  Price in INR (₹) *
+                </label>
+                <span className="text-[11px] text-[#7B8A90] font-mono">
+                  Max ₹50,000
+                </span>
+              </div>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-[#D3CCB0]">
                   ₹
@@ -385,13 +403,24 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
                   type="number"
                   required
                   min={0}
+                  max={50000}
                   step={50}
                   value={priceInINR}
                   onChange={(e) => setPriceInINR(Number(e.target.value) || 0)}
                   placeholder="499"
-                  className="w-full bg-[#000000] text-white text-sm font-mono font-bold pl-8 pr-4 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
+                  className={`w-full bg-[#000000] text-white text-sm font-mono font-bold pl-8 pr-4 py-3 rounded-xl border focus:outline-none transition-colors ${
+                    priceInINR > 50000
+                      ? "border-rose-500 focus:border-rose-500 bg-rose-950/10"
+                      : "border-[#202C44] focus:border-[#D3CCB0]"
+                  }`}
                 />
               </div>
+              {priceInINR > 50000 && (
+                <p className="text-[11px] text-rose-400 font-mono flex items-center gap-1.5 mt-1 font-semibold">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Price exceeds maximum allowed limit of ₹50,000.</span>
+                </p>
+              )}
             </div>
 
             {/* Description text area (2,000 word limit) */}
@@ -451,20 +480,30 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               )}
             </div>
 
-            {/* Preview Images upload area with a grid for multiple images and a "+" button */}
+            {/* Preview Images upload area (1 to 5 images required) */}
             <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-4" id="preview-images-section">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block text-xs font-medium text-white">
-                    Preview Images ({images.length})
+                    Preview Images ({images.length}/5) *
                   </label>
                   <p className="text-[11px] text-[#7B8A90]">
-                    Upload screenshots or visual mockups showing your digital asset.
+                    Upload 1 to 5 visual screenshots or mockups showing your asset.
                   </p>
                 </div>
+                {images.length < 1 && (
+                  <span className="text-[10px] text-rose-400 font-mono font-bold bg-rose-950/50 px-2 py-0.5 rounded border border-rose-800">
+                    Min 1 required
+                  </span>
+                )}
+                {images.length >= 5 && (
+                  <span className="text-[10px] text-amber-400 font-mono bg-amber-950/50 px-2 py-0.5 rounded border border-amber-800">
+                    Max 5 reached
+                  </span>
+                )}
               </div>
 
-              {/* Images Grid with "+" Button */}
+              {/* Images Grid with conditional "+" Button */}
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                 {images.map((imgUrl, index) => (
                   <div
@@ -492,16 +531,18 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
                   </div>
                 ))}
 
-                {/* The "+" Button to Add Image */}
-                <button
-                  type="button"
-                  id="add-preview-image-button"
-                  onClick={() => setShowAddImageInput(!showAddImageInput)}
-                  className="aspect-video rounded-xl border-2 border-dashed border-[#202C44] hover:border-[#D3CCB0] bg-[#202C44]/20 hover:bg-[#202C44]/40 flex flex-col items-center justify-center gap-1 transition-all text-[#7B8A90] hover:text-[#D3CCB0]"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span className="text-[10px] font-mono font-medium">Add Image</span>
-                </button>
+                {/* The "+" Button to Add Image (hidden if 5 images reached) */}
+                {images.length < 5 && (
+                  <button
+                    type="button"
+                    id="add-preview-image-button"
+                    onClick={() => setShowAddImageInput(!showAddImageInput)}
+                    className="aspect-video rounded-xl border-2 border-dashed border-[#202C44] hover:border-[#D3CCB0] bg-[#202C44]/20 hover:bg-[#202C44]/40 flex flex-col items-center justify-center gap-1 transition-all text-[#7B8A90] hover:text-[#D3CCB0]"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span className="text-[10px] font-mono font-medium">Add Image</span>
+                  </button>
+                )}
               </div>
 
               {/* Popover / Input to insert image URL or preset */}
@@ -544,14 +585,14 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               )}
             </div>
 
-            {/* Earnings Preview (Bottom of Form): Dark box showing "You'll receive ₹[87.5% of price]" and "87.5% of listed price" label */}
+            {/* Earnings Preview (Bottom of Form): Dark box showing 90% seller take-home */}
             <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-6 space-y-3 shadow-lg" id="earnings-preview-box">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono uppercase tracking-wider text-[#7B8A90]">
                   Earnings Preview
                 </span>
                 <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-2 py-0.5 rounded">
-                  87.5% Payout Rule
+                  90% Payout Rule
                 </span>
               </div>
 
@@ -561,12 +602,12 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
                     You'll receive ₹{pricing.sellerNetINR.toLocaleString("en-IN")}
                   </div>
                   <div className="text-xs text-[#7B8A90] mt-0.5" id="earnings-percentage-label">
-                    87.5% of listed price (guaranteed net)
+                    90% of listed price (guaranteed net)
                   </div>
                 </div>
 
                 <div className="text-right text-[11px] text-[#7B8A90] font-mono">
-                  <div>Platform fee: ₹{pricing.platformFeeINR} (12.5%)</div>
+                  <div>Platform fee: ₹{pricing.platformFeeINR} (10%)</div>
                   <div className="text-white">Buyer pays: ₹{pricing.buyerTotalINR}</div>
                 </div>
               </div>
@@ -657,7 +698,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               {/* Creator row */}
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-md bg-[#202C44] text-[#D3CCB0] text-[10px] font-mono font-bold flex items-center justify-center border border-[#202C44]">
-                  AB
+                  {(userProfile.name || "A").charAt(0).toUpperCase()}
                 </div>
                 <span className="text-xs text-[#7B8A90] font-medium">
                   {userProfile.name || "Ansh Bhardwaj"}
@@ -708,7 +749,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Automated 87.5% payout direct to your UPI</span>
+              <span>Automated 90% payout direct to your UPI</span>
             </div>
           </div>
 

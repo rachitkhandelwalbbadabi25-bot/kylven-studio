@@ -47,9 +47,9 @@ export const Footer: React.FC = () => {
               <IndianRupee className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-white font-bold text-sm mb-1 font-heading">87.5% Seller Revenue Split</h4>
+              <h4 className="text-white font-bold text-sm mb-1 font-heading">90% Seller Revenue Split</h4>
               <p className="text-[#7B8A90] text-xs leading-relaxed">
-                Sellers keep 87.5% net earnings paid directly into Indian bank accounts or UPI VPAs every Monday.
+                Sellers keep 90% net earnings paid directly into Indian bank accounts or UPI VPAs every Monday.
               </p>
             </div>
           </div>
@@ -144,7 +144,7 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link to="/pricing" className="hover:text-[#D3CCB0] transition-colors">
-                  87.5% Revenue Split
+                  90% Revenue Split
                 </Link>
               </li>
               <li>
@@ -203,17 +203,7 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li>
                 <Link to="/pricing" className="hover:text-[#D3CCB0] transition-colors">
-                  Help Center & FAQs
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="hover:text-[#D3CCB0] transition-colors">
-                  UPI Settlement Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/pricing" className="hover:text-[#D3CCB0] transition-colors">
-                  Commercial Licensing
+                  Privacy Policy
                 </Link>
               </li>
               <li>
@@ -223,7 +213,17 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link to="/pricing" className="hover:text-[#D3CCB0] transition-colors">
-                  Privacy Policy
+                  Seller Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/pricing" className="hover:text-[#D3CCB0] transition-colors">
+                  Refund Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/pricing" className="hover:text-[#D3CCB0] transition-colors">
+                  Grievance Redressal
                 </Link>
               </li>
             </ul>

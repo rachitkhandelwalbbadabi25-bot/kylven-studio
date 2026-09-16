@@ -259,47 +259,7 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
                 </div>
               </div>
 
-              {/* Quality & Security Audit Badge Bar */}
-              <div className="bg-[#111317] border border-[#202C44] rounded-2xl p-4 space-y-3">
-                <h4 className="text-xs font-mono font-bold text-[#D3CCB0] uppercase tracking-wider flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Verified Marketplace Quality & Security Audit</span>
-                </h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
-                  <div className="bg-[#202C44]/60 border border-[#202C44] p-3 rounded-xl space-y-1">
-                    <div className="font-bold text-white flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Malware & Virus Scan</span>
-                    </div>
-                    <p className="text-[11px] text-[#7B8A90]">
-                      ClamAV 1.4.1 Engine • 0 threats detected (Scanned Aug 2026).
-                    </p>
-                  </div>
-
-                  <div className="bg-[#202C44]/60 border border-[#202C44] p-3 rounded-xl space-y-1">
-                    <div className="font-bold text-white flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Syntax & Build Test</span>
-                    </div>
-                    <p className="text-[11px] text-[#7B8A90]">
-                      Compiled with 0 breaking errors across target environments.
-                    </p>
-                  </div>
-
-                  <div className="bg-[#202C44]/60 border border-[#202C44] p-3 rounded-xl space-y-1">
-                    <div className="font-bold text-white flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#D3CCB0]" />
-                      <span>7-Day Guarantee</span>
-                    </div>
-                    <p className="text-[11px] text-[#7B8A90]">
-                      Full replacement or refund if files are corrupted or missing key components.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Compatibility badges */}
+              {/* Supported Software & Workflows */}
               <div className="space-y-2">
                 <h4 className="text-white font-semibold font-heading text-xs uppercase tracking-wider">
                   Supported Software & Workflows
@@ -394,8 +354,11 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-heading font-bold text-white text-base">{creator.name}</h3>
-                    {creator.verified && (
-                      <ShieldCheck className="w-4 h-4 text-[#D3CCB0]" title="Verified Creator" />
+                    {(creator.isAdmin || creator.id === "admin-user" || creator.username?.toLowerCase() === "admin") && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-medium" title="Verified Admin">
+                        <CheckCircle2 className="w-3 h-3 text-blue-400 fill-blue-500/20" />
+                        <span>Verified</span>
+                      </span>
                     )}
                   </div>
                   <span className="text-xs text-[#7B8A90] font-mono">{creator.handle}</span>
@@ -406,16 +369,6 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
                 <div className="bg-[#111317] border border-[#202C44] px-3 py-1.5 rounded-lg text-center">
                   <span className="text-[#D3CCB0] font-bold block">{creator.totalSales}</span>
                   <span className="text-[10px] text-[#7B8A90]">Total Sales</span>
-                </div>
-
-                <div className="bg-[#111317] border border-[#202C44] px-3 py-1.5 rounded-lg text-center">
-                  <span className="text-white font-bold block">{creator.rating}★</span>
-                  <span className="text-[10px] text-[#7B8A90]">Rating</span>
-                </div>
-
-                <div className="bg-[#111317] border border-[#202C44] px-3 py-1.5 rounded-lg text-center">
-                  <span className="text-white font-bold block">{creator.responseTime}</span>
-                  <span className="text-[10px] text-[#7B8A90]">Response</span>
                 </div>
               </div>
             </div>
@@ -448,7 +401,7 @@ export const ListingDetailView: React.FC<ListingDetailViewProps> = ({
               <div className="flex items-center justify-between text-xs text-[#7B8A90]">
                 <span className="flex items-center gap-1">
                   <span>Platform & Processing Fee</span>
-                  <span className="text-[10px] bg-[#202C44] px-1 rounded text-[#D3CCB0]">12.5%</span>
+                  <span className="text-[10px] bg-[#202C44] px-1 rounded text-[#D3CCB0]">10%</span>
                 </span>
                 <span className="font-mono text-[#7B8A90]">
                   + ₹{platformFee.toLocaleString("en-IN")}

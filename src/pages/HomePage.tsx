@@ -115,7 +115,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <Percent className="w-5 h-5" />
               </div>
               <div className="space-y-0.5">
-                <h4 className="font-heading font-bold text-white text-sm">87.5% Seller Earnings</h4>
+                <h4 className="font-heading font-bold text-white text-sm">90% Seller Earnings</h4>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
                   Direct weekly UPI bank settlement.
                 </p>
@@ -141,9 +141,9 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div className="space-y-0.5">
-                <h4 className="font-heading font-bold text-white text-sm">Verified Virus-Free</h4>
+                <h4 className="font-heading font-bold text-white text-sm">Quality Inspected</h4>
                 <p className="text-xs text-[#7B8A90] leading-relaxed">
-                  ClamAV & syntax automated inspection.
+                  Verified file structure & clean assets.
                 </p>
               </div>
             </div>

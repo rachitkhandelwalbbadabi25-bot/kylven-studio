@@ -68,7 +68,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     );
   }
 
-  // Calculate pricing using 12.5% platform + payment fee
+  // Calculate pricing using 10% platform fee
   const itemPrice = typeof listing.price === "number" && !isNaN(listing.price) ? Math.max(0, listing.price) : 0;
   const pricing = calculatePricing(itemPrice);
   const creatorName = listing.creator?.name || listing.seller?.name || "Verified Seller";
@@ -281,7 +281,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             </div>
           </div>
 
-          {/* 2. Price Breakdown (Item Price, Platform fee 12.5%, Total) */}
+          {/* 2. Price Breakdown (Item Price, Platform fee 10%, Total) */}
           <div className="space-y-3">
             <span className="text-xs font-mono font-bold text-[#7B8A90] uppercase tracking-wider block">
               Price Breakdown
@@ -293,7 +293,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </div>
 
               <div className="flex items-center justify-between text-[#7B8A90]">
-                <span>Platform + payment fee (12.5%)</span>
+                <span>Platform + payment fee (10%)</span>
                 <span className="font-mono text-[#D3CCB0]">₹{pricing.platformFeeINR.toLocaleString("en-IN")}</span>
               </div>
 
