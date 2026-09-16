@@ -103,7 +103,7 @@ export interface AssetListing {
   seller?: CreatorProfile;
   tags?: string[];
   fileFormatTags?: string[];
-  fileSizeBytes?: string;
+  fileSizeBytes?: string | number;
   previewImages?: string[];
   thumbnailUrl?: string;
   shortDescription?: string;

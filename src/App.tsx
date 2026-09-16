@@ -24,6 +24,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { 
   subscribeToAuthState, 
   fetchListingsFromFirebase, 
+  subscribeToListingsFromFirebase,
   saveListingToFirebase, 
   fetchPublicProfileFromFirebase,
   fetchUserBookmarksFromFirebase,
@@ -73,30 +74,26 @@ export default function App() {
   // Global Search in Navbar
   const [globalSearch, setGlobalSearch] = useState("");
 
-  // Firebase Realtime Database: Initial authoritative fetch of listings
+  // Firebase Realtime Database: Subscribe to live authoritative approved listings
   useEffect(() => {
     let isMounted = true;
     setIsListingsLoading(true);
 
-    fetchListingsFromFirebase()
-      .then((res) => {
+    const unsubscribeListings = subscribeToListingsFromFirebase(
+      (approvedListings) => {
         if (isMounted) {
-          if (res.data) {
-            // Strictly Firebase listings only, excluding deleted
-            setListings(res.data.filter((l) => l.deleted !== true));
-          } else {
-            setListings([]);
-          }
+          // Strictly approved Firebase listings, excluding deleted
+          setListings(approvedListings.filter((l) => l.deleted !== true));
           setIsListingsLoading(false);
         }
-      })
-      .catch((err) => {
-        console.warn("Failed to fetch listings from Firebase:", err);
+      },
+      (err) => {
+        console.warn("Failed to subscribe to listings from Firebase:", err);
         if (isMounted) {
-          setListings([]);
           setIsListingsLoading(false);
         }
-      });
+      }
+    );
 
     // Subscribe to Firebase Auth state
     const unsubscribeAuth = subscribeToAuthState((firebaseUser) => {
@@ -152,6 +149,7 @@ export default function App() {
 
     return () => {
       isMounted = false;
+      unsubscribeListings();
       unsubscribeAuth();
     };
   }, []);
@@ -332,9 +330,11 @@ export default function App() {
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <ListingDetailPage
                     listings={listings}
+                    isListingsLoading={isListingsLoading}
                     onBuyNowDirect={(listing) => {}}
                     savedIds={savedIds}
                     onToggleSave={handleToggleSave}
+                    isAuthenticated={isAuthenticated}
                   />
                 </ProtectedRoute>
               }
@@ -345,9 +345,11 @@ export default function App() {
                 <ProtectedRoute isAuthenticated={isAuthenticated}>
                   <ListingDetailPage
                     listings={listings}
+                    isListingsLoading={isListingsLoading}
                     onBuyNowDirect={(listing) => {}}
                     savedIds={savedIds}
                     onToggleSave={handleToggleSave}
+                    isAuthenticated={isAuthenticated}
                   />
                 </ProtectedRoute>
               }

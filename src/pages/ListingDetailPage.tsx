@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { AssetListing, calculatePricing } from "../types";
 import { ListingCard } from "../components/ListingCard";
+import { fetchListingByIdFromFirebase } from "../services/firebaseService";
 import {
   Star,
   ShieldCheck,
@@ -19,11 +20,13 @@ import {
   Check,
   Layers,
   FileArchive,
-  Info
+  Info,
+  Loader2
 } from "lucide-react";
 
 interface ListingDetailPageProps {
   listings: AssetListing[];
+  isListingsLoading?: boolean;
   onBuyNowDirect: (listing: AssetListing) => void;
   savedIds: string[];
   onToggleSave: (id: string) => void;
@@ -32,6 +35,7 @@ interface ListingDetailPageProps {
 
 export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   listings,
+  isListingsLoading = false,
   onBuyNowDirect,
   savedIds,
   onToggleSave,
@@ -40,18 +44,92 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   const { slug, id } = useParams<{ slug?: string; id?: string }>();
   const navigate = useNavigate();
 
-  // Match listing by slug or id (strictly excluding soft-deleted listings)
-  const listing = listings.find(
-    (item) =>
-      item.deleted !== true &&
-      (item.slug === slug ||
-        item.id === slug ||
-        item.id === id ||
-        item.slug === id)
-  );
+  // Authoritative target identifier from URL route (/listing/:slug or /asset/:id)
+  const routeParam = (slug || id || "").trim();
+
+  // 1. First attempt resolution from in-memory listings
+  // Strictly prevent undefined === undefined or false-positive matching
+  const memoryListing = useMemo(() => {
+    if (!routeParam) return null;
+    return (
+      listings.find((item) => {
+        if (item.deleted === true) return false;
+        // Direct ID match
+        if (item.id === routeParam) return true;
+        // Slug match only if item has an explicit, non-empty slug
+        if (item.slug && typeof item.slug === "string" && item.slug.toLowerCase() === routeParam.toLowerCase()) {
+          return true;
+        }
+        return false;
+      }) || null
+    );
+  }, [listings, routeParam]);
+
+  // 2. Direct database fetch fallback for deep-links, direct navigations, or slow network state
+  const [directListing, setDirectListing] = useState<AssetListing | null>(null);
+  const [isDirectFetching, setIsDirectFetching] = useState<boolean>(false);
+  const [hasAttemptedDirectFetch, setHasAttemptedDirectFetch] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (memoryListing) {
+      setDirectListing(null);
+      setIsDirectFetching(false);
+      return;
+    }
+
+    if (!routeParam) {
+      setHasAttemptedDirectFetch(true);
+      return;
+    }
+
+    // Only fetch if not found in memory and listings finished initial load
+    let isMounted = true;
+    setIsDirectFetching(true);
+    setHasAttemptedDirectFetch(false);
+
+    fetchListingByIdFromFirebase(routeParam)
+      .then((fetched) => {
+        if (!isMounted) return;
+        setDirectListing(fetched);
+      })
+      .catch((err) => {
+        console.warn("Direct fetch error for routeParam:", routeParam, err);
+        if (isMounted) setDirectListing(null);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsDirectFetching(false);
+          setHasAttemptedDirectFetch(true);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [routeParam, memoryListing]);
+
+  // Resolved authoritative listing (in-memory takes priority, direct DB fetch fallback)
+  const listing = memoryListing || directListing;
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Loading state while either global listings are loading or direct fetch is in progress
+  const isLoading = (isListingsLoading && !listing) || (isDirectFetching && !listing);
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center space-y-4">
+        <div className="w-14 h-14 rounded-2xl bg-[#111317] border border-[#202C44] text-[#D3CCB0] flex items-center justify-center mx-auto animate-spin">
+          <Loader2 className="w-7 h-7" />
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-lg font-heading font-bold text-white">Loading Asset Details...</h2>
+          <p className="text-xs text-[#7B8A90] font-mono">Fetching verified listing from Kelvyn Studio</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!listing) {
     return (

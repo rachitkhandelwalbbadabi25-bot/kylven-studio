@@ -89,6 +89,7 @@ export const HomePage: React.FC<HomePageProps> = ({
         searchQuery={heroSearch}
         setSearchQuery={setHeroSearch}
         onSearchSubmit={handleSearchSubmit}
+        featuredListings={listings.filter((l) => l.deleted !== true).slice(0, 3)}
       />
 
       {/* 2. Clean 4-Column Trust Metrics Strip */}

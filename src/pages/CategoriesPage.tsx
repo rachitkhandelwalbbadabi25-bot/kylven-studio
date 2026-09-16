@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { CATEGORIES_LIST, FILE_FORMATS_CATALOG } from "../data/mockData";
 import { CoreCategory, AssetListing } from "../types";
+import { normalizeCategoryName } from "../services/firebaseService";
 import {
   Code2,
   BrainCircuit,
@@ -78,8 +79,8 @@ export const CategoriesPage: React.FC<CategoriesPageProps> = ({ listings = [] })
           const liveCount = listings.filter(
             (l) =>
               l.deleted !== true &&
-              (l.category?.toLowerCase() === cat.name.toLowerCase() ||
-                l.category?.toLowerCase().includes(cat.name.toLowerCase().split(" ")[0]))
+              (normalizeCategoryName(l.category) === normalizeCategoryName(cat.name) ||
+                l.category?.toLowerCase() === cat.name.toLowerCase())
           ).length;
 
           return (

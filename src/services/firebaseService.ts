@@ -6,10 +6,83 @@ import {
   onAuthStateChanged,
   User 
 } from "firebase/auth";
-import { ref, get, set, update, query, orderByChild, equalTo, remove, serverTimestamp } from "firebase/database";
+import { ref, get, set, update, query, orderByChild, equalTo, remove, serverTimestamp, onValue } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, database, storage, googleAuthProvider } from "../lib/firebase";
-import { AssetListing, FirebaseListing, CreatorProfile, UserProfile, UserPurchase, PublicProfile } from "../types";
+import { AssetListing, FirebaseListing, CreatorProfile, UserProfile, UserPurchase, PublicProfile, CoreCategory } from "../types";
+
+/**
+ * Normalizes raw category strings from Firebase / Kelvyn Studio app
+ * into one of the standard CoreCategories recognized by the website catalog.
+ */
+export function normalizeCategoryName(rawCategory?: string): CoreCategory {
+  if (!rawCategory) return "Software & Development";
+  const lower = rawCategory.toLowerCase();
+  if (
+    lower.includes("design") ||
+    /\b(ui|ux)\b/i.test(rawCategory) ||
+    lower.includes("icon") ||
+    lower.includes("figma")
+  ) {
+    return "UI/UX & Design";
+  }
+  // Word-boundary token matching for AI / ML so "html", "email", etc. do not trigger false positives
+  if (
+    lower.includes("machine learning") ||
+    lower.includes("data science") ||
+    lower.includes("python data") ||
+    lower.includes("predictor") ||
+    lower.includes("churn") ||
+    /\b(ai|ml)\b/i.test(rawCategory)
+  ) {
+    return "AI/ML & Data Science";
+  }
+  if (
+    /\b(3d|cad)\b/i.test(rawCategory) ||
+    lower.includes("blender") ||
+    lower.includes("environmental")
+  ) {
+    return "3D & CAD";
+  }
+  if (
+    lower.includes("audio") ||
+    lower.includes("video") ||
+    lower.includes("pro tools") ||
+    lower.includes("motion") ||
+    lower.includes("music")
+  ) {
+    return "Video/Motion & Audio";
+  }
+  if (
+    lower.includes("notion") ||
+    lower.includes("legal") ||
+    lower.includes("contract") ||
+    lower.includes("productivity") ||
+    lower.includes("business") ||
+    lower.includes("crm") ||
+    lower.includes("placement")
+  ) {
+    return "Productivity & Business";
+  }
+  if (
+    lower.includes("dev") ||
+    lower.includes("html") ||
+    lower.includes("css") ||
+    lower.includes("template") ||
+    lower.includes("website") ||
+    lower.includes("code") ||
+    lower.includes("chrome") ||
+    lower.includes("backend") ||
+    lower.includes("script") ||
+    lower.includes("flutter") ||
+    lower.includes("lead") ||
+    lower.includes("voice") ||
+    lower.includes("rag")
+  ) {
+    return "Software & Development";
+  }
+  return "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)";
+}
 
 // ==========================================
 // AUTHENTICATION SERVICES
@@ -141,6 +214,22 @@ export function mapFirebaseListingToAssetListing(
   const fileType = raw.fileType || (raw.fileExtension ? `.${raw.fileExtension}` : ".zip");
   const fileExt = raw.fileExtension || fileType.replace(/^\./, "") || "zip";
 
+  // Format file size nicely if provided
+  let formattedSize = "Instant Download";
+  if (typeof raw.fileSizeBytes === "number" && raw.fileSizeBytes > 0) {
+    if (raw.fileSizeBytes >= 1024 * 1024) {
+      formattedSize = `${(raw.fileSizeBytes / (1024 * 1024)).toFixed(1)} MB`;
+    } else if (raw.fileSizeBytes >= 1024) {
+      formattedSize = `${Math.round(raw.fileSizeBytes / 1024)} KB`;
+    } else {
+      formattedSize = `${raw.fileSizeBytes} B`;
+    }
+  }
+
+  // Derive standardized core category and keep exact category as subcategory
+  const normalizedCat = normalizeCategoryName(raw.category);
+  const rawCat = raw.category || "General";
+
   const creatorObj: CreatorProfile = {
     id: raw.sellerId || "creator",
     name: sellerName,
@@ -158,6 +247,11 @@ export function mapFirebaseListingToAssetListing(
     skills: [],
   };
 
+  const fileFormatTags = [
+    fileExt.toUpperCase(),
+    fileType.startsWith(".") ? fileType : `.${fileExt}`
+  ].filter((v, idx, arr) => arr.indexOf(v) === idx && v !== ".");
+
   return {
     id,
     title: raw.title || "Untitled Asset",
@@ -165,10 +259,11 @@ export function mapFirebaseListingToAssetListing(
     sellerId: raw.sellerId || "",
     price,
     isFree,
-    category: (raw.category as any) || "Other (Digital Planners, Embroidery Files, Lightroom Presets, eBooks/Guides)",
-    subcategory: raw.category || "General",
+    category: normalizedCat,
+    subcategory: rawCat,
     fileType,
     fileExtension: fileExt,
+    fileSizeBytes: raw.fileSizeBytes !== undefined ? String(raw.fileSizeBytes) : undefined,
     createdAt: raw.createdAt || 0,
     description: desc,
     shortDescription: desc.length > 140 ? `${desc.slice(0, 140)}...` : desc,
@@ -178,20 +273,18 @@ export function mapFirebaseListingToAssetListing(
     previewUrls: previewList,
     thumbnailUrl: preview,
     previewImages: previewList,
-    fileFormatTags: [fileType],
+    fileFormatTags,
     creator: creatorObj,
     seller: creatorObj,
-    // Rating, reviewCount, and salesCount are deliberately omitted (undefined)
-    // so client components do not fabricate fake metrics.
     softwareCompatibility: ["Cross-Platform", "Standard Viewers"],
     licenseType: "Commercial License",
-    deliveryType: "Instant Download",
+    deliveryType: formattedSize,
     deleted: raw.deleted,
     deletedAt: raw.deletedAt,
     detailedFeatures: [
-      "Original verified files",
-      "Commercial license included",
-      "Instant secure delivery",
+      "Original verified digital files",
+      "Standard Commercial License included",
+      `Instant delivery (${formattedSize})`,
     ],
   };
 }
@@ -255,6 +348,80 @@ export async function fetchListingsFromFirebase(): Promise<{ data: AssetListing[
   } catch (err: any) {
     console.warn("Failed to fetch listings with query orderByChild('status').equalTo('approved'):", err.message);
     return { data: null, error: err.message };
+  }
+}
+
+/**
+ * Sets up a live Realtime Database listener on approved listings.
+ * Emits updated list whenever listings change in the database.
+ */
+export function subscribeToListingsFromFirebase(
+  onData: (listings: AssetListing[]) => void,
+  onError?: (err: any) => void
+): () => void {
+  try {
+    const approvedListingsQuery = query(
+      ref(database, "listings"),
+      orderByChild("status"),
+      equalTo("approved")
+    );
+    const unsubscribe = onValue(
+      approvedListingsQuery,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const val = snapshot.val();
+          const list: AssetListing[] = [];
+          if (Array.isArray(val)) {
+            val.forEach((item, idx) => {
+              if (item && item.deleted !== true) {
+                list.push(mapFirebaseListingToAssetListing(item.id || `asset-${idx}`, item));
+              }
+            });
+          } else if (typeof val === "object" && val !== null) {
+            Object.entries(val).forEach(([dbKey, item]: [string, any]) => {
+              if (item && item.deleted !== true) {
+                list.push(mapFirebaseListingToAssetListing(item.id || dbKey, item));
+              }
+            });
+          }
+          onData(list);
+        } else {
+          onData([]);
+        }
+      },
+      (err) => {
+        console.warn("Realtime listings subscription error:", err.message);
+        if (onError) onError(err);
+      }
+    );
+    return unsubscribe;
+  } catch (err: any) {
+    console.warn("Exception in subscribeToListingsFromFirebase:", err.message);
+    if (onError) onError(err);
+    return () => {};
+  }
+}
+
+/**
+ * Fetches a single listing directly by its Firebase database ID.
+ */
+export async function fetchListingByIdFromFirebase(id: string): Promise<AssetListing | null> {
+  if (!id || typeof id !== "string") return null;
+  const cleanId = id.trim();
+  if (!cleanId) return null;
+
+  try {
+    const snapshot = await get(ref(database, `listings/${cleanId}`));
+    if (snapshot.exists()) {
+      const raw = snapshot.val();
+      if (raw && raw.status === "approved" && raw.deleted !== true) {
+        return mapFirebaseListingToAssetListing(cleanId, raw);
+      }
+    }
+    return null;
+  } catch (err: any) {
+    console.warn(`Direct fetch for listing ${cleanId} failed:`, err.message);
+    return null;
   }
 }
 

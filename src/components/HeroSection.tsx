@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Star, FileCode, CheckCircle2, Sparkles, ShieldCheck, Zap, Layers, IndianRupee, Users } from "lucide-react";
 import { motion } from "motion/react";
-import { CoreCategory } from "../types";
+import { CoreCategory, AssetListing } from "../types";
 
 interface HeroSectionProps {
   onExploreClick: () => void;
@@ -10,6 +10,7 @@ interface HeroSectionProps {
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   onSearchSubmit: () => void;
+  featuredListings?: AssetListing[];
 }
 
 export const HeroSection: React.FC<HeroSectionProps> = ({
@@ -18,6 +19,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
   searchQuery,
   setSearchQuery,
   onSearchSubmit,
+  featuredListings = [],
 }) => {
   const navigate = useNavigate();
 
@@ -181,103 +183,111 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 {/* Stack of realistic preview cards */}
                 <div className="space-y-2.5">
-                  
-                  {/* Asset 1: Neo Bharat Cyberpunk UI Kit */}
-                  <div
-                    onClick={() => navigate("/listing/neo-bharat-cyberpunk-ui-kit")}
-                    className="bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/70 p-3 rounded-xl shadow-lg transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80"
-                        alt="Neo Bharat Cyberpunk UI Kit"
-                        className="w-12 h-12 rounded-lg object-cover border border-[#202C44] shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-bold">
-                            .fig
-                          </span>
-                          <span className="text-xs font-mono font-bold text-[#D3CCB0]">₹1,499</span>
+                  {featuredListings && featuredListings.length > 0 ? (
+                    featuredListings.slice(0, 3).map((item) => {
+                      const displayPrice = item.isFree || item.price === 0 ? "Free" : `₹${item.price.toLocaleString("en-IN")}`;
+                      const image = item.previewUrl || (item.previewUrls && item.previewUrls[0]) || item.thumbnailUrl;
+                      const fileBadge = item.fileExtension ? `.${item.fileExtension}` : item.fileType;
+                      const creatorTitle = item.sellerName || item.creator?.name || "Verified Creator";
+
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => navigate(`/listing/${item.slug || item.id}`)}
+                          className="bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/70 p-3 rounded-xl shadow-lg transition-all cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-3">
+                            {image ? (
+                              <img
+                                src={image}
+                                alt={item.title}
+                                className="w-12 h-12 rounded-lg object-cover border border-[#202C44] shrink-0"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-lg bg-[#202C44] flex items-center justify-center text-[#D3CCB0] text-xs font-mono font-bold shrink-0">
+                                {fileBadge}
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-bold uppercase">
+                                  {fileBadge}
+                                </span>
+                                <span className="text-xs font-mono font-bold text-[#D3CCB0]">{displayPrice}</span>
+                              </div>
+                              <h4 className="text-xs font-heading font-bold text-white truncate mt-1 group-hover:text-[#D3CCB0] transition-colors">
+                                {item.title}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] text-[#7B8A90] truncate">{creatorTitle}</span>
+                                <span className="text-[10px] text-[#D3CCB0] ml-auto font-mono">
+                                  {item.subcategory || item.category}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <h4 className="text-xs font-heading font-bold text-white truncate mt-1 group-hover:text-[#D3CCB0] transition-colors">
-                          Neo Bharat Cyberpunk UI Kit
-                        </h4>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-[#7B8A90] truncate">Aarav Sharma</span>
-                          <div className="flex items-center gap-0.5 text-[10px] text-[#D3CCB0] ml-auto">
-                            <Star className="w-2.5 h-2.5 fill-current" />
-                            <span>4.9</span>
+                      );
+                    })
+                  ) : (
+                    <>
+                      {/* Fallback Asset 1 */}
+                      <div
+                        onClick={() => navigate("/browse")}
+                        className="bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/70 p-3 rounded-xl shadow-lg transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80"
+                            alt="Explore UI Assets"
+                            className="w-12 h-12 rounded-lg object-cover border border-[#202C44] shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-bold">
+                                .fig
+                              </span>
+                              <span className="text-xs font-mono font-bold text-[#D3CCB0]">Verified</span>
+                            </div>
+                            <h4 className="text-xs font-heading font-bold text-white truncate mt-1 group-hover:text-[#D3CCB0] transition-colors">
+                              Explore Production UI Kits
+                            </h4>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-[#7B8A90] truncate">Kelvyn Studio</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Asset 2: ML Fine-Tuning Notebook */}
-                  <div
-                    onClick={() => navigate("/listing/ml-finetuning-notebook")}
-                    className="bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/70 p-3 rounded-xl shadow-lg transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=200&auto=format&fit=crop&q=80"
-                        alt="ML Fine-Tuning Notebook"
-                        className="w-12 h-12 rounded-lg object-cover border border-[#202C44] shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-bold">
-                            .ipynb
-                          </span>
-                          <span className="text-xs font-mono font-bold text-[#D3CCB0]">₹3,499</span>
-                        </div>
-                        <h4 className="text-xs font-heading font-bold text-white truncate mt-1 group-hover:text-[#D3CCB0] transition-colors">
-                          ML Fine-Tuning Notebook (Llama-3)
-                        </h4>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-[#7B8A90] truncate">Vikram Patel</span>
-                          <div className="flex items-center gap-0.5 text-[10px] text-[#D3CCB0] ml-auto">
-                            <Star className="w-2.5 h-2.5 fill-current" />
-                            <span>5.0</span>
+                      {/* Fallback Asset 2 */}
+                      <div
+                        onClick={() => navigate("/browse")}
+                        className="bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/70 p-3 rounded-xl shadow-lg transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src="https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=200&auto=format&fit=crop&q=80"
+                            alt="Explore ML Notebooks"
+                            className="w-12 h-12 rounded-lg object-cover border border-[#202C44] shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-bold">
+                                .ipynb
+                              </span>
+                              <span className="text-xs font-mono font-bold text-[#D3CCB0]">Verified</span>
+                            </div>
+                            <h4 className="text-xs font-heading font-bold text-white truncate mt-1 group-hover:text-[#D3CCB0] transition-colors">
+                              Machine Learning & AI Tools
+                            </h4>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-[#7B8A90] truncate">Kelvyn Studio</span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Asset 3: Flutter Multi-Vendor E-Commerce */}
-                  <div
-                    onClick={() => navigate("/listing/flutter-multivendor-ecommerce-app")}
-                    className="bg-[#111317] border border-[#202C44] hover:border-[#D3CCB0]/70 p-3 rounded-xl shadow-lg transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-3">
-                      <img
-                        src="https://images.unsplash.com/photo-1551650975-87deedd944c3?w=200&auto=format&fit=crop&q=80"
-                        alt="Flutter Multi-Vendor E-Commerce"
-                        className="w-12 h-12 rounded-lg object-cover border border-[#202C44] shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono text-[#D3CCB0] bg-[#202C44] px-1.5 py-0.5 rounded font-bold">
-                            .dart
-                          </span>
-                          <span className="text-xs font-mono font-bold text-[#D3CCB0]">₹2,199</span>
-                        </div>
-                        <h4 className="text-xs font-heading font-bold text-white truncate mt-1 group-hover:text-[#D3CCB0] transition-colors">
-                          Flutter E-Commerce App + Backend
-                        </h4>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[10px] text-[#7B8A90] truncate">Rohan Mehra</span>
-                          <div className="flex items-center gap-0.5 text-[10px] text-[#D3CCB0] ml-auto">
-                            <Star className="w-2.5 h-2.5 fill-current" />
-                            <span>4.8</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
+                    </>
+                  )}
                 </div>
 
                 {/* Footer Micro Bar */}

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { AssetListing, calculatePricing, UserPurchase } from "../types";
+import { fetchListingByIdFromFirebase } from "../services/firebaseService";
 import { auth } from "../lib/firebase";
 import {
   ShieldCheck,
@@ -33,7 +34,42 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const { listingId } = useParams<{ listingId: string }>();
   const navigate = useNavigate();
 
-  const listing = listings.find((l) => (l.id === listingId || l.slug === listingId) && l.deleted !== true);
+  const cleanId = (listingId || "").trim();
+
+  // 1. In-memory lookup: safe matching preventing false positives
+  const memoryListing = useMemo(() => {
+    if (!cleanId) return null;
+    return (
+      listings.find(
+        (l) =>
+          l.deleted !== true &&
+          (l.id === cleanId ||
+            (Boolean(l.slug) && typeof l.slug === "string" && l.slug.toLowerCase() === cleanId.toLowerCase()))
+      ) || null
+    );
+  }, [listings, cleanId]);
+
+  // 2. Direct fetch fallback from Firebase if not in memory
+  const [directListing, setDirectListing] = useState<AssetListing | null>(null);
+
+  useEffect(() => {
+    if (memoryListing) {
+      setDirectListing(null);
+      return;
+    }
+    if (!cleanId) return;
+
+    let isMounted = true;
+    fetchListingByIdFromFirebase(cleanId).then((res) => {
+      if (isMounted) setDirectListing(res);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [cleanId, memoryListing]);
+
+  const listing = memoryListing || directListing;
 
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "gpay" | "phonepe" | "card">("upi");
   const [buyerEmail, setBuyerEmail] = useState(initialBuyerEmail);

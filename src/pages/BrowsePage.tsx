@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { AssetListing, CoreCategory } from "../types";
 import { CATEGORIES_LIST, FILE_FORMATS_CATALOG } from "../data/mockData";
+import { normalizeCategoryName } from "../services/firebaseService";
 import { ListingCard } from "../components/ListingCard";
 import {
   Search,
@@ -139,9 +140,13 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
           return false;
         }
 
-        // Category filter
-        if (selectedCategory !== "All" && item.category !== selectedCategory) {
-          return false;
+        // Category filter (using robust category normalization)
+        if (selectedCategory !== "All") {
+          const normSelected = normalizeCategoryName(selectedCategory);
+          const normItem = normalizeCategoryName(item.category);
+          if (normSelected !== normItem && item.category !== selectedCategory) {
+            return false;
+          }
         }
 
         // Format filter
