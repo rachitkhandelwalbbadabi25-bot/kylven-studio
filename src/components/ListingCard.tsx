@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AssetListing, calculatePricing } from "../types";
-import { Star, Heart, ArrowRight, ShieldCheck, Download, Sparkles, CheckCircle2 } from "lucide-react";
+import { Heart, ArrowRight, ShieldCheck, Download, Sparkles, CheckCircle2 } from "lucide-react";
 
 interface ListingCardProps {
   listing: AssetListing;
@@ -119,20 +119,6 @@ export const ListingCard: React.FC<ListingCardProps> = ({
           <span className="text-[#7B8A90] font-mono text-[10px] bg-[#111317]/80 px-1.5 py-0.5 rounded border border-[#202C44]/50">
             {listing.fileSizeBytes || "Instant"}
           </span>
-          {typeof listing.rating === "number" && !isNaN(listing.rating) && listing.rating > 0 ? (
-            <div className="flex items-center gap-1 bg-[#111317]/90 px-2 py-0.5 rounded border border-[#202C44] text-[#D3CCB0] font-bold text-[10px]">
-              <Star className="w-3 h-3 fill-current" />
-              <span>{listing.rating.toFixed(1)}</span>
-              {typeof listing.reviewCount === "number" && listing.reviewCount > 0 && (
-                <span className="text-[#7B8A90] font-normal font-mono">({listing.reviewCount})</span>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center gap-1 bg-[#111317]/90 px-2 py-0.5 rounded border border-[#202C44] text-[#D3CCB0] font-bold text-[10px]">
-              <Sparkles className="w-3 h-3 text-[#D3CCB0]" />
-              <span>New</span>
-            </div>
-          )}
         </div>
       </div>
 

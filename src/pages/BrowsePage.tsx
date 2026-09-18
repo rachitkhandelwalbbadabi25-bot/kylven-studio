@@ -23,7 +23,6 @@ import {
   Check,
   IndianRupee,
   FileCode,
-  Star,
   Home,
   CheckCircle2
 } from "lucide-react";
@@ -63,13 +62,11 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
   const searchQuery = searchParams.get("q") || "";
   const selectedFormat = searchParams.get("format") || "";
   const priceType = searchParams.get("priceType") || "all"; // 'all' | 'free' | 'paid'
-  const sortBy = (searchParams.get("sort") as "popular" | "newest" | "price-asc" | "price-desc" | "rating") || "popular";
+  const sortBy = (searchParams.get("sort") as "popular" | "newest" | "price-asc" | "price-desc") || "popular";
   const minPriceParam = searchParams.get("minPrice");
   const maxPriceParam = searchParams.get("maxPrice");
   const minPrice = minPriceParam ? parseInt(minPriceParam, 10) : 0;
   const maxPrice = maxPriceParam ? parseInt(maxPriceParam, 10) : 5000;
-  const minRatingParam = searchParams.get("minRating");
-  const minRating = minRatingParam ? parseFloat(minRatingParam) : 0;
 
   // Local state for Min / Max input boxes for smooth typing
   const [localMinPrice, setLocalMinPrice] = useState<string>(minPrice > 0 ? minPrice.toString() : "");
@@ -104,7 +101,6 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
         (key === "priceType" && val === "all") ||
         (key === "minPrice" && (val === "0" || val === "")) ||
         (key === "maxPrice" && (val === "5000" || val === "")) ||
-        (key === "minRating" && (val === "0" || val === "")) ||
         (key === "sort" && val === "popular")
       ) {
         newParams.delete(key);
@@ -178,11 +174,6 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
           return false;
         }
 
-        // Customer Rating filter (e.g. 4★ & above)
-        if (minRating > 0 && (item.rating || 0) < minRating) {
-          return false;
-        }
-
         // Search query filter
         if (searchQuery.trim() !== "") {
           const q = searchQuery.toLowerCase();
@@ -227,10 +218,9 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
         const priceB = typeof b.price === "number" && !isNaN(b.price) ? b.price : 0;
         if (sortBy === "price-asc") return priceA - priceB;
         if (sortBy === "price-desc") return priceB - priceA;
-        if (sortBy === "rating") return (b.rating || 0) - (a.rating || 0);
         return 0;
       });
-  }, [listings, selectedCategory, searchQuery, selectedFormat, priceType, sortBy, minPrice, maxPrice, minRating]);
+  }, [listings, selectedCategory, searchQuery, selectedFormat, priceType, sortBy, minPrice, maxPrice]);
 
   // Active filters count
   const activeFiltersCount =
@@ -239,8 +229,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
     (priceType !== "all" ? 1 : 0) +
     (searchQuery !== "" ? 1 : 0) +
     (minPrice > 0 ? 1 : 0) +
-    (maxPrice < 5000 ? 1 : 0) +
-    (minRating > 0 ? 1 : 0);
+    (maxPrice < 5000 ? 1 : 0);
 
   const hasActiveFilters = activeFiltersCount > 0;
 
@@ -249,7 +238,6 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
     { key: "newest", label: "Newest Releases" },
     { key: "price-asc", label: "Price: Low to High" },
     { key: "price-desc", label: "Price: High to Low" },
-    { key: "rating", label: "Customer Rating" },
   ];
 
   const currentSortLabel = sortOptions.find((s) => s.key === sortBy)?.label || "Popularity / Trending";
@@ -513,65 +501,7 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
         </div>
       </div>
 
-      {/* 5. Customer Ratings Section (Flipkart / Amazon Style) */}
-      <div className="space-y-3 pb-5 border-b border-[#202C44]">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-mono uppercase tracking-wider text-[#D3CCB0] font-bold">
-            Customer Ratings
-          </h3>
-          {minRating > 0 && (
-            <button
-              type="button"
-              onClick={() => updateParams({ minRating: null })}
-              className="text-[10px] font-mono text-[#D3CCB0] hover:underline"
-            >
-              Reset
-            </button>
-          )}
-        </div>
-        <div className="space-y-1.5">
-          {[
-            { val: 4.0, label: "4★ & above", stars: 4 },
-            { val: 3.0, label: "3★ & above", stars: 3 },
-            { val: 2.0, label: "2★ & above", stars: 2 },
-          ].map((r) => {
-            const isSelected = minRating === r.val;
-            const count = listings.filter((l) => l.deleted !== true && (l.rating || 0) >= r.val).length;
-
-            return (
-              <button
-                key={`${prefix}-rating-${r.val}`}
-                type="button"
-                onClick={() => updateParams({ minRating: isSelected ? null : r.val.toString() })}
-                className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
-                  isSelected
-                    ? "bg-[#202C44] text-[#D3CCB0] font-bold border border-[#D3CCB0]/40"
-                    : "text-[#7B8A90] hover:text-white hover:bg-[#202C44]/40"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center text-amber-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={`${prefix}-star-${r.val}-${i}`}
-                        className={`w-3.5 h-3.5 ${
-                          i < r.stars ? "fill-amber-400 text-amber-400" : "text-[#7B8A90]/40"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-white text-xs font-medium">& Up</span>
-                </div>
-                <span className="text-[10px] font-mono text-[#7B8A90] bg-[#000000]/60 px-1.5 py-0.2 rounded">
-                  ({count})
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 6. Format Section: Checkboxes for file types (.fig, .dart, .zip, etc.) */}
+      {/* 5. Format Section: Checkboxes for file types (.fig, .dart, .zip, etc.) */}
       <div className="space-y-3 pb-2">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-mono uppercase tracking-wider text-[#D3CCB0] font-bold">
@@ -834,21 +764,6 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
                       setLocalMaxPrice("");
                       updateParams({ minPrice: null, maxPrice: null });
                     }}
-                    className="hover:text-white"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </span>
-              )}
-
-              {/* Customer Rating Pill */}
-              {minRating > 0 && (
-                <span className="bg-[#202C44] text-amber-400 px-2.5 py-1 rounded-lg flex items-center gap-1.5 border border-[#202C44] font-medium">
-                  <span>Rating: {minRating}★ & above</span>
-                  <button
-                    type="button"
-                    title="Remove rating filter"
-                    onClick={() => updateParams({ minRating: null })}
                     className="hover:text-white"
                   >
                     <X className="w-3.5 h-3.5" />

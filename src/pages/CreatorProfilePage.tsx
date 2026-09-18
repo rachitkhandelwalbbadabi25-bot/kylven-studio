@@ -462,6 +462,103 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         </div>
       </div>
 
+      {/* 2. About / Bio & Blocked Accounts Sections */}
+      <section className="space-y-3" id="seller-bio-blocked-section">
+        {/* Bio Box */}
+        <div
+          id="seller-bio-section"
+          className="bg-[#0B0D11] border border-[#202C44] rounded-2xl p-4 sm:p-5 transition-colors"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-mono uppercase tracking-wider text-[#7B8A90]">
+              About / Bio
+            </span>
+            {isOwner && !isBioEditingInline && (
+              <button
+                type="button"
+                onClick={() => {
+                  setInlineBioText(displayBio || "");
+                  setIsBioEditingInline(true);
+                }}
+                className="text-[11px] font-sans font-medium text-[#D3CCB0] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Pencil className="w-3 h-3" />
+                {displayBio ? "Edit Bio" : "Add Bio"}
+              </button>
+            )}
+          </div>
+
+          {isBioEditingInline ? (
+            <div className="space-y-2">
+              <textarea
+                value={inlineBioText}
+                onChange={(e) => setInlineBioText(e.target.value)}
+                placeholder="Add a bio..."
+                rows={3}
+                className="w-full bg-[#111622] border border-[#202C44] rounded-xl p-3 text-sm text-white placeholder-[#7B8A90] focus:outline-none focus:border-[#D3CCB0] transition-colors"
+                autoFocus
+              />
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBioEditingInline(false)}
+                  disabled={isSavingInlineBio}
+                  className="px-3 py-1.5 rounded-lg text-xs text-[#7B8A90] hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveBioInline}
+                  disabled={isSavingInlineBio}
+                  className="px-4 py-1.5 rounded-lg bg-[#D3CCB0] text-black font-heading font-bold text-xs hover:bg-[#c4bb9a] disabled:opacity-50"
+                >
+                  {isSavingInlineBio ? "Saving..." : "Save Bio"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-white/90 font-sans leading-relaxed">
+              {displayBio || (
+                <span className="text-[#7B8A90] italic">
+                  {isOwner ? "Add a bio to let buyers and creators know about your work." : "No bio provided."}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+
+        {/* Settings Link: "Blocked Accounts" row */}
+        {isOwner && (
+          <button
+            type="button"
+            id="seller-blocked-accounts-row-btn"
+            onClick={() => setIsBlockedModalOpen(true)}
+            className="w-full bg-[#0B0D11] hover:bg-[#111622] border border-[#202C44] hover:border-[#2a3a5a] rounded-2xl p-4 flex items-center justify-between transition-all group text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#162032] border border-[#202C44] flex items-center justify-center text-[#7B8A90] group-hover:text-[#D3CCB0] transition-colors">
+                <Ban className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-heading font-semibold text-sm text-white group-hover:text-[#D3CCB0] transition-colors">
+                  Blocked Accounts
+                </span>
+                <p className="text-[11px] text-[#7B8A90] font-sans">
+                  {blockedUsers.length > 0
+                    ? `${blockedUsers.length} account${blockedUsers.length > 1 ? "s" : ""} blocked`
+                    : "Manage blocked creators & users"}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1.5 text-[#7B8A90] group-hover:text-white">
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </button>
+        )}
+      </section>
+
       {/* 3. Interactive Tabs */}
       <div className="flex items-center justify-between border-b border-[#202C44] pb-4">
         <div className="flex items-center gap-2 sm:gap-3" id="seller-tabs-container">
@@ -720,103 +817,6 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
           </div>
         </div>
       )}
-
-      {/* 4. About / Bio & Blocked Accounts Sections (Visually aligned with Buyer Profile) */}
-      <section className="space-y-3" id="seller-bio-blocked-section">
-        {/* Bio Box */}
-        <div
-          id="seller-bio-section"
-          className="bg-[#0B0D11] border border-[#202C44] rounded-2xl p-4 sm:p-5 transition-colors"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-mono uppercase tracking-wider text-[#7B8A90]">
-              About / Bio
-            </span>
-            {isOwner && !isBioEditingInline && (
-              <button
-                type="button"
-                onClick={() => {
-                  setInlineBioText(displayBio || "");
-                  setIsBioEditingInline(true);
-                }}
-                className="text-[11px] font-sans font-medium text-[#D3CCB0] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Pencil className="w-3 h-3" />
-                {displayBio ? "Edit Bio" : "Add Bio"}
-              </button>
-            )}
-          </div>
-
-          {isBioEditingInline ? (
-            <div className="space-y-2">
-              <textarea
-                value={inlineBioText}
-                onChange={(e) => setInlineBioText(e.target.value)}
-                placeholder="Add a bio..."
-                rows={3}
-                className="w-full bg-[#111622] border border-[#202C44] rounded-xl p-3 text-sm text-white placeholder-[#7B8A90] focus:outline-none focus:border-[#D3CCB0] transition-colors"
-                autoFocus
-              />
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsBioEditingInline(false)}
-                  disabled={isSavingInlineBio}
-                  className="px-3 py-1.5 rounded-lg text-xs text-[#7B8A90] hover:text-white"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveBioInline}
-                  disabled={isSavingInlineBio}
-                  className="px-4 py-1.5 rounded-lg bg-[#D3CCB0] text-black font-heading font-bold text-xs hover:bg-[#c4bb9a] disabled:opacity-50"
-                >
-                  {isSavingInlineBio ? "Saving..." : "Save Bio"}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-white/90 font-sans leading-relaxed">
-              {displayBio || (
-                <span className="text-[#7B8A90] italic">
-                  {isOwner ? "Add a bio to let buyers and creators know about your work." : "No bio provided."}
-                </span>
-              )}
-            </p>
-          )}
-        </div>
-
-        {/* Settings Link: "Blocked Accounts" row */}
-        {isOwner && (
-          <button
-            type="button"
-            id="seller-blocked-accounts-row-btn"
-            onClick={() => setIsBlockedModalOpen(true)}
-            className="w-full bg-[#0B0D11] hover:bg-[#111622] border border-[#202C44] hover:border-[#2a3a5a] rounded-2xl p-4 flex items-center justify-between transition-all group text-left cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-[#162032] border border-[#202C44] flex items-center justify-center text-[#7B8A90] group-hover:text-[#D3CCB0] transition-colors">
-                <Ban className="w-4 h-4" />
-              </div>
-              <div>
-                <span className="font-heading font-semibold text-sm text-white group-hover:text-[#D3CCB0] transition-colors">
-                  Blocked Accounts
-                </span>
-                <p className="text-[11px] text-[#7B8A90] font-sans">
-                  {blockedUsers.length > 0
-                    ? `${blockedUsers.length} account${blockedUsers.length > 1 ? "s" : ""} blocked`
-                    : "Manage blocked creators & users"}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-1.5 text-[#7B8A90] group-hover:text-white">
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </button>
-        )}
-      </section>
 
       {/* Edit Profile Modal (saves directly to /publicProfiles/{uid}) */}
       {isEditModalOpen && isOwner && (
