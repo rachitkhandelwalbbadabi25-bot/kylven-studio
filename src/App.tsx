@@ -27,6 +27,7 @@ import {
   subscribeToListingsFromFirebase,
   saveListingToFirebase, 
   fetchPublicProfileFromFirebase,
+  savePublicProfileToFirebase,
   fetchUserBookmarksFromFirebase,
   addBookmarkToFirebase,
   removeBookmarkFromFirebase,
@@ -216,7 +217,20 @@ export default function App() {
   };
 
   const handleUpdateUserProfile = (updated: Partial<UserProfile>) => {
-    setUserProfile((prev) => ({ ...prev, ...updated }));
+    setUserProfile((prev) => {
+      const nextProfile = { ...prev, ...updated };
+      if (nextProfile.uid) {
+        savePublicProfileToFirebase(nextProfile.uid, {
+          name: nextProfile.name,
+          role: nextProfile.role,
+          bio: nextProfile.bio || "",
+          usernameId: nextProfile.username || nextProfile.uid,
+        }).catch((err) => {
+          console.warn("Could not sync public profile to Firebase:", err);
+        });
+      }
+      return nextProfile;
+    });
   };
 
   const handleUpgradeToSeller = (upiId: string, redirectTo: string = "/sell/new") => {

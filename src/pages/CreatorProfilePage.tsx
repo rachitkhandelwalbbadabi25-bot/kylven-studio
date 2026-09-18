@@ -26,6 +26,9 @@ import {
   UserX,
   Loader2,
   Heart,
+  Ban,
+  ChevronRight,
+  Pencil,
 } from "lucide-react";
 
 interface CreatorProfilePageProps {
@@ -76,6 +79,37 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   const [editUsernameId, setEditUsernameId] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Inline bio editing state
+  const [isBioEditingInline, setIsBioEditingInline] = useState(false);
+  const [inlineBioText, setInlineBioText] = useState("");
+  const [isSavingInlineBio, setIsSavingInlineBio] = useState(false);
+
+  // Blocked accounts modal state
+  const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
+  const [newBlockedInput, setNewBlockedInput] = useState("");
+  const [blockedUsers, setBlockedUsers] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem("kreate_blocked_users");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const handleBlockUser = (usernameToBlock: string) => {
+    const clean = usernameToBlock.trim().replace(/^@/, "").toLowerCase();
+    if (!clean || blockedUsers.includes(clean)) return;
+    const updated = [...blockedUsers, clean];
+    setBlockedUsers(updated);
+    localStorage.setItem("kreate_blocked_users", JSON.stringify(updated));
+  };
+
+  const handleUnblockUser = (usernameToUnblock: string) => {
+    const updated = blockedUsers.filter((u) => u !== usernameToUnblock);
+    setBlockedUsers(updated);
+    localStorage.setItem("kreate_blocked_users", JSON.stringify(updated));
+  };
 
   // Load public profile from Firebase /publicProfiles/{uid}
   useEffect(() => {
@@ -181,10 +215,46 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     return false;
   });
 
+  // 5-metric Seller Profile statistics (Listings, Followers, Following, Purchases, Spent)
+  const listingsCount = isBuyer ? savedListings.length : creatorListings.length;
+  const followersCount = (userProfile as any)?.followersCount ?? (profileData as any)?.followersCount ?? 0;
+  const followingCount = (userProfile as any)?.followingCount ?? (profileData as any)?.followingCount ?? 0;
+  const purchasesCount = purchases.length;
+  const totalSpentINR = purchases.reduce((acc, p) => acc + (p.pricePaidINR || 0), 0);
+
   const MAX_BIO_WORDS = 150;
   const countWords = (text: string) => {
     const trimmed = text.trim();
     return trimmed ? trimmed.split(/\s+/).length : 0;
+  };
+
+  const handleSaveBioInline = async () => {
+    if (!userProfile?.uid) return;
+    setIsSavingInlineBio(true);
+
+    const words = inlineBioText.trim() ? inlineBioText.trim().split(/\s+/) : [];
+    const trimmedBio = words.slice(0, MAX_BIO_WORDS).join(" ");
+
+    const updatedPublicProfile: PublicProfile = {
+      name: profileData?.name || userProfile.name || "User",
+      role: profileData?.role || displayRole,
+      bio: trimmedBio,
+      usernameId: profileData?.usernameId || userProfile.username || userProfile.uid,
+    };
+
+    const res = await savePublicProfileToFirebase(userProfile.uid, updatedPublicProfile);
+    setIsSavingInlineBio(false);
+
+    if (res.success) {
+      setProfileData(updatedPublicProfile);
+      setEditBio(trimmedBio);
+      if (onUpdateUserProfile) {
+        onUpdateUserProfile({ bio: trimmedBio });
+      }
+      setIsBioEditingInline(false);
+    } else {
+      alert("Failed to update bio: " + (res.error || "Permission denied"));
+    }
   };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -334,33 +404,60 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
           </div>
         </div>
 
-        {/* 2. Stats Row: Authoritative counts */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-4 border-t border-[#202C44]" id="seller-stats-row">
-          <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
-            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
-              {isBuyer ? "Saved Assets" : "Live Listings"}
-            </span>
-            <span className="text-xl sm:text-2xl font-heading font-extrabold text-white font-mono mt-0.5 block" id="stat-listings-count">
-              {isBuyer ? savedListings.length : creatorListings.length}
-            </span>
-          </div>
+        {/* 2. Stats Row: Authoritative 5-metric layout (Listings, Followers, Following, Purchases, Spent) */}
+        <div className="pt-4 border-t border-[#202C44]" id="seller-stats-row">
+          <div className="bg-[#202C44]/40 border border-[#202C44] rounded-2xl p-4 sm:p-5">
+            <div className="grid grid-cols-5 divide-x divide-[#202C44]/60 text-center">
+              {/* 1. Listings */}
+              <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
+                <span id="stat-listings-count" className="font-heading font-bold text-base sm:text-xl text-white">
+                  {listingsCount}
+                </span>
+                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+                  Listings
+                </span>
+              </div>
 
-          <div className="bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
-            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
-              {isBuyer ? "Purchases" : "Profile Status"}
-            </span>
-            <span className={`text-xl sm:text-2xl font-heading font-extrabold font-mono mt-0.5 block ${isBuyer ? "text-[#D3CCB0]" : "text-emerald-400"}`} id="stat-status">
-              {isBuyer ? purchases.length : "Active"}
-            </span>
-          </div>
+              {/* 2. Followers */}
+              <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
+                <span id="stat-followers-count" className="font-heading font-bold text-base sm:text-xl text-white">
+                  {followersCount}
+                </span>
+                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+                  Followers
+                </span>
+              </div>
 
-          <div className="col-span-2 sm:col-span-1 bg-[#202C44]/40 border border-[#202C44] p-3.5 sm:p-4 rounded-2xl text-center">
-            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider block">
-              Role
-            </span>
-            <span className="text-xl sm:text-2xl font-heading font-extrabold text-[#D3CCB0] font-mono mt-0.5 block capitalize" id="stat-role">
-              {displayRole}
-            </span>
+              {/* 3. Following */}
+              <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
+                <span id="stat-following-count" className="font-heading font-bold text-base sm:text-xl text-white">
+                  {followingCount}
+                </span>
+                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+                  Following
+                </span>
+              </div>
+
+              {/* 4. Purchases */}
+              <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
+                <span id="stat-purchases-count" className="font-heading font-bold text-base sm:text-xl text-[#D3CCB0]">
+                  {purchasesCount}
+                </span>
+                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+                  Purchases
+                </span>
+              </div>
+
+              {/* 5. Spent */}
+              <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
+                <span id="stat-spent-amount" className="font-heading font-bold text-base sm:text-xl text-white">
+                  ₹{totalSpentINR.toLocaleString("en-IN")}
+                </span>
+                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+                  Spent
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -624,6 +721,103 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         </div>
       )}
 
+      {/* 4. About / Bio & Blocked Accounts Sections (Visually aligned with Buyer Profile) */}
+      <section className="space-y-3" id="seller-bio-blocked-section">
+        {/* Bio Box */}
+        <div
+          id="seller-bio-section"
+          className="bg-[#0B0D11] border border-[#202C44] rounded-2xl p-4 sm:p-5 transition-colors"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-mono uppercase tracking-wider text-[#7B8A90]">
+              About / Bio
+            </span>
+            {isOwner && !isBioEditingInline && (
+              <button
+                type="button"
+                onClick={() => {
+                  setInlineBioText(displayBio || "");
+                  setIsBioEditingInline(true);
+                }}
+                className="text-[11px] font-sans font-medium text-[#D3CCB0] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <Pencil className="w-3 h-3" />
+                {displayBio ? "Edit Bio" : "Add Bio"}
+              </button>
+            )}
+          </div>
+
+          {isBioEditingInline ? (
+            <div className="space-y-2">
+              <textarea
+                value={inlineBioText}
+                onChange={(e) => setInlineBioText(e.target.value)}
+                placeholder="Add a bio..."
+                rows={3}
+                className="w-full bg-[#111622] border border-[#202C44] rounded-xl p-3 text-sm text-white placeholder-[#7B8A90] focus:outline-none focus:border-[#D3CCB0] transition-colors"
+                autoFocus
+              />
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsBioEditingInline(false)}
+                  disabled={isSavingInlineBio}
+                  className="px-3 py-1.5 rounded-lg text-xs text-[#7B8A90] hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveBioInline}
+                  disabled={isSavingInlineBio}
+                  className="px-4 py-1.5 rounded-lg bg-[#D3CCB0] text-black font-heading font-bold text-xs hover:bg-[#c4bb9a] disabled:opacity-50"
+                >
+                  {isSavingInlineBio ? "Saving..." : "Save Bio"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-white/90 font-sans leading-relaxed">
+              {displayBio || (
+                <span className="text-[#7B8A90] italic">
+                  {isOwner ? "Add a bio to let buyers and creators know about your work." : "No bio provided."}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+
+        {/* Settings Link: "Blocked Accounts" row */}
+        {isOwner && (
+          <button
+            type="button"
+            id="seller-blocked-accounts-row-btn"
+            onClick={() => setIsBlockedModalOpen(true)}
+            className="w-full bg-[#0B0D11] hover:bg-[#111622] border border-[#202C44] hover:border-[#2a3a5a] rounded-2xl p-4 flex items-center justify-between transition-all group text-left cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#162032] border border-[#202C44] flex items-center justify-center text-[#7B8A90] group-hover:text-[#D3CCB0] transition-colors">
+                <Ban className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="font-heading font-semibold text-sm text-white group-hover:text-[#D3CCB0] transition-colors">
+                  Blocked Accounts
+                </span>
+                <p className="text-[11px] text-[#7B8A90] font-sans">
+                  {blockedUsers.length > 0
+                    ? `${blockedUsers.length} account${blockedUsers.length > 1 ? "s" : ""} blocked`
+                    : "Manage blocked creators & users"}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1.5 text-[#7B8A90] group-hover:text-white">
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </div>
+          </button>
+        )}
+      </section>
+
       {/* Edit Profile Modal (saves directly to /publicProfiles/{uid}) */}
       {isEditModalOpen && isOwner && (
         <div className="fixed inset-0 z-50 bg-[#000000]/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -709,6 +903,92 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Blocked Accounts Modal */}
+      {isBlockedModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#0E121A] border border-[#202C44] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#202C44] pb-3">
+              <div className="flex items-center gap-2">
+                <Ban className="w-4 h-4 text-rose-400" />
+                <h3 className="font-heading font-bold text-base text-white">
+                  Blocked Accounts
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsBlockedModalOpen(false)}
+                className="p-1 rounded-lg text-[#7B8A90] hover:text-white hover:bg-[#202C44]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-[#7B8A90] leading-relaxed">
+              Blocked accounts cannot send you direct messages or interact with your profile comments.
+            </p>
+
+            {/* Add block user input */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleBlockUser(newBlockedInput);
+                setNewBlockedInput("");
+              }}
+              className="flex gap-2"
+            >
+              <input
+                type="text"
+                placeholder="Username to block (e.g. @spammer)"
+                value={newBlockedInput}
+                onChange={(e) => setNewBlockedInput(e.target.value)}
+                className="flex-1 bg-[#162032] border border-[#202C44] rounded-xl px-3 py-2 text-xs text-white placeholder-[#7B8A90] focus:outline-none focus:border-[#D3CCB0]"
+              />
+              <button
+                type="submit"
+                disabled={!newBlockedInput.trim()}
+                className="px-3.5 py-2 rounded-xl bg-[#202C44] hover:bg-rose-900/60 text-white font-heading font-bold text-xs disabled:opacity-40 transition-colors cursor-pointer"
+              >
+                Block
+              </button>
+            </form>
+
+            {/* List */}
+            <div className="max-h-60 overflow-y-auto space-y-2 pr-1 divide-y divide-[#202C44]/40">
+              {blockedUsers.length === 0 ? (
+                <div className="text-center py-6 text-xs text-[#7B8A90]">
+                  No blocked accounts yet.
+                </div>
+              ) : (
+                blockedUsers.map((u) => (
+                  <div key={u} className="flex items-center justify-between pt-2">
+                    <div className="flex items-center gap-2">
+                      <UserX className="w-4 h-4 text-[#7B8A90]" />
+                      <span className="text-xs font-mono text-white">@{u}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUnblockUser(u)}
+                      className="text-[11px] font-sans text-rose-400 hover:text-rose-300 hover:underline cursor-pointer"
+                    >
+                      Unblock
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-[#202C44] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsBlockedModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-[#162032] hover:bg-[#202C44] text-xs font-bold text-white transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

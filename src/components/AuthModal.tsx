@@ -4,6 +4,7 @@ import {
   loginWithEmail,
   registerWithEmail,
   loginWithGoogle,
+  getAuthErrorMessage,
 } from "../services/firebaseService";
 import { X, Lock, Mail, User, ArrowRight, Sparkles, AlertCircle, Loader2 } from "lucide-react";
 
@@ -58,17 +59,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       }
     } catch (err: any) {
       console.warn("Auth error:", err);
-      let message = err.message || "Authentication failed. Please check your credentials.";
-      if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
-        message = "Invalid email or password. Please try again.";
-      } else if (err.code === "auth/user-not-found") {
-        message = "No account found with this email. Please sign up.";
-      } else if (err.code === "auth/email-already-in-use") {
-        message = "An account already exists with this email address. Please sign in.";
-      } else if (err.code === "auth/weak-password") {
-        message = "Password should be at least 6 characters.";
-      }
-      setErrorMsg(message);
+      setErrorMsg(getAuthErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
@@ -92,9 +83,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       onClose();
     } catch (err: any) {
       console.warn("Google sign-in error:", err);
-      if (err.code !== "auth/popup-closed-by-user") {
-        setErrorMsg(err.message || "Failed to sign in with Google.");
-      }
+      setErrorMsg(getAuthErrorMessage(err));
     } finally {
       setIsLoading(false);
     }

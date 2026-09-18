@@ -88,6 +88,42 @@ export function normalizeCategoryName(rawCategory?: string): CoreCategory {
 // AUTHENTICATION SERVICES
 // ==========================================
 
+/**
+ * Translates Firebase Authentication error codes into actionable user messages.
+ * Handles unauthorized-domain, popup blocks, credential issues, and cancellations.
+ */
+export function getAuthErrorMessage(err: any): string {
+  if (!err) return "An unexpected error occurred. Please try again.";
+  const code = err.code || "";
+  const currentHost = typeof window !== "undefined" && window.location.hostname ? window.location.hostname : "kreate-mauve.vercel.app";
+
+  switch (code) {
+    case "auth/unauthorized-domain":
+      return `Domain '${currentHost}' is not authorized for Firebase Authentication. Go to Firebase Console (project: kreate-studio-d95f0) → Authentication → Settings → Authorized domains and ensure '${currentHost}' and 'kreate-mauve.vercel.app' are added.`;
+    case "auth/popup-closed-by-user":
+      return "Google sign-in was cancelled (the popup was closed before completing authentication).";
+    case "auth/popup-blocked":
+      return "The Google sign-in popup was blocked by your browser. Please allow popups for this site and try again.";
+    case "auth/invalid-credential":
+    case "auth/wrong-password":
+      return "Invalid email or password. Please verify your credentials and try again.";
+    case "auth/user-not-found":
+      return "No account exists with this email address. Please sign up.";
+    case "auth/email-already-in-use":
+      return "An account with this email address already exists. Please sign in instead.";
+    case "auth/weak-password":
+      return "Password should be at least 6 characters.";
+    case "auth/operation-not-allowed":
+      return "Google sign-in is currently disabled. Please enable Google under Firebase Console → Authentication → Sign-in method.";
+    case "auth/network-request-failed":
+      return "Network connection issue. Please check your internet connection and try again.";
+    case "auth/cancelled-popup-request":
+      return "Only one sign-in window can be open at a time. Please try again.";
+    default:
+      return err.message || `Authentication error (${code || "unknown"}). Please try again.`;
+  }
+}
+
 export async function loginWithEmail(email: string, password: string): Promise<User> {
   const credential = await signInWithEmailAndPassword(auth, email, password);
   return credential.user;
@@ -545,22 +581,49 @@ export async function fetchPublicProfileByUsernameId(identifier: string): Promis
 /**
  * Updates an authenticated user's public profile at /publicProfiles/{uid}
  * Restricts payload to valid public schema: name, role, bio, usernameId.
+ * Uses atomic update() and verifies active auth session to prevent PERMISSION_DENIED.
  */
 export async function savePublicProfileToFirebase(
   uid: string,
-  profile: PublicProfile
+  profile: Partial<PublicProfile>
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const profileRef = ref(database, `publicProfiles/${uid}`);
-    await set(profileRef, {
-      name: profile.name,
-      role: profile.role,
-      bio: profile.bio,
-      usernameId: profile.usernameId,
-    });
+    const currentUid = auth.currentUser?.uid;
+    const targetUid = uid || currentUid;
+
+    if (!targetUid) {
+      return { success: false, error: "Authentication required to update profile." };
+    }
+
+    if (currentUid && targetUid !== currentUid) {
+      console.warn("Target UID mismatch with active user; using active currentUid:", currentUid);
+    }
+
+    const effectiveUid = currentUid || targetUid;
+    const profileRef = ref(database, `publicProfiles/${effectiveUid}`);
+
+    const payload: Record<string, any> = {};
+    if (profile.name !== undefined && profile.name.trim() !== "") {
+      payload.name = profile.name.trim();
+    }
+    if (profile.role !== undefined && profile.role.trim() !== "") {
+      payload.role = profile.role.trim();
+    }
+    if (profile.bio !== undefined) {
+      payload.bio = profile.bio.trim();
+    }
+    if (profile.usernameId !== undefined && profile.usernameId.trim() !== "") {
+      payload.usernameId = profile.usernameId.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+    }
+
+    if (Object.keys(payload).length === 0) {
+      return { success: true };
+    }
+
+    await update(profileRef, payload);
     return { success: true };
   } catch (err: any) {
-    console.warn("Failed to save public profile:", err.message);
+    console.warn("Failed to save public profile to Firebase:", err.message);
     return { success: false, error: err.message };
   }
 }

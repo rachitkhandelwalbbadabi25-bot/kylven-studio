@@ -44,19 +44,14 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
   const navigate = useNavigate();
 
   // Form State
-  const [title, setTitle] = useState("Neo Bharat Cyberpunk UI Kit");
+  const [title, setTitle] = useState("");
   const [category, setCategory] = useState<CoreCategory>("UI/UX & Design");
-  const [priceInINR, setPriceInINR] = useState<number>(499);
-  const [description, setDescription] = useState(
-    "Futuristic neon-infused mobile and web UI component kit inspired by modern Indian cyberpunk aesthetics. Includes over 120+ customizable components, glow tokens, and dark layouts."
-  );
-  const [images, setImages] = useState<string[]>([
-    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&auto=format&fit=crop&q=80",
-  ]);
-  const [fileType, setFileType] = useState(".fig");
-  const [fileSizeBytes, setFileSizeBytes] = useState("92 MB");
-  const [fileName, setFileName] = useState("neo-bharat-cyberpunk-ui-kit.fig");
+  const [priceInINR, setPriceInINR] = useState<number>(0);
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState<string[]>([]);
+  const [fileType, setFileType] = useState(".zip");
+  const [fileSizeBytes, setFileSizeBytes] = useState("");
+  const [fileName, setFileName] = useState("");
   const [newImageUrl, setNewImageUrl] = useState("");
   const [showAddImageInput, setShowAddImageInput] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

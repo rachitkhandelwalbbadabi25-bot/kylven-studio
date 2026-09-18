@@ -16,7 +16,7 @@ import {
   Store,
   AtSign,
 } from "lucide-react";
-import { loginWithEmail, registerWithEmail, loginWithGoogle } from "../services/firebaseService";
+import { loginWithEmail, registerWithEmail, loginWithGoogle, getAuthErrorMessage } from "../services/firebaseService";
 
 interface AuthPageProps {
   onLoginSuccess: (profile: UserProfile) => void;
@@ -179,9 +179,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         }
       } catch (authErr: any) {
         console.warn("Firebase Auth operation encountered error:", authErr);
-        // Show Firebase message or code
-        const msg = authErr.code ? `[${authErr.code}] ${authErr.message}` : authErr.message;
-        setErrorMessage(msg);
+        setErrorMessage(getAuthErrorMessage(authErr));
         setIsSubmitting(false);
       }
     })();
@@ -209,7 +207,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       }
     } catch (err: any) {
       console.warn("Google Sign-In failed:", err);
-      setErrorMessage(err.code ? `[${err.code}] ${err.message}` : err.message);
+      setErrorMessage(getAuthErrorMessage(err));
       setIsSubmitting(false);
     }
   };
