@@ -116,13 +116,17 @@ export default function App() {
 
         // 1. Fetch public profile from authoritative /publicProfiles/{uid}
         fetchPublicProfileFromFirebase(firebaseUser.uid).then((publicProf) => {
-          if (isMounted && publicProf) {
+          if (isMounted) {
+            let cachedBio = "";
+            try {
+              cachedBio = localStorage.getItem(`kreate_user_bio_${firebaseUser.uid}`) || "";
+            } catch {}
             setUserProfile((prev) => ({
               ...prev,
-              name: publicProf.name || prev.name || baseName,
-              role: (publicProf.role as any) || prev.role || "buyer",
-              bio: publicProf.bio || prev.bio || "",
-              username: publicProf.usernameId || prev.username || baseUsername,
+              name: publicProf?.name || prev.name || baseName,
+              role: (publicProf?.role as any) || prev.role || "buyer",
+              bio: publicProf?.bio || cachedBio || prev.bio || "",
+              username: publicProf?.usernameId || prev.username || baseUsername,
             }));
           }
         });

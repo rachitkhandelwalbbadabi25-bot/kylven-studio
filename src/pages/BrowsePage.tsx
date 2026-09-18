@@ -639,13 +639,6 @@ export const BrowsePage: React.FC<BrowsePageProps> = ({
                   </>
                 )}
               </nav>
-
-              {/* Result Counter (e.g. "Showing 1-12 of 24 results") */}
-              <p className="text-xs text-[#7B8A90]" id="results-count-text">
-                Showing <strong className="text-white font-mono">{filteredListings.length > 0 ? 1 : 0}–{filteredListings.length}</strong> of{" "}
-                <strong className="text-white font-mono">{listings.filter((l) => l.deleted !== true).length}</strong> results
-                {searchQuery && <span> for <strong className="text-white">"{searchQuery}"</strong></span>}
-              </p>
             </div>
 
             {/* Right Side: Clean "Sort By" Dropdown */}

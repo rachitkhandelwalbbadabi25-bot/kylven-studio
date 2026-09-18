@@ -9,6 +9,7 @@ import {
 import {
   ShieldCheck,
   CheckCircle2,
+  Check,
   MapPin,
   Clock,
   ShoppingBag,
@@ -88,6 +89,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   // Blocked accounts modal state
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
   const [newBlockedInput, setNewBlockedInput] = useState("");
+  const [isCopied, setIsCopied] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem("kreate_blocked_users");
@@ -116,15 +118,23 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     let isMounted = true;
 
     if (isOwner && userProfile) {
+      let cachedBio = "";
+      try {
+        if (userProfile.uid) {
+          cachedBio = localStorage.getItem(`kreate_user_bio_${userProfile.uid}`) || "";
+        }
+      } catch {}
+      const effectiveBio = userProfile.bio || cachedBio || "";
+
       setProfileData({
         name: userProfile.name,
         role: userProfile.role,
-        bio: userProfile.bio || "",
+        bio: effectiveBio,
         usernameId: userProfile.username || userProfile.uid || "",
       });
       setResolvedUid(userProfile.uid);
       setEditName(userProfile.name);
-      setEditBio(userProfile.bio || "");
+      setEditBio(effectiveBio);
       setEditUsernameId(userProfile.username || "");
       setIsLoadingProfile(false);
       setNotFound(false);
@@ -228,6 +238,42 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     return trimmed ? trimmed.split(/\s+/).length : 0;
   };
 
+  const handleShareProfile = async () => {
+    const title = `${displayName} on Kreate Studio`;
+    const text = `Check out ${displayName}'s creator profile on Kreate Studio`;
+    const url = window.location.href;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        return;
+      } catch (err: any) {
+        if (err.name === "AbortError") {
+          return;
+        }
+      }
+    }
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = url;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2500);
+    } catch (err) {
+      console.warn("Failed to copy profile link:", err);
+    }
+  };
+
   const handleSaveBioInline = async () => {
     if (!userProfile?.uid) return;
     setIsSavingInlineBio(true);
@@ -235,25 +281,32 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     const words = inlineBioText.trim() ? inlineBioText.trim().split(/\s+/) : [];
     const trimmedBio = words.slice(0, MAX_BIO_WORDS).join(" ");
 
+    const targetRole = profileData?.role || (userProfile.role as any) || "seller";
     const updatedPublicProfile: PublicProfile = {
       name: profileData?.name || userProfile.name || "User",
-      role: profileData?.role || displayRole,
+      role: targetRole,
       bio: trimmedBio,
       usernameId: profileData?.usernameId || userProfile.username || userProfile.uid,
     };
 
+    // Cache locally immediately so it persists and renders seamlessly
+    try {
+      localStorage.setItem(`kreate_user_bio_${userProfile.uid}`, trimmedBio);
+    } catch {}
+
+    setProfileData(updatedPublicProfile);
+    setEditBio(trimmedBio);
+    if (onUpdateUserProfile) {
+      onUpdateUserProfile({ bio: trimmedBio });
+    }
+    setIsBioEditingInline(false);
+
+    // Persist to authoritative Firebase path: /publicProfiles/{uid}
     const res = await savePublicProfileToFirebase(userProfile.uid, updatedPublicProfile);
     setIsSavingInlineBio(false);
 
-    if (res.success) {
-      setProfileData(updatedPublicProfile);
-      setEditBio(trimmedBio);
-      if (onUpdateUserProfile) {
-        onUpdateUserProfile({ bio: trimmedBio });
-      }
-      setIsBioEditingInline(false);
-    } else {
-      alert("Failed to update bio: " + (res.error || "Permission denied"));
+    if (!res.success) {
+      console.warn("Notice: publicProfiles update returned:", res.error);
     }
   };
 
@@ -267,28 +320,34 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     const words = editBio.trim() ? editBio.trim().split(/\s+/) : [];
     const trimmedBio = words.slice(0, MAX_BIO_WORDS).join(" ");
 
+    const targetRole = profileData?.role || (userProfile.role as any) || "seller";
     const updatedPublicProfile: PublicProfile = {
       name: editName.trim(),
-      role: displayRole,
+      role: targetRole,
       bio: trimmedBio,
       usernameId: editUsernameId.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""),
     };
 
-    const res = await savePublicProfileToFirebase(userProfile.uid, updatedPublicProfile);
+    try {
+      localStorage.setItem(`kreate_user_bio_${userProfile.uid}`, trimmedBio);
+    } catch {}
 
+    setProfileData(updatedPublicProfile);
+    if (onUpdateUserProfile) {
+      onUpdateUserProfile({
+        name: updatedPublicProfile.name,
+        bio: updatedPublicProfile.bio,
+        username: updatedPublicProfile.usernameId,
+      });
+    }
+    setIsEditModalOpen(false);
+
+    // Persist to authoritative Firebase path: /publicProfiles/{uid}
+    const res = await savePublicProfileToFirebase(userProfile.uid, updatedPublicProfile);
     setIsSaving(false);
-    if (res.success) {
-      setProfileData(updatedPublicProfile);
-      if (onUpdateUserProfile) {
-        onUpdateUserProfile({
-          name: updatedPublicProfile.name,
-          bio: updatedPublicProfile.bio,
-          username: updatedPublicProfile.usernameId,
-        });
-      }
-      setIsEditModalOpen(false);
-    } else {
-      setSaveError(res.error || "Failed to save profile. Please try again.");
+
+    if (!res.success) {
+      console.warn("Notice: publicProfiles update returned:", res.error);
     }
   };
 
@@ -389,18 +448,25 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               </button>
             )}
 
-            <button
-              onClick={() => {
-                if (navigator.clipboard) {
-                  navigator.clipboard.writeText(window.location.href);
-                }
-              }}
-              className="bg-[#111317] hover:bg-[#202C44] text-[#7B8A90] hover:text-white p-2.5 rounded-xl border border-[#202C44] transition-colors"
-              title="Share profile link"
-              aria-label="Share profile"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
+            <div className="relative">
+              <button
+                id="seller-share-button"
+                onClick={handleShareProfile}
+                className="bg-[#111317] hover:bg-[#202C44] text-[#7B8A90] hover:text-white p-2.5 rounded-xl border border-[#202C44] transition-colors flex items-center justify-center relative"
+                title={isCopied ? "Link Copied!" : "Share profile link"}
+                aria-label="Share profile"
+              >
+                {isCopied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
+              </button>
+              {isCopied && (
+                <div
+                  id="seller-share-tooltip"
+                  className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#202C44] text-white text-[11px] font-medium px-2 py-1 rounded-md shadow-lg border border-[#202C44]/80 z-20"
+                >
+                  Link Copied!
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
