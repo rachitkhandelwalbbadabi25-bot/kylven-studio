@@ -254,8 +254,8 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
 
   // 5-metric Seller Profile statistics (Listings, Followers, Following, Purchases, Spent)
   const listingsCount = isBuyer ? savedListings.length : creatorListings.length;
-  const purchasesCount = purchases.length;
-  const totalSpentINR = purchases.reduce((acc, p) => acc + (p.pricePaidINR || 0), 0);
+  const purchasesCount = isOwner ? purchases.length : 0;
+  const totalSpentINR = isOwner ? purchases.reduce((acc, p) => acc + (p.pricePaidINR || 0), 0) : 0;
 
   const MAX_BIO_WORDS = 150;
   const countWords = (text: string) => {
@@ -532,20 +532,34 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
 
               {/* 4. Purchases */}
               <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
-                <span id="stat-purchases-count" className="font-heading font-bold text-base sm:text-xl text-[#D3CCB0]">
-                  {purchasesCount}
+                <span
+                  id="stat-purchases-count"
+                  className={`font-heading font-bold text-base sm:text-xl ${isOwner ? "text-[#D3CCB0]" : "text-[#7B8A90]"}`}
+                  title={isOwner ? undefined : "Feature unavailable on public creator profiles"}
+                >
+                  {isOwner ? purchasesCount : "—"}
                 </span>
-                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+                <span
+                  className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5"
+                  title={isOwner ? undefined : "Feature unavailable on public creator profiles"}
+                >
                   Purchases
                 </span>
               </div>
 
               {/* 5. Spent */}
               <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
-                <span id="stat-spent-amount" className="font-heading font-bold text-base sm:text-xl text-white">
-                  ₹{totalSpentINR.toLocaleString("en-IN")}
+                <span
+                  id="stat-spent-amount"
+                  className={`font-heading font-bold text-base sm:text-xl ${isOwner ? "text-white" : "text-[#7B8A90]"}`}
+                  title={isOwner ? undefined : "Feature unavailable on public creator profiles"}
+                >
+                  {isOwner ? `₹${totalSpentINR.toLocaleString("en-IN")}` : "—"}
                 </span>
-                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+                <span
+                  className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5"
+                  title={isOwner ? undefined : "Feature unavailable on public creator profiles"}
+                >
                   Spent
                 </span>
               </div>

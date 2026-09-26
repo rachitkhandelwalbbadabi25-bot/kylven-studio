@@ -9,7 +9,7 @@ import {
 import { ref, get, set, update, query, orderByChild, equalTo, remove, serverTimestamp, onValue } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { auth, database, storage, googleAuthProvider } from "../lib/firebase";
-import { AssetListing, FirebaseListing, CreatorProfile, UserProfile, UserPurchase, PublicProfile, CoreCategory } from "../types";
+import { AssetListing, FirebaseListing, CreatorProfile, UserProfile, UserPurchase, FirebasePurchase, PublicProfile, CoreCategory } from "../types";
 
 /**
  * Normalizes raw category strings from Firebase / Kelvyn Studio app
@@ -807,9 +807,115 @@ export async function removeBookmarkFromFirebase(listingId: string): Promise<boo
 // ==========================================
 
 /**
+ * Maps an authoritative Firebase Realtime Database purchase record (/purchases/{purchaseId})
+ * into the frontend UserPurchase model for UI presentation and download handling.
+ */
+export function mapFirebasePurchaseToUserPurchase(
+  purchaseKey: string,
+  raw: any
+): UserPurchase {
+  const amount = typeof raw.amountPaid === "number" ? raw.amountPaid : (raw.pricePaidINR || 0);
+  const purchaseTimestamp = typeof raw.purchasedAt === "number" ? raw.purchasedAt : (raw.createdAt || Date.now());
+  const dateStr = raw.purchaseDate || new Date(purchaseTimestamp).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const fileExt = raw.fileExtension
+    ? (raw.fileExtension.startsWith(".") ? raw.fileExtension : `.${raw.fileExtension}`)
+    : (raw.fileType || ".zip");
+
+  const orderId = raw.orderId || (raw.razorpayPaymentId && raw.razorpayPaymentId !== "FREE"
+    ? raw.razorpayPaymentId
+    : `ORD-${purchaseKey.replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase()}`);
+
+  const licenseKey = raw.licenseKey || `KREATE-${purchaseKey.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}-${(raw.listingId || "ASSET").replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}`;
+
+  return {
+    orderId,
+    purchaseId: purchaseKey,
+    buyerId: raw.buyerId || "",
+    sellerId: raw.sellerId || "",
+    listingId: raw.listingId || "",
+    title: raw.listingTitle || raw.title || "Digital Asset",
+    thumbnailUrl: raw.previewUrl || raw.thumbnailUrl || "",
+    category: raw.category || "Digital Assets",
+    fileType: fileExt,
+    downloadUrl: raw.fileUrl || raw.downloadUrl || "",
+    licenseKey,
+    purchaseDate: dateStr,
+    pricePaidINR: amount,
+    amountPaid: amount,
+    sellerNetINR: Math.round(amount * 0.9),
+    platformFeeINR: Math.round(amount * 0.1),
+    paymentMethod: raw.razorpayPaymentId === "FREE" ? "Free Download" : (raw.paymentMethod || "UPI / Razorpay"),
+  };
+}
+
+/**
+ * Subscribes to the authenticated user's purchase records in realtime from /purchases
+ * strictly filtered by buyerId === uid.
+ * 
+ * Secure architecture:
+ * - Scoped strictly to the authenticated buyer (never queries other users' purchases)
+ * - Returns cleanup unsubscribe function for onValue
+ * - Maps authoritative FirebasePurchase fields (listingTitle, previewUrl, fileUrl, amountPaid, etc.)
+ *   into UserPurchase items for UI presentation
+ */
+export function subscribeToUserPurchases(
+  uid: string,
+  onPurchasesChanged: (purchases: UserPurchase[]) => void,
+  onError?: (error: Error) => void
+): () => void {
+  const currentUid = auth.currentUser?.uid;
+  if (!currentUid || currentUid !== uid) {
+    onPurchasesChanged([]);
+    return () => {};
+  }
+
+  const purchasesQuery = query(
+    ref(database, "purchases"),
+    orderByChild("buyerId"),
+    equalTo(currentUid)
+  );
+
+  return onValue(
+    purchasesQuery,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const val = snapshot.val();
+        if (typeof val === "object" && val !== null) {
+          const mappedList: UserPurchase[] = Object.entries(val).map(([key, item]) =>
+            mapFirebasePurchaseToUserPurchase(key, item)
+          );
+          // Sort newest purchase first
+          mappedList.sort((a, b) => {
+            const timeA = (val[a.purchaseId || ""]?.purchasedAt) || 0;
+            const timeB = (val[b.purchaseId || ""]?.purchasedAt) || 0;
+            return timeB - timeA;
+          });
+          onPurchasesChanged(mappedList);
+          return;
+        }
+      }
+      onPurchasesChanged([]);
+    },
+    (err) => {
+      let friendlyError = err.message;
+      if (err.message?.includes("PERMISSION_DENIED")) {
+        friendlyError = "Purchase history requires authenticated access on /purchases.";
+      }
+      console.warn("Realtime purchases sync notice:", friendlyError);
+      if (onError) onError(err);
+      onPurchasesChanged([]);
+    }
+  );
+}
+
+/**
  * Reads purchase records from the authoritative top-level node: /purchases
  * Filtered by buyerId matching the authenticated UID.
- * Does NOT assume or reference /users/{uid}/purchases.
+ * Maps authoritative Firebase schema into UserPurchase[] models.
  */
 export async function fetchUserPurchasesFromFirebase(uid: string): Promise<{ data: UserPurchase[] | null; error?: string }> {
   try {
@@ -826,8 +932,17 @@ export async function fetchUserPurchasesFromFirebase(uid: string): Promise<{ dat
     const snapshot = await get(purchasesQuery);
     if (snapshot.exists()) {
       const val = snapshot.val();
-      const list = typeof val === "object" && val !== null ? (Object.values(val) as UserPurchase[]) : [];
-      return { data: list };
+      if (typeof val === "object" && val !== null) {
+        const mappedList: UserPurchase[] = Object.entries(val).map(([key, item]) =>
+          mapFirebasePurchaseToUserPurchase(key, item)
+        );
+        mappedList.sort((a, b) => {
+          const timeA = (val[a.purchaseId || ""]?.purchasedAt) || 0;
+          const timeB = (val[b.purchaseId || ""]?.purchasedAt) || 0;
+          return timeB - timeA;
+        });
+        return { data: mappedList };
+      }
     }
     return { data: [] };
   } catch (err: any) {

@@ -30,6 +30,7 @@ import {
   subscribeToUserBookmarks,
   addBookmarkToFirebase,
   removeBookmarkFromFirebase,
+  subscribeToUserPurchases,
   fetchUserPurchasesFromFirebase,
   logoutUser 
 } from "./services/firebaseService";
@@ -97,6 +98,7 @@ export default function App() {
 
     let unsubscribeProfile: (() => void) | null = null;
     let unsubscribeBookmarks: (() => void) | null = null;
+    let unsubscribePurchases: (() => void) | null = null;
 
     // Subscribe to Firebase Auth state
     const unsubscribeAuth = subscribeToAuthState((firebaseUser) => {
@@ -108,6 +110,10 @@ export default function App() {
       if (unsubscribeBookmarks) {
         unsubscribeBookmarks();
         unsubscribeBookmarks = null;
+      }
+      if (unsubscribePurchases) {
+        unsubscribePurchases();
+        unsubscribePurchases = null;
       }
 
       if (firebaseUser) {
@@ -160,12 +166,18 @@ export default function App() {
           }
         );
 
-        // 3. Purchase records from authoritative top-level /purchases
-        fetchUserPurchasesFromFirebase(firebaseUser.uid).then((res) => {
-          if (isMounted) {
-            setPurchases(res.data || []);
+        // 3. REALTIME LISTENER: Live synchronization with /purchases filtered by buyerId
+        unsubscribePurchases = subscribeToUserPurchases(
+          firebaseUser.uid,
+          (remotePurchases) => {
+            if (isMounted) {
+              setPurchases(remotePurchases);
+            }
+          },
+          (err) => {
+            console.warn("Live purchases sync notice:", err);
           }
-        });
+        );
       } else {
         setIsAuthenticated(false);
         setUserProfile(EMPTY_PROFILE);
@@ -180,6 +192,7 @@ export default function App() {
       unsubscribeAuth();
       if (unsubscribeProfile) unsubscribeProfile();
       if (unsubscribeBookmarks) unsubscribeBookmarks();
+      if (unsubscribePurchases) unsubscribePurchases();
     };
   }, []);
 

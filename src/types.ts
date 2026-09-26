@@ -177,6 +177,25 @@ export interface UserPurchase {
 }
 
 /**
+ * Authoritative schema for purchases stored at top-level /purchases/{purchaseId}
+ * in Firebase Realtime Database.
+ */
+export interface FirebasePurchase {
+  amountPaid: number;
+  buyerId: string;
+  fileExtension?: string;
+  fileUrl: string;
+  listingId: string;
+  listingTitle?: string;
+  previewUrl?: string;
+  purchasedAt?: number;
+  razorpayPaymentId?: string;
+  sellerId?: string;
+  sellerName?: string;
+  category?: string;
+}
+
+/**
  * Authoritative Public Profile schema stored at /publicProfiles/{uid}
  * Intentionally public fields only.
  */
