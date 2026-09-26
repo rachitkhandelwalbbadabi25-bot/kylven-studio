@@ -105,11 +105,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               Seller Portal
             </span>
             <Link
-              to={`/profile/${userProfile.username || "buildwithansh"}`}
+              to={`/profile/${userProfile.username || userProfile.uid || "me"}`}
               className="text-xs text-[#7B8A90] hover:text-[#D3CCB0] font-mono transition-colors flex items-center gap-1 group"
               title="View your public seller profile"
             >
-              <span className="group-hover:underline">@{userProfile.username || "buildwithansh"}</span>
+              <span className="group-hover:underline">@{userProfile.username || userProfile.uid || "seller"}</span>
               <ExternalLink className="w-3 h-3 opacity-70 group-hover:opacity-100" />
             </Link>
           </div>
@@ -123,7 +123,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
         <div className="flex items-center gap-2.5 self-start sm:self-auto">
           <Link
-            to={`/profile/${userProfile.username || "buildwithansh"}`}
+            to={`/profile/${userProfile.username || userProfile.uid || "me"}`}
             id="dashboard-view-profile-btn"
             className="bg-[#111317] hover:bg-[#202C44] text-[#D3CCB0] hover:text-white font-bold text-xs px-3.5 sm:px-4 py-2.5 rounded-xl transition-all border border-[#202C44] flex items-center gap-1.5 active:scale-95"
           >

@@ -16,9 +16,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   onSaveProfile,
 }) => {
   const [selectedRole, setSelectedRole] = useState<UserRole>(currentUserProfile.role || "buyer");
-  const [name, setName] = useState(currentUserProfile.name || "Rachit K.");
-  const [email, setEmail] = useState(currentUserProfile.email || "creator@kreate.in");
-  const [upiId, setUpiId] = useState(currentUserProfile.upiId || "rachit@okaxis");
+  const [name, setName] = useState(currentUserProfile.name || "");
+  const [email, setEmail] = useState(currentUserProfile.email || "");
+  const [upiId, setUpiId] = useState(currentUserProfile.upiId || "");
   const [avatar, setAvatar] = useState(
     currentUserProfile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200"
   );
@@ -218,7 +218,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Rachit K. / Pixel Craft Studio"
+                  placeholder="e.g. Pixel Craft Studio / Your Name"
                   className="w-full bg-[#000000] text-white text-xs pl-10 pr-3 py-3 rounded-xl border border-[#202C44] focus:outline-none focus:border-[#D3CCB0]"
                 />
               </div>

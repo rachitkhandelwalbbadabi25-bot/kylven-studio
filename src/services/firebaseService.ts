@@ -497,6 +497,7 @@ export async function saveListingToFirebase(listing: Partial<AssetListing>): Pro
 }
 
 // ==========================================
+// ==========================================
 // REALTIME DATABASE: PUBLIC PROFILES
 // ==========================================
 
@@ -511,8 +512,9 @@ export async function saveListingToFirebase(listing: Partial<AssetListing>): Pro
  * Does NOT read from /users/{uid} or assume /users exists.
  */
 export async function fetchPublicProfileFromFirebase(uid: string): Promise<PublicProfile | null> {
+  if (!uid) return null;
   try {
-    const profileRef = ref(database, `publicProfiles/${uid}`);
+    const profileRef = ref(database, `publicProfiles/${uid.trim()}`);
     const snapshot = await get(profileRef);
     if (snapshot.exists()) {
       return snapshot.val() as PublicProfile;
@@ -521,6 +523,44 @@ export async function fetchPublicProfileFromFirebase(uid: string): Promise<Publi
   } catch (err: any) {
     console.warn("Failed to fetch public profile from /publicProfiles:", err.message);
     return null;
+  }
+}
+
+/**
+ * Sets up a realtime Database listener on /publicProfiles/{uid}.
+ * Fires whenever profile changes in Firebase (e.g. from the mobile app).
+ */
+export function subscribeToPublicProfile(
+  uid: string,
+  onData: (profile: PublicProfile | null) => void,
+  onError?: (err: any) => void
+): () => void {
+  if (!uid) {
+    onData(null);
+    return () => {};
+  }
+  const cleanUid = uid.trim();
+  try {
+    const profileRef = ref(database, `publicProfiles/${cleanUid}`);
+    const unsubscribe = onValue(
+      profileRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          onData(snapshot.val() as PublicProfile);
+        } else {
+          onData(null);
+        }
+      },
+      (err) => {
+        console.warn(`Realtime public profile subscription error for ${cleanUid}:`, err.message);
+        if (onError) onError(err);
+      }
+    );
+    return unsubscribe;
+  } catch (err: any) {
+    console.warn(`Exception subscribing to public profile for ${cleanUid}:`, err.message);
+    if (onError) onError(err);
+    return () => {};
   }
 }
 
@@ -581,7 +621,7 @@ export async function fetchPublicProfileByUsernameId(identifier: string): Promis
 /**
  * Updates an authenticated user's public profile at /publicProfiles/{uid}
  * Restricts payload to valid public schema: name, role, bio, usernameId.
- * Uses atomic update() and verifies active auth session to prevent PERMISSION_DENIED.
+ * Handles database security rule conditions gracefully.
  */
 export async function savePublicProfileToFirebase(
   uid: string,
@@ -623,8 +663,16 @@ export async function savePublicProfileToFirebase(
     await update(profileRef, payload);
     return { success: true };
   } catch (err: any) {
-    console.warn("Failed to save public profile to Firebase:", err.message);
-    return { success: false, error: err.message };
+    const msg = err.message || "";
+    if (msg.includes("PERMISSION_DENIED")) {
+      console.warn("Notice: Client-side write to /publicProfiles is restricted by Firebase security rules. Profiles are maintained by the authorized backend or mobile app.");
+      return { 
+        success: false, 
+        error: "PERMISSION_DENIED: Client-side write to /publicProfiles is restricted by Firebase security rules. Profile changes are synchronized via the Kreate Studio mobile app or authorized backend." 
+      };
+    }
+    console.warn("Failed to save public profile to Firebase:", msg);
+    return { success: false, error: msg };
   }
 }
 
@@ -655,6 +703,48 @@ export async function fetchUserBookmarksFromFirebase(uid: string): Promise<strin
   } catch (err: any) {
     console.warn("Failed to fetch bookmarks from /bookmarks:", err.message);
     return [];
+  }
+}
+
+/**
+ * Sets up a realtime Database listener on /bookmarks/{uid}.
+ * Emits updated listing IDs whenever bookmarks change in the app or website.
+ */
+export function subscribeToUserBookmarks(
+  uid: string,
+  onData: (listingIds: string[]) => void,
+  onError?: (err: any) => void
+): () => void {
+  const currentUid = auth.currentUser?.uid;
+  if (!currentUid || currentUid !== uid) {
+    onData([]);
+    return () => {};
+  }
+  try {
+    const bookmarksRef = ref(database, `bookmarks/${currentUid}`);
+    const unsubscribe = onValue(
+      bookmarksRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const val = snapshot.val();
+          if (typeof val === "object" && val !== null) {
+            const ids = Object.keys(val).filter((key) => val[key] === true);
+            onData(ids);
+            return;
+          }
+        }
+        onData([]);
+      },
+      (err) => {
+        console.warn("Realtime bookmarks subscription error:", err.message);
+        if (onError) onError(err);
+      }
+    );
+    return unsubscribe;
+  } catch (err: any) {
+    console.warn("Exception subscribing to bookmarks:", err.message);
+    if (onError) onError(err);
+    return () => {};
   }
 }
 

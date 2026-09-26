@@ -4,6 +4,7 @@ import { AssetListing, UserProfile, UserPurchase, PublicProfile, isUserAdmin } f
 import { ListingCard } from "../components/ListingCard";
 import {
   fetchPublicProfileByUsernameId,
+  subscribeToPublicProfile,
   savePublicProfileToFirebase,
 } from "../services/firebaseService";
 import {
@@ -85,6 +86,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   const [isBioEditingInline, setIsBioEditingInline] = useState(false);
   const [inlineBioText, setInlineBioText] = useState("");
   const [isSavingInlineBio, setIsSavingInlineBio] = useState(false);
+  const [inlineBioError, setInlineBioError] = useState<string | null>(null);
 
   // Blocked accounts modal state
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
@@ -113,32 +115,48 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     localStorage.setItem("kreate_blocked_users", JSON.stringify(updated));
   };
 
-  // Load public profile from Firebase /publicProfiles/{uid}
+  // Load public profile from Firebase /publicProfiles/{uid} with realtime synchronization
   useEffect(() => {
     let isMounted = true;
+    let unsubscribe: (() => void) | null = null;
 
-    if (isOwner && userProfile) {
-      let cachedBio = "";
-      try {
-        if (userProfile.uid) {
-          cachedBio = localStorage.getItem(`kreate_user_bio_${userProfile.uid}`) || "";
-        }
-      } catch {}
-      const effectiveBio = userProfile.bio || cachedBio || "";
-
-      setProfileData({
-        name: userProfile.name,
-        role: userProfile.role,
-        bio: effectiveBio,
-        usernameId: userProfile.username || userProfile.uid || "",
-      });
+    if (isOwner && userProfile?.uid) {
       setResolvedUid(userProfile.uid);
-      setEditName(userProfile.name);
-      setEditBio(effectiveBio);
-      setEditUsernameId(userProfile.username || "");
-      setIsLoadingProfile(false);
+      setIsLoadingProfile(true);
       setNotFound(false);
-      return;
+
+      unsubscribe = subscribeToPublicProfile(
+        userProfile.uid,
+        (liveProf) => {
+          if (!isMounted) return;
+          if (liveProf) {
+            setProfileData(liveProf);
+            setEditName(liveProf.name || userProfile.name || "");
+            setEditBio(liveProf.bio || "");
+            setEditUsernameId(liveProf.usernameId || userProfile.username || "");
+          } else {
+            setProfileData({
+              name: userProfile.name || "User",
+              role: userProfile.role || "buyer",
+              bio: userProfile.bio || "",
+              usernameId: userProfile.username || userProfile.uid,
+            });
+            setEditName(userProfile.name || "");
+            setEditBio(userProfile.bio || "");
+            setEditUsernameId(userProfile.username || "");
+          }
+          setIsLoadingProfile(false);
+        },
+        (err) => {
+          console.warn("Realtime profile error:", err);
+          if (isMounted) setIsLoadingProfile(false);
+        }
+      );
+
+      return () => {
+        isMounted = false;
+        if (unsubscribe) unsubscribe();
+      };
     }
 
     if (!cleanUsername) {
@@ -159,10 +177,19 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
           setEditName(res.profile.name || "");
           setEditBio(res.profile.bio || "");
           setEditUsernameId(res.profile.usernameId || "");
+          setIsLoadingProfile(false);
           setNotFound(false);
+
+          // Attach realtime listener on the resolved UID
+          unsubscribe = subscribeToPublicProfile(res.uid, (liveProf) => {
+            if (isMounted && liveProf) {
+              setProfileData(liveProf);
+            }
+          });
         } else {
           setProfileData(null);
           setResolvedUid(null);
+          setIsLoadingProfile(false);
           setNotFound(true);
         }
       })
@@ -170,25 +197,24 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
         if (!isMounted) return;
         console.warn("Error fetching creator profile:", err);
         setProfileData(null);
+        setIsLoadingProfile(false);
         setNotFound(true);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoadingProfile(false);
       });
 
     return () => {
       isMounted = false;
+      if (unsubscribe) unsubscribe();
     };
-  }, [cleanUsername, isOwner, userProfile]);
+  }, [cleanUsername, isOwner, userProfile?.uid]);
 
   // Derive profile display attributes strictly from allowed fields: name, role, bio, usernameId
-  const displayName = profileData?.name || (isOwner && userProfile?.name) || "Creator";
+  const displayName = profileData?.name || (isOwner && userProfile?.name) || "User";
   const displayRole = profileData?.role || (isOwner && userProfile?.role) || "creator";
-  const displayBio = profileData?.bio || (isOwner && userProfile?.bio) || "Digital asset creator on Kreate Studio.";
-  const displayUsernameId = profileData?.usernameId || cleanUsername || "creator";
+  const displayBio = profileData?.bio !== undefined ? profileData.bio : (isOwner && userProfile?.bio) || "";
+  const displayUsernameId = profileData?.usernameId || (isOwner && userProfile?.username) || cleanUsername || "user";
 
   // Initials for avatar: single letter (e.g. 'R' for 'Rachit Khandelwal')
-  const initials = (displayName.trim().charAt(0) || "C").toUpperCase();
+  const initials = (displayName.trim().charAt(0) || "U").toUpperCase();
 
   const isBuyer = Boolean(isOwner && (userProfile?.role === "buyer" || displayRole === "buyer"));
 
@@ -227,8 +253,6 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
 
   // 5-metric Seller Profile statistics (Listings, Followers, Following, Purchases, Spent)
   const listingsCount = isBuyer ? savedListings.length : creatorListings.length;
-  const followersCount = (userProfile as any)?.followersCount ?? (profileData as any)?.followersCount ?? 0;
-  const followingCount = (userProfile as any)?.followingCount ?? (profileData as any)?.followingCount ?? 0;
   const purchasesCount = purchases.length;
   const totalSpentINR = purchases.reduce((acc, p) => acc + (p.pricePaidINR || 0), 0);
 
@@ -289,24 +313,22 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
       usernameId: profileData?.usernameId || userProfile.username || userProfile.uid,
     };
 
-    // Cache locally immediately so it persists and renders seamlessly
-    try {
-      localStorage.setItem(`kreate_user_bio_${userProfile.uid}`, trimmedBio);
-    } catch {}
-
     setProfileData(updatedPublicProfile);
     setEditBio(trimmedBio);
     if (onUpdateUserProfile) {
       onUpdateUserProfile({ bio: trimmedBio });
     }
-    setIsBioEditingInline(false);
-
     // Persist to authoritative Firebase path: /publicProfiles/{uid}
     const res = await savePublicProfileToFirebase(userProfile.uid, updatedPublicProfile);
     setIsSavingInlineBio(false);
 
-    if (!res.success) {
-      console.warn("Notice: publicProfiles update returned:", res.error);
+    if (!res.success && res.error) {
+      setInlineBioError(res.error);
+      setIsBioEditingInline(true);
+      console.warn("Notice from Firebase:", res.error);
+    } else {
+      setIsBioEditingInline(false);
+      setInlineBioError(null);
     }
   };
 
@@ -328,10 +350,6 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
       usernameId: editUsernameId.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""),
     };
 
-    try {
-      localStorage.setItem(`kreate_user_bio_${userProfile.uid}`, trimmedBio);
-    } catch {}
-
     setProfileData(updatedPublicProfile);
     if (onUpdateUserProfile) {
       onUpdateUserProfile({
@@ -346,8 +364,9 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
     const res = await savePublicProfileToFirebase(userProfile.uid, updatedPublicProfile);
     setIsSaving(false);
 
-    if (!res.success) {
-      console.warn("Notice: publicProfiles update returned:", res.error);
+    if (!res.success && res.error) {
+      setSaveError(res.error);
+      console.warn("Notice from Firebase:", res.error);
     }
   };
 
@@ -486,20 +505,20 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
 
               {/* 2. Followers */}
               <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
-                <span id="stat-followers-count" className="font-heading font-bold text-base sm:text-xl text-white">
-                  {followersCount}
+                <span id="stat-followers-count" className="font-heading font-bold text-base sm:text-xl text-[#7B8A90]" title="Feature unavailable in database">
+                  —
                 </span>
-                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5" title="Feature unavailable in database">
                   Followers
                 </span>
               </div>
 
               {/* 3. Following */}
               <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
-                <span id="stat-following-count" className="font-heading font-bold text-base sm:text-xl text-white">
-                  {followingCount}
+                <span id="stat-following-count" className="font-heading font-bold text-base sm:text-xl text-[#7B8A90]" title="Feature unavailable in database">
+                  —
                 </span>
-                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+                <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5" title="Feature unavailable in database">
                   Following
                 </span>
               </div>
@@ -556,9 +575,17 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
 
           {isBioEditingInline ? (
             <div className="space-y-2">
+              {inlineBioError && (
+                <div className="p-2.5 bg-amber-950/60 border border-amber-800/80 rounded-xl text-xs text-amber-300">
+                  {inlineBioError}
+                </div>
+              )}
               <textarea
                 value={inlineBioText}
-                onChange={(e) => setInlineBioText(e.target.value)}
+                onChange={(e) => {
+                  setInlineBioText(e.target.value);
+                  if (inlineBioError) setInlineBioError(null);
+                }}
                 placeholder="Add a bio..."
                 rows={3}
                 className="w-full bg-[#111622] border border-[#202C44] rounded-xl p-3 text-sm text-white placeholder-[#7B8A90] focus:outline-none focus:border-[#D3CCB0] transition-colors"
@@ -567,7 +594,10 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsBioEditingInline(false)}
+                  onClick={() => {
+                    setIsBioEditingInline(false);
+                    setInlineBioError(null);
+                  }}
                   disabled={isSavingInlineBio}
                   className="px-3 py-1.5 rounded-lg text-xs text-[#7B8A90] hover:text-white"
                 >

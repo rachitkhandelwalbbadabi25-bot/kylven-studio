@@ -23,12 +23,11 @@ import { BuyerProfilePage } from "./pages/BuyerProfilePage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { 
   subscribeToAuthState, 
-  fetchListingsFromFirebase, 
   subscribeToListingsFromFirebase,
   saveListingToFirebase, 
-  fetchPublicProfileFromFirebase,
+  subscribeToPublicProfile,
   savePublicProfileToFirebase,
-  fetchUserBookmarksFromFirebase,
+  subscribeToUserBookmarks,
   addBookmarkToFirebase,
   removeBookmarkFromFirebase,
   fetchUserPurchasesFromFirebase,
@@ -75,7 +74,7 @@ export default function App() {
   // Global Search in Navbar
   const [globalSearch, setGlobalSearch] = useState("");
 
-  // Firebase Realtime Database: Subscribe to live authoritative approved listings
+  // Firebase Realtime Database: Subscribe to live authoritative approved listings & auth state
   useEffect(() => {
     let isMounted = true;
     setIsListingsLoading(true);
@@ -96,8 +95,21 @@ export default function App() {
       }
     );
 
+    let unsubscribeProfile: (() => void) | null = null;
+    let unsubscribeBookmarks: (() => void) | null = null;
+
     // Subscribe to Firebase Auth state
     const unsubscribeAuth = subscribeToAuthState((firebaseUser) => {
+      // Clean up previous user subscriptions if user changes
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+      if (unsubscribeBookmarks) {
+        unsubscribeBookmarks();
+        unsubscribeBookmarks = null;
+      }
+
       if (firebaseUser) {
         setIsAuthenticated(true);
         const baseName = firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User";
@@ -105,40 +117,50 @@ export default function App() {
           .toLowerCase()
           .replace(/[^a-z0-9_]/g, "");
 
+        // Set initial auth attributes immediately
         setUserProfile((prev) => ({
           ...prev,
           uid: firebaseUser.uid,
           email: firebaseUser.email || "",
-          name: prev.name || baseName,
+          name: firebaseUser.displayName || prev.name || baseName,
           username: prev.username || baseUsername,
+          avatar: firebaseUser.photoURL || prev.avatar || "",
           hasCompletedOnboarding: true,
         }));
 
-        // 1. Fetch public profile from authoritative /publicProfiles/{uid}
-        fetchPublicProfileFromFirebase(firebaseUser.uid).then((publicProf) => {
-          if (isMounted) {
-            let cachedBio = "";
-            try {
-              cachedBio = localStorage.getItem(`kreate_user_bio_${firebaseUser.uid}`) || "";
-            } catch {}
-            setUserProfile((prev) => ({
-              ...prev,
-              name: publicProf?.name || prev.name || baseName,
-              role: (publicProf?.role as any) || prev.role || "buyer",
-              bio: publicProf?.bio || cachedBio || prev.bio || "",
-              username: publicProf?.usernameId || prev.username || baseUsername,
-            }));
+        // 1. REALTIME LISTENER: Live synchronization with /publicProfiles/{uid}
+        unsubscribeProfile = subscribeToPublicProfile(
+          firebaseUser.uid,
+          (publicProf) => {
+            if (isMounted) {
+              setUserProfile((prev) => ({
+                ...prev,
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || prev.email || "",
+                name: publicProf?.name || firebaseUser.displayName || prev.name || baseName,
+                role: (publicProf?.role as any) || prev.role || "buyer",
+                bio: publicProf?.bio !== undefined ? publicProf.bio : prev.bio || "",
+                username: publicProf?.usernameId || prev.username || baseUsername,
+                hasCompletedOnboarding: true,
+              }));
+            }
+          },
+          (err) => {
+            console.warn("Live public profile sync notice:", err);
           }
-        });
+        );
 
-        // 2. Fetch bookmarks from authoritative /bookmarks/{uid}
-        fetchUserBookmarksFromFirebase(firebaseUser.uid).then((remoteSaved) => {
-          if (isMounted) {
-            setSavedIds(remoteSaved || []);
+        // 2. REALTIME LISTENER: Live synchronization with /bookmarks/{uid}
+        unsubscribeBookmarks = subscribeToUserBookmarks(
+          firebaseUser.uid,
+          (remoteSaved) => {
+            if (isMounted) {
+              setSavedIds(remoteSaved || []);
+            }
           }
-        });
+        );
 
-        // 3. Fetch purchase records from authoritative top-level /purchases (filtered by buyerId)
+        // 3. Purchase records from authoritative top-level /purchases
         fetchUserPurchasesFromFirebase(firebaseUser.uid).then((res) => {
           if (isMounted) {
             setPurchases(res.data || []);
@@ -156,6 +178,8 @@ export default function App() {
       isMounted = false;
       unsubscribeListings();
       unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+      if (unsubscribeBookmarks) unsubscribeBookmarks();
     };
   }, []);
 

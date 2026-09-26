@@ -546,7 +546,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </div>
                     <div className="hidden md:flex flex-col text-left">
                       <span className="text-xs text-white font-medium max-w-[100px] truncate leading-tight group-hover:text-[#D3CCB0] transition-colors">
-                        {userProfile?.name || "Rachit Khandelwal20"}
+                        {userProfile?.name || "Account"}
                       </span>
                       <span
                         className={`text-[9px] font-mono leading-none mt-0.5 flex items-center gap-1 ${
@@ -588,7 +588,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                         {/* Large Name */}
                         <p className="text-sm font-heading font-extrabold text-white tracking-tight truncate">
-                          {userProfile?.name || "Rachit Khandelwal20"}
+                          {userProfile?.name || "Account"}
                         </p>
 
                         {/* Muted Username */}
@@ -847,7 +847,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <div className="truncate text-left space-y-0.5">
                       {/* 1. Large Name */}
                       <p className="text-sm font-heading font-extrabold text-white group-hover:text-[#D3CCB0] transition-colors truncate">
-                        {userProfile?.name || "Rachit Khandelwal20"}
+                        {userProfile?.name || "Account"}
                       </p>
                       {/* 2. Muted Username */}
                       <p className="text-xs text-[#7B8A90] font-mono truncate">

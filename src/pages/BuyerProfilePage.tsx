@@ -52,7 +52,7 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
   const [isBioEditingInline, setIsBioEditingInline] = useState(false);
 
   // Profile Form States
-  const [formName, setFormName] = useState(userProfile?.name || "User");
+  const [formName, setFormName] = useState(userProfile?.name || "");
   const [formEmail, setFormEmail] = useState(userProfile?.email || "");
   const [formBio, setFormBio] = useState(userProfile?.bio || "");
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
@@ -65,14 +65,12 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
     return trimmed.charAt(0).toUpperCase();
   };
 
-  const initialLetter = getInitial(userProfile?.name || userProfile?.email || "User");
+  const initialLetter = getInitial(userProfile?.name || userProfile?.email || "U");
 
   const isAdminAccount = Boolean(userProfile && isUserAdmin(userProfile));
 
   // Calculate stats
   const listingsCount = 0; // Buyers don't have public selling listings
-  const followersCount = 0;
-  const followingCount = 0;
   const purchasesCount = purchases.length;
   const totalSpentINR = purchases.reduce((sum, item) => sum + (item.pricePaidINR || 0), 0);
 
@@ -151,7 +149,7 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
                     id="buyer-profile-name"
                     className="font-heading font-extrabold text-2xl sm:text-3xl text-white tracking-tight leading-tight"
                   >
-                    {userProfile?.name || "Rachit Khandelwal20"}
+                    {userProfile?.name || "Buyer"}
                   </h1>
                   {isAdminAccount && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-medium" title="Verified Admin">
@@ -162,12 +160,14 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
                 </div>
                 
                 {/* Email: (Muted gray, directly below name) */}
-                <p
-                  id="buyer-profile-email"
-                  className="text-xs sm:text-sm text-[#7B8A90] font-sans font-medium mt-0.5"
-                >
-                  {userProfile?.email || "kavishkhandelwal9@gmail.com"}
-                </p>
+                {userProfile?.email && (
+                  <p
+                    id="buyer-profile-email"
+                    className="text-xs sm:text-sm text-[#7B8A90] font-sans font-medium mt-0.5"
+                  >
+                    {userProfile.email}
+                  </p>
+                )}
               </div>
 
               {/* Action Buttons: Edit Profile */}
@@ -176,8 +176,8 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
                   type="button"
                   id="edit-profile-btn"
                   onClick={() => {
-                    setFormName(userProfile?.name || "Rachit Khandelwal20");
-                    setFormEmail(userProfile?.email || "kavishkhandelwal9@gmail.com");
+                    setFormName(userProfile?.name || "");
+                    setFormEmail(userProfile?.email || "");
                     setFormBio(userProfile?.bio || "");
                     setIsEditModalOpen(true);
                   }}
@@ -233,20 +233,20 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
 
           {/* 2. Followers */}
           <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
-            <span id="stat-followers-count" className="font-heading font-bold text-base sm:text-xl text-white">
-              {followersCount}
+            <span id="stat-followers-count" className="font-heading font-bold text-base sm:text-xl text-[#7B8A90]" title="Feature unavailable in database">
+              —
             </span>
-            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5" title="Feature unavailable in database">
               Followers
             </span>
           </div>
 
           {/* 3. Following */}
           <div className="px-1 sm:px-2 flex flex-col items-center justify-center">
-            <span id="stat-following-count" className="font-heading font-bold text-base sm:text-xl text-white">
-              {followingCount}
+            <span id="stat-following-count" className="font-heading font-bold text-base sm:text-xl text-[#7B8A90]" title="Feature unavailable in database">
+              —
             </span>
-            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5">
+            <span className="text-[10px] sm:text-xs text-[#7B8A90] uppercase font-mono tracking-wider mt-0.5" title="Feature unavailable in database">
               Following
             </span>
           </div>

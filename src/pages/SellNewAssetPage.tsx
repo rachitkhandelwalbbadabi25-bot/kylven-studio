@@ -255,7 +255,7 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               View Marketplace Listing →
             </button>
             <button
-              onClick={() => navigate(`/profile/${userProfile.username || "buildwithansh"}`)}
+              onClick={() => navigate(`/profile/${userProfile.username || userProfile.uid || "me"}`)}
               className="bg-[#202C44] text-[#D3CCB0] text-xs font-bold px-5 py-2.5 rounded-xl border border-[#202C44]"
             >
               Go to Profile
@@ -693,13 +693,13 @@ export const SellNewAssetPage: React.FC<SellNewAssetPageProps> = ({
               {/* Creator row */}
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 rounded-md bg-[#202C44] text-[#D3CCB0] text-[10px] font-mono font-bold flex items-center justify-center border border-[#202C44]">
-                  {(userProfile.name || "A").charAt(0).toUpperCase()}
+                  {(userProfile.name || "U").charAt(0).toUpperCase()}
                 </div>
                 <span className="text-xs text-[#7B8A90] font-medium">
-                  {userProfile.name || "Ansh Bhardwaj"}
+                  {userProfile.name || "Creator"}
                 </span>
                 <span className="text-[10px] text-[#7B8A90] font-mono">
-                  (@{userProfile.username || "buildwithansh"})
+                  (@{userProfile.username || userProfile.uid || "creator"})
                 </span>
               </div>
 
