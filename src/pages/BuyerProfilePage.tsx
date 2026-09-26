@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserProfile, UserPurchase, AssetListing, isUserAdmin } from "../types";
 import { ListingCard } from "../components/ListingCard";
+import { savePublicProfileToFirebase } from "../services/firebaseService";
 import {
   ShoppingBag,
   Pencil,
@@ -50,6 +51,11 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
   const [isBioEditingInline, setIsBioEditingInline] = useState(false);
+  const [isSavingBio, setIsSavingBio] = useState(false);
+  const [bioError, setBioError] = useState<string | null>(null);
+  const [bioSuccess, setBioSuccess] = useState<string | null>(null);
+  const [isSavingModal, setIsSavingModal] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // Profile Form States
   const [formName, setFormName] = useState(userProfile?.name || "");
@@ -78,25 +84,61 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
   const savedListings = listings.filter((item) => savedIds.includes(item.id) && item.deleted !== true);
 
   // Save profile updates
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (onUpdateUserProfile) {
-      onUpdateUserProfile({
-        name: formName.trim(),
-        email: formEmail.trim(),
-        bio: formBio.trim(),
-      });
+    if (!userProfile?.uid) return;
+    setIsSavingModal(true);
+    setModalError(null);
+
+    const res = await savePublicProfileToFirebase(userProfile.uid, {
+      name: formName.trim(),
+      role: userProfile.role,
+      bio: formBio.trim(),
+      usernameId: userProfile.username || userProfile.uid,
+    });
+    setIsSavingModal(false);
+
+    if (!res.success && res.error) {
+      setModalError(res.error);
+    } else {
+      if (onUpdateUserProfile) {
+        onUpdateUserProfile({
+          name: formName.trim(),
+          email: formEmail.trim(),
+          bio: formBio.trim(),
+        });
+      }
+      setIsEditModalOpen(false);
+      setBioSuccess("Profile updated and synchronized successfully!");
+      setTimeout(() => setBioSuccess(null), 4000);
     }
-    setIsEditModalOpen(false);
   };
 
-  const handleSaveBioInline = () => {
-    if (onUpdateUserProfile) {
-      onUpdateUserProfile({
-        bio: formBio.trim(),
-      });
+  const handleSaveBioInline = async () => {
+    if (!userProfile?.uid) return;
+    setIsSavingBio(true);
+    setBioError(null);
+    setBioSuccess(null);
+
+    const trimmedBio = formBio.trim();
+    const res = await savePublicProfileToFirebase(userProfile.uid, {
+      name: userProfile.name,
+      role: userProfile.role,
+      bio: trimmedBio,
+      usernameId: userProfile.username || userProfile.uid,
+    });
+    setIsSavingBio(false);
+
+    if (!res.success && res.error) {
+      setBioError(res.error);
+    } else {
+      if (onUpdateUserProfile) {
+        onUpdateUserProfile({ bio: trimmedBio });
+      }
+      setIsBioEditingInline(false);
+      setBioSuccess("Bio updated and synchronized successfully!");
+      setTimeout(() => setBioSuccess(null), 4000);
     }
-    setIsBioEditingInline(false);
   };
 
   const handleAddBlockedUser = (e: React.FormEvent) => {
@@ -296,6 +338,8 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
                 onClick={() => {
                   setFormBio(userProfile.bio || "");
                   setIsBioEditingInline(true);
+                  setBioSuccess(null);
+                  setBioError(null);
                 }}
                 className="text-[11px] font-sans font-medium text-[#D3CCB0] hover:underline flex items-center gap-1 cursor-pointer"
               >
@@ -305,11 +349,26 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
             )}
           </div>
 
+          {bioSuccess && (
+            <div className="mb-3 p-2.5 bg-emerald-950/60 border border-emerald-800/80 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+              <span>{bioSuccess}</span>
+            </div>
+          )}
+
           {isBioEditingInline ? (
             <div className="space-y-2">
+              {bioError && (
+                <div className="p-2.5 bg-amber-950/60 border border-amber-800/80 rounded-xl text-xs text-amber-300">
+                  {bioError}
+                </div>
+              )}
               <textarea
                 value={formBio}
-                onChange={(e) => setFormBio(e.target.value)}
+                onChange={(e) => {
+                  setFormBio(e.target.value);
+                  if (bioError) setBioError(null);
+                }}
                 placeholder="Add a bio..."
                 rows={3}
                 className="w-full bg-[#111622] border border-[#202C44] rounded-xl p-3 text-sm text-white placeholder-[#7B8A90] focus:outline-none focus:border-[#D3CCB0] transition-colors"
@@ -318,7 +377,11 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
               <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsBioEditingInline(false)}
+                  onClick={() => {
+                    setIsBioEditingInline(false);
+                    setBioError(null);
+                  }}
+                  disabled={isSavingBio}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium text-[#7B8A90] hover:text-white"
                 >
                   Cancel
@@ -326,9 +389,10 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
                 <button
                   type="button"
                   onClick={handleSaveBioInline}
-                  className="px-3.5 py-1.5 rounded-lg bg-[#D3CCB0] text-black font-heading font-bold text-xs hover:bg-[#c4bb9a]"
+                  disabled={isSavingBio}
+                  className="px-3.5 py-1.5 rounded-lg bg-[#D3CCB0] text-black font-heading font-bold text-xs hover:bg-[#c4bb9a] disabled:opacity-50"
                 >
-                  Save Bio
+                  {isSavingBio ? "Saving..." : "Save Bio"}
                 </button>
               </div>
             </div>
@@ -584,6 +648,12 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
               </button>
             </div>
 
+            {modalError && (
+              <div className="p-3 bg-red-950/40 border border-red-800/80 rounded-xl text-xs text-red-300">
+                {modalError}
+              </div>
+            )}
+
             <form onSubmit={handleSaveProfile} className="space-y-4">
               
               {/* Full Name Input */}
@@ -650,9 +720,10 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#D3CCB0] text-black font-heading font-bold text-xs hover:bg-[#c4bb9a] shadow-md"
+                  disabled={isSavingModal}
+                  className="px-5 py-2 rounded-xl bg-[#D3CCB0] text-black font-heading font-bold text-xs hover:bg-[#c4bb9a] shadow-md disabled:opacity-50"
                 >
-                  Save Changes
+                  {isSavingModal ? "Saving Changes..." : "Save Changes"}
                 </button>
               </div>
 

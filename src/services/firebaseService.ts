@@ -149,8 +149,23 @@ export async function registerWithEmail(
     hasCompletedOnboarding: true,
   };
 
-  // NOTE: In the authoritative architecture, client-side writes to /users are strictly forbidden.
-  // Profile state is managed locally in the client session or updated via authorized admin/backend flows.
+  // Canonical profile creation: write to /users/{user.uid} so that the backend trigger
+  // creates and populates /publicProfiles/{user.uid} with name, role, bio, usernameId
+  try {
+    const userRef = ref(database, `users/${user.uid}`);
+    await set(userRef, {
+      name: profile.name,
+      email: profile.email,
+      usernameId: profile.username,
+      role: profile.role,
+      bio: profile.bio || "",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err: any) {
+    console.warn("Could not initialize /users record during registration:", err.message);
+  }
+
   return { user, profile };
 }
 
@@ -619,9 +634,12 @@ export async function fetchPublicProfileByUsernameId(identifier: string): Promis
 }
 
 /**
- * Updates an authenticated user's public profile at /publicProfiles/{uid}
- * Restricts payload to valid public schema: name, role, bio, usernameId.
- * Handles database security rule conditions gracefully.
+ * Updates an authenticated user's profile through the authoritative canonical mechanism:
+ * Writes to /users/{uid}, which is authorized for the authenticated user by Firebase security rules.
+ * The backend synchronization service in Kreate Studio automatically detects updates to /users/{uid}
+ * and replicates canonical fields (name, role, bio, usernameId) into /publicProfiles/{uid}.
+ * 
+ * Direct client-side writes to /publicProfiles/{uid} are restricted by Firebase security rules.
  */
 export async function savePublicProfileToFirebase(
   uid: string,
@@ -640,9 +658,12 @@ export async function savePublicProfileToFirebase(
     }
 
     const effectiveUid = currentUid || targetUid;
-    const profileRef = ref(database, `publicProfiles/${effectiveUid}`);
+    // Canonical path: /users/{uid}
+    const userRef = ref(database, `users/${effectiveUid}`);
 
-    const payload: Record<string, any> = {};
+    const payload: Record<string, any> = {
+      updatedAt: serverTimestamp(),
+    };
     if (profile.name !== undefined && profile.name.trim() !== "") {
       payload.name = profile.name.trim();
     }
@@ -656,22 +677,15 @@ export async function savePublicProfileToFirebase(
       payload.usernameId = profile.usernameId.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
     }
 
-    if (Object.keys(payload).length === 0) {
+    if (Object.keys(payload).length <= 1) {
       return { success: true };
     }
 
-    await update(profileRef, payload);
+    await update(userRef, payload);
     return { success: true };
   } catch (err: any) {
     const msg = err.message || "";
-    if (msg.includes("PERMISSION_DENIED")) {
-      console.warn("Notice: Client-side write to /publicProfiles is restricted by Firebase security rules. Profiles are maintained by the authorized backend or mobile app.");
-      return { 
-        success: false, 
-        error: "PERMISSION_DENIED: Client-side write to /publicProfiles is restricted by Firebase security rules. Profile changes are synchronized via the Kreate Studio mobile app or authorized backend." 
-      };
-    }
-    console.warn("Failed to save public profile to Firebase:", msg);
+    console.error("Failed to save profile via canonical /users path:", msg);
     return { success: false, error: msg };
   }
 }

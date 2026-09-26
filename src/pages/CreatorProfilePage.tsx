@@ -87,6 +87,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   const [inlineBioText, setInlineBioText] = useState("");
   const [isSavingInlineBio, setIsSavingInlineBio] = useState(false);
   const [inlineBioError, setInlineBioError] = useState<string | null>(null);
+  const [inlineBioSuccess, setInlineBioSuccess] = useState<string | null>(null);
 
   // Blocked accounts modal state
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
@@ -301,6 +302,8 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   const handleSaveBioInline = async () => {
     if (!userProfile?.uid) return;
     setIsSavingInlineBio(true);
+    setInlineBioError(null);
+    setInlineBioSuccess(null);
 
     const words = inlineBioText.trim() ? inlineBioText.trim().split(/\s+/) : [];
     const trimmedBio = words.slice(0, MAX_BIO_WORDS).join(" ");
@@ -313,12 +316,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
       usernameId: profileData?.usernameId || userProfile.username || userProfile.uid,
     };
 
-    setProfileData(updatedPublicProfile);
-    setEditBio(trimmedBio);
-    if (onUpdateUserProfile) {
-      onUpdateUserProfile({ bio: trimmedBio });
-    }
-    // Persist to authoritative Firebase path: /publicProfiles/{uid}
+    // Persist via canonical /users/{uid} mechanism; backend replicates to /publicProfiles/{uid}
     const res = await savePublicProfileToFirebase(userProfile.uid, updatedPublicProfile);
     setIsSavingInlineBio(false);
 
@@ -327,8 +325,15 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
       setIsBioEditingInline(true);
       console.warn("Notice from Firebase:", res.error);
     } else {
+      setProfileData((prev) => prev ? { ...prev, bio: trimmedBio } : updatedPublicProfile);
+      setEditBio(trimmedBio);
+      if (onUpdateUserProfile) {
+        onUpdateUserProfile({ bio: trimmedBio });
+      }
       setIsBioEditingInline(false);
       setInlineBioError(null);
+      setInlineBioSuccess("Bio saved and synchronized successfully!");
+      setTimeout(() => setInlineBioSuccess(null), 4000);
     }
   };
 
@@ -350,23 +355,25 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
       usernameId: editUsernameId.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""),
     };
 
-    setProfileData(updatedPublicProfile);
-    if (onUpdateUserProfile) {
-      onUpdateUserProfile({
-        name: updatedPublicProfile.name,
-        bio: updatedPublicProfile.bio,
-        username: updatedPublicProfile.usernameId,
-      });
-    }
-    setIsEditModalOpen(false);
-
-    // Persist to authoritative Firebase path: /publicProfiles/{uid}
+    // Persist via canonical /users/{uid} mechanism; backend replicates to /publicProfiles/{uid}
     const res = await savePublicProfileToFirebase(userProfile.uid, updatedPublicProfile);
     setIsSaving(false);
 
     if (!res.success && res.error) {
       setSaveError(res.error);
       console.warn("Notice from Firebase:", res.error);
+    } else {
+      setProfileData(updatedPublicProfile);
+      if (onUpdateUserProfile) {
+        onUpdateUserProfile({
+          name: updatedPublicProfile.name,
+          bio: updatedPublicProfile.bio,
+          username: updatedPublicProfile.usernameId,
+        });
+      }
+      setIsEditModalOpen(false);
+      setInlineBioSuccess("Profile updated and synchronized successfully!");
+      setTimeout(() => setInlineBioSuccess(null), 4000);
     }
   };
 
@@ -564,6 +571,7 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
                 onClick={() => {
                   setInlineBioText(displayBio || "");
                   setIsBioEditingInline(true);
+                  setInlineBioSuccess(null);
                 }}
                 className="text-[11px] font-sans font-medium text-[#D3CCB0] hover:underline flex items-center gap-1 cursor-pointer"
               >
@@ -572,6 +580,13 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
               </button>
             )}
           </div>
+
+          {inlineBioSuccess && (
+            <div className="mb-3 p-2.5 bg-emerald-950/60 border border-emerald-800/80 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 shrink-0 text-emerald-400" />
+              <span>{inlineBioSuccess}</span>
+            </div>
+          )}
 
           {isBioEditingInline ? (
             <div className="space-y-2">
