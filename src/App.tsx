@@ -116,6 +116,10 @@ export default function App() {
         unsubscribePurchases = null;
       }
 
+      // Immediately clear sensitive user state to prevent any stale cross-account data leakage
+      setPurchases([]);
+      setSavedIds([]);
+
       if (firebaseUser) {
         setIsAuthenticated(true);
         const baseName = firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User";

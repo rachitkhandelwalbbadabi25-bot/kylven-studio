@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { AssetListing, UserProfile, UserPurchase, PublicProfile, isUserAdmin } from "../types";
 import { ListingCard } from "../components/ListingCard";
+import { auth } from "../lib/firebase";
 import {
   fetchPublicProfileByUsernameId,
   subscribeToPublicProfile,
@@ -61,17 +62,24 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   // Derive target username/handle
   const cleanUsername = (username || userProfile?.username || "").replace("@", "").trim().toLowerCase();
 
-  // Check if viewing own profile
-  const isOwner = Boolean(
-    !username ||
-    username === "me" ||
-    (userProfile?.username && cleanUsername === userProfile.username.toLowerCase()) ||
-    (userProfile?.uid && cleanUsername === userProfile.uid.toLowerCase())
-  );
-
   // Authoritative public profile state (from Firebase /publicProfiles)
   const [profileData, setProfileData] = useState<PublicProfile | null>(null);
   const [resolvedUid, setResolvedUid] = useState<string | null>(null);
+
+  // Check if viewing own profile strictly against auth.currentUser.uid
+  const currentAuthUid = auth.currentUser?.uid || userProfile?.uid;
+  const isOwner = Boolean(
+    currentAuthUid && (
+      !username ||
+      username === "me" ||
+      (resolvedUid && currentAuthUid === resolvedUid) ||
+      (userProfile?.uid && currentAuthUid === userProfile.uid && (
+        (userProfile.username && cleanUsername === userProfile.username.toLowerCase()) ||
+        cleanUsername === userProfile.uid.toLowerCase()
+      ))
+    )
+  );
+
   const [isLoadingProfile, setIsLoadingProfile] = useState<boolean>(!isOwner);
   const [notFound, setNotFound] = useState<boolean>(false);
 
@@ -255,7 +263,13 @@ export const CreatorProfilePage: React.FC<CreatorProfilePageProps> = ({
   // 5-metric Seller Profile statistics (Listings, Followers, Following, Purchases, Spent)
   const listingsCount = isBuyer ? savedListings.length : creatorListings.length;
   const purchasesCount = isOwner ? purchases.length : 0;
-  const totalSpentINR = isOwner ? purchases.reduce((acc, p) => acc + (p.pricePaidINR || 0), 0) : 0;
+  const totalSpentINR = isOwner
+    ? purchases.reduce((sum, item) => {
+        const rawVal = item.amountPaid !== undefined ? item.amountPaid : item.pricePaidINR;
+        const val = typeof rawVal === "number" ? rawVal : parseFloat(String(rawVal)) || 0;
+        return sum + (isNaN(val) ? 0 : val);
+      }, 0)
+    : 0;
 
   const MAX_BIO_WORDS = 150;
   const countWords = (text: string) => {

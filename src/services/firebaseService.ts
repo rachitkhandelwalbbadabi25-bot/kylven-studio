@@ -837,8 +837,22 @@ export function mapFirebasePurchaseToUserPurchase(
   purchaseKey: string,
   raw: any
 ): UserPurchase {
-  const amount = typeof raw.amountPaid === "number" ? raw.amountPaid : (raw.pricePaidINR || 0);
-  const purchaseTimestamp = typeof raw.purchasedAt === "number" ? raw.purchasedAt : (raw.createdAt || Date.now());
+  // Safely parse amount whether stored as number, numeric string, or legacy field
+  let parsedAmount = 0;
+  const candidateAmount = raw.amountPaid !== undefined ? raw.amountPaid : raw.pricePaidINR;
+  if (typeof candidateAmount === "number") {
+    parsedAmount = isNaN(candidateAmount) ? 0 : candidateAmount;
+  } else if (typeof candidateAmount === "string") {
+    const p = parseFloat(candidateAmount);
+    parsedAmount = isNaN(p) ? 0 : p;
+  }
+
+  const purchaseTimestamp = typeof raw.purchasedAt === "number"
+    ? raw.purchasedAt
+    : typeof raw.purchasedAt === "string"
+      ? parseFloat(raw.purchasedAt) || Date.now()
+      : (raw.createdAt || Date.now());
+
   const dateStr = raw.purchaseDate || new Date(purchaseTimestamp).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
@@ -867,10 +881,10 @@ export function mapFirebasePurchaseToUserPurchase(
     downloadUrl: raw.fileUrl || raw.downloadUrl || "",
     licenseKey,
     purchaseDate: dateStr,
-    pricePaidINR: amount,
-    amountPaid: amount,
-    sellerNetINR: Math.round(amount * 0.9),
-    platformFeeINR: Math.round(amount * 0.1),
+    pricePaidINR: parsedAmount,
+    amountPaid: parsedAmount,
+    sellerNetINR: Math.round(parsedAmount * 0.9),
+    platformFeeINR: Math.round(parsedAmount * 0.1),
     paymentMethod: raw.razorpayPaymentId === "FREE" ? "Free Download" : (raw.paymentMethod || "UPI / Razorpay"),
   };
 }
@@ -918,21 +932,51 @@ export function subscribeToUserPurchases(
       if (snapshot.exists()) {
         const val = snapshot.val();
         if (typeof val === "object" && val !== null) {
-          // Strictly filter so only records matching effectiveUid are returned
-          const mappedList: UserPurchase[] = Object.entries(val)
-            .filter(([_, item]: [string, any]) => item && item.buyerId === effectiveUid)
-            .map(([key, item]) =>
-              mapFirebasePurchaseToUserPurchase(key, item)
-            );
+          const rawEntries = Object.entries(val);
+          const authedUid = (auth.currentUser?.uid || effectiveUid).trim();
+
+          // Runtime audit logging for development
+          if (process.env.NODE_ENV !== "production" || (import.meta as any).env?.DEV) {
+            console.log("[Purchases Runtime Audit] auth.currentUser.uid:", authedUid);
+            console.log("[Purchases Runtime Audit] records returned from Firebase:", rawEntries.length);
+          }
+
+          const verifiedList: UserPurchase[] = [];
+
+          for (const [key, rawItem] of rawEntries) {
+            const item = rawItem as any;
+            if (!item) continue;
+
+            const recordBuyerId = (item.buyerId || "").trim();
+
+            if (process.env.NODE_ENV !== "production" || (import.meta as any).env?.DEV) {
+              console.log("[Purchases Runtime Audit] Purchase record:", {
+                purchaseId: key,
+                buyerId: item.buyerId,
+                sellerId: item.sellerId,
+                listingId: item.listingId,
+                listingTitle: item.listingTitle || item.title,
+                amountPaid: item.amountPaid,
+                purchasedAt: item.purchasedAt,
+              });
+            }
+
+            // Strictly verify: EVERY returned record MUST satisfy purchase.buyerId === auth.currentUser.uid
+            if (recordBuyerId === authedUid) {
+              verifiedList.push(mapFirebasePurchaseToUserPurchase(key, item));
+            } else {
+              console.warn(`[Purchases Sync] Discarded non-matching record ${key}: buyerId (${recordBuyerId}) !== auth.currentUser (${authedUid})`);
+            }
+          }
 
           // Sort newest purchase first
-          mappedList.sort((a, b) => {
+          verifiedList.sort((a, b) => {
             const timeA = (val[a.purchaseId || ""]?.purchasedAt) || 0;
             const timeB = (val[b.purchaseId || ""]?.purchasedAt) || 0;
             return timeB - timeA;
           });
 
-          onPurchasesChanged(mappedList);
+          onPurchasesChanged(verifiedList);
           return;
         }
       }
@@ -978,17 +1022,18 @@ export async function fetchUserPurchasesFromFirebase(uid: string): Promise<{ dat
     if (snapshot.exists()) {
       const val = snapshot.val();
       if (typeof val === "object" && val !== null) {
-        const mappedList: UserPurchase[] = Object.entries(val)
-          .filter(([_, item]: [string, any]) => item && item.buyerId === effectiveUid)
+        const authedUid = (auth.currentUser?.uid || effectiveUid).trim();
+        const verifiedList: UserPurchase[] = Object.entries(val)
+          .filter(([_, item]: [string, any]) => item && (item.buyerId || "").trim() === authedUid)
           .map(([key, item]) =>
             mapFirebasePurchaseToUserPurchase(key, item)
           );
-        mappedList.sort((a, b) => {
+        verifiedList.sort((a, b) => {
           const timeA = (val[a.purchaseId || ""]?.purchasedAt) || 0;
           const timeB = (val[b.purchaseId || ""]?.purchasedAt) || 0;
           return timeB - timeA;
         });
-        return { data: mappedList };
+        return { data: verifiedList };
       }
     }
     return { data: [] };

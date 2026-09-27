@@ -75,10 +75,14 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
 
   const isAdminAccount = Boolean(userProfile && isUserAdmin(userProfile));
 
-  // Calculate stats
+  // Calculate stats strictly based on authoritative purchase records for auth.currentUser.uid
   const listingsCount = 0; // Buyers don't have public selling listings
   const purchasesCount = purchases.length;
-  const totalSpentINR = purchases.reduce((sum, item) => sum + (item.pricePaidINR || 0), 0);
+  const totalSpentINR = purchases.reduce((sum, item) => {
+    const rawVal = item.amountPaid !== undefined ? item.amountPaid : item.pricePaidINR;
+    const val = typeof rawVal === "number" ? rawVal : parseFloat(String(rawVal)) || 0;
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
 
   // Saved listings (excluding soft-deleted listings)
   const savedListings = listings.filter((item) => savedIds.includes(item.id) && item.deleted !== true);
