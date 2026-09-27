@@ -252,10 +252,10 @@ export const BuyerProfilePage: React.FC<BuyerProfilePageProps> = ({
           2. ACTIVITY STATS ROW
           - Single, rounded dark-navy panel containing five key metrics:
             Listings: (0)
-            Followers: (0)
-            Following: (0)
-            Purchases: (0)
-            Spent: (₹0)
+            Followers: (—)
+            Following: (—)
+            Purchases: (real purchases count)
+            Spent: (real total spent in INR)
          ========================================================= */}
       <section
         id="activity-stats-row-panel"

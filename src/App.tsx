@@ -249,12 +249,9 @@ export default function App() {
       );
   };
 
-  const handleCompletePurchase = (purchase: UserPurchase) => {
-    setPurchases((prev) => [purchase, ...prev]);
-    // increment sales count on listing
-    setListings((prev) =>
-      prev.map((l) => (l.id === purchase.listingId ? { ...l, salesCount: (l.salesCount || 0) + 1 } : l))
-    );
+  const handleCompletePurchase = (_purchase: UserPurchase) => {
+    // Authoritative purchases are synchronized exclusively via subscribeToUserPurchases
+    // listener from the Firebase Realtime Database. We strictly do not inject simulated records into state.
   };
 
   const handleUpdateUserProfile = (updated: Partial<UserProfile>) => {

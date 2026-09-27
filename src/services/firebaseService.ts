@@ -803,6 +803,29 @@ export async function removeBookmarkFromFirebase(listingId: string): Promise<boo
 }
 
 // ==========================================
+// REALTIME DATABASE: FOLLOWERS & FOLLOWING
+// ==========================================
+
+/**
+ * Backend Audit Specification for Followers / Following:
+ * The shared Kreate Studio Firebase Realtime Database schema (/publicProfiles, /users, etc.)
+ * does NOT store follower or following relationships, and no top-level /followers, /following,
+ * or /userFollowers paths exist in the backend.
+ * 
+ * In accordance with strict data integrity rules, the client returns null ("—")
+ * and does NOT fabricate counts or store a separate un-synchronized social graph.
+ */
+export function getFollowerRelationshipStatus(): {
+  isSupported: boolean;
+  message: string;
+} {
+  return {
+    isSupported: false,
+    message: "Follower and following relationship data is currently not exposed by the shared Firebase backend.",
+  };
+}
+
+// ==========================================
 // REALTIME DATABASE: PURCHASES
 // ==========================================
 
@@ -856,8 +879,9 @@ export function mapFirebasePurchaseToUserPurchase(
  * Subscribes to the authenticated user's purchase records in realtime from /purchases
  * strictly filtered by buyerId === uid.
  * 
- * Secure architecture:
- * - Scoped strictly to the authenticated buyer (never queries other users' purchases)
+ * Secure authoritative architecture:
+ * - Scoped strictly to the authenticated buyer UID (never queries other users' purchases)
+ * - Explicitly filters snapshot entries by buyerId === effectiveUid to prevent cross-user leakage
  * - Returns cleanup unsubscribe function for onValue
  * - Maps authoritative FirebasePurchase fields (listingTitle, previewUrl, fileUrl, amountPaid, etc.)
  *   into UserPurchase items for UI presentation
@@ -868,7 +892,16 @@ export function subscribeToUserPurchases(
   onError?: (error: Error) => void
 ): () => void {
   const currentUid = auth.currentUser?.uid;
-  if (!currentUid || currentUid !== uid) {
+  const effectiveUid = (uid || currentUid || "").trim();
+
+  if (!effectiveUid) {
+    onPurchasesChanged([]);
+    return () => {};
+  }
+
+  // Prevent querying another user's purchases
+  if (currentUid && effectiveUid !== currentUid) {
+    console.warn("Security safeguard: Cannot subscribe to purchases for another UID.");
     onPurchasesChanged([]);
     return () => {};
   }
@@ -876,7 +909,7 @@ export function subscribeToUserPurchases(
   const purchasesQuery = query(
     ref(database, "purchases"),
     orderByChild("buyerId"),
-    equalTo(currentUid)
+    equalTo(effectiveUid)
   );
 
   return onValue(
@@ -885,15 +918,20 @@ export function subscribeToUserPurchases(
       if (snapshot.exists()) {
         const val = snapshot.val();
         if (typeof val === "object" && val !== null) {
-          const mappedList: UserPurchase[] = Object.entries(val).map(([key, item]) =>
-            mapFirebasePurchaseToUserPurchase(key, item)
-          );
+          // Strictly filter so only records matching effectiveUid are returned
+          const mappedList: UserPurchase[] = Object.entries(val)
+            .filter(([_, item]: [string, any]) => item && item.buyerId === effectiveUid)
+            .map(([key, item]) =>
+              mapFirebasePurchaseToUserPurchase(key, item)
+            );
+
           // Sort newest purchase first
           mappedList.sort((a, b) => {
             const timeA = (val[a.purchaseId || ""]?.purchasedAt) || 0;
             const timeB = (val[b.purchaseId || ""]?.purchasedAt) || 0;
             return timeB - timeA;
           });
+
           onPurchasesChanged(mappedList);
           return;
         }
@@ -920,22 +958,31 @@ export function subscribeToUserPurchases(
 export async function fetchUserPurchasesFromFirebase(uid: string): Promise<{ data: UserPurchase[] | null; error?: string }> {
   try {
     const currentUid = auth.currentUser?.uid;
-    if (!currentUid || currentUid !== uid) {
+    const effectiveUid = (uid || currentUid || "").trim();
+
+    if (!effectiveUid) {
       return { data: null, error: "Unauthorized: You can only query purchase records for your authenticated account." };
     }
+
+    if (currentUid && effectiveUid !== currentUid) {
+      return { data: null, error: "Unauthorized: Cannot query purchases for another user account." };
+    }
+
     // Query top-level /purchases by buyerId
     const purchasesQuery = query(
       ref(database, "purchases"),
       orderByChild("buyerId"),
-      equalTo(currentUid)
+      equalTo(effectiveUid)
     );
     const snapshot = await get(purchasesQuery);
     if (snapshot.exists()) {
       const val = snapshot.val();
       if (typeof val === "object" && val !== null) {
-        const mappedList: UserPurchase[] = Object.entries(val).map(([key, item]) =>
-          mapFirebasePurchaseToUserPurchase(key, item)
-        );
+        const mappedList: UserPurchase[] = Object.entries(val)
+          .filter(([_, item]: [string, any]) => item && item.buyerId === effectiveUid)
+          .map(([key, item]) =>
+            mapFirebasePurchaseToUserPurchase(key, item)
+          );
         mappedList.sort((a, b) => {
           const timeA = (val[a.purchaseId || ""]?.purchasedAt) || 0;
           const timeB = (val[b.purchaseId || ""]?.purchasedAt) || 0;
